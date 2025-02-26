@@ -55,7 +55,8 @@
             <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'Events'">Events</b-nav-item>
             <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings();" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover="'Accounts'">Accounts</b-nav-item> -->
             <!-- <b-avatar v-if="coinbase && coinbase != nameOrShortAddress(coinbase)" rounded variant="light" size="3.0rem" :src="'https://metadata.ens.domains/mainnet/avatar/' + nameOrShortAddress(coinbase, 100)" v-b-popover.hover="'Your ENS avatar if set'"></b-avatar> -->
-            <b-button size="sm" variant="outline-primary" class="ml-1 mr-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.bottom="'Click to update wallet'">{{ coinbase ? nameOrShortAddress(coinbase, 16) : 'Connect' }}</b-button>
+            <!-- <b-button size="sm" variant="outline-primary" class="ml-1 mr-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.bottom="'Click to update wallet'">{{ coinbase ? nameOrShortAddress(coinbase, 16) : 'Connect' }}</b-button> -->
+            <b-button size="sm" variant="outline-primary" class="ml-1 mr-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.bottom="'Click to update wallet'">{{ coinbase ? coinbase.substring(0, 16) : 'Connect' }}</b-button>
           </b-navbar-nav>
         </b-navbar>
 
@@ -101,17 +102,51 @@
             </div>
           </div>
 
-          <b-card no-body class="m-1 p-1 border-0" bg-variant="light">
+          <b-card no-body class="m-1 p-0 border-0" bg-variant="light">
+            <b-table small fixed striped responsive hover :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve Safes v1.1.1" head-variant="light" class="mx-0 my-0">
+              <template #cell(index)="data">
+                <font size="-1" class="text-muted">
+                  {{ parseInt(data.index) + ((settings.safesTable.currentPage - 1) * settings.safesTable.pageSize) + 1 }}
+                </font>
+              </template>
+              <template #cell(chain)="data">
+                <div v-if="data.item.chainId == 1">
+                  ETH Mainnet
+                </div>
+                <div v-else>
+                  {{ "Chain Id " + data.item.chainId }}
+                </div>
+              </template>
+              <template #cell(blockNumber)="data">
+                <b-link :href="'https://etherscan.io/tx/' + indexToTxHash[data.item.txHashIndex] + '#eventlog#' + data.item.logIndex" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                  {{ data.item.blockNumber }}
+                </b-link>
+                <font size="-2" class="text-muted">
+                  {{ data.item.logIndex }}
+                </font>
+              </template>
+              <template #cell(safe)="data">
+                <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item.safeAddressIndex]" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                  {{ indexToAddress[data.item.safeAddressIndex] }}
+                </b-link>
+              </template>
+              <template #cell(factory)="data">
+                <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item.factoryAddressIndex]" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                  {{ indexToAddress[data.item.factoryAddressIndex] }}
+                </b-link>
+              </template>
+            </b-table>
+
             <!-- <b-form-group label="" label-cols="3" label-align="right" class="m-0 mt-2" :description="!connected ? 'Click [Connect] to connect to Ethereum mainnet' : ''">
               <b-button size="sm" @click="retrieveSafeFactoryEvents();" variant="primary">
                 Retrieve Safe Factory Events
               </b-button>
             </b-form-group> -->
-            <font size="-2">
+            <!-- <font size="-2">
               <pre>
 {{ pagedFilteredSortedSafes }}
               </pre>
-            </font>
+            </font> -->
           </b-card>
 
           <!-- :INFO -->
@@ -193,17 +228,10 @@
           forceRefresh: 0,
 
           settings: {
-            // mode: 'card', // 'card', 'cards', 'addresses', 'info', 'config'
-            // tabIndex: 0,
-            // cards: {},
-            // addresses: {},
-            // selectedCard: null,
-            // etherscanAPIKey: null,
-            // cryptoCompareAPIKey: null,
             safesTable: {
               filter: null,
               currentPage: 1,
-              pageSize: 25,
+              pageSize: 15,
               sortOption: 'blocknumberdsc',
             },
             version: 0,
@@ -231,6 +259,7 @@
             { value: 2, text: '2' },
             { value: 5, text: '5' },
             { value: 10, text: '10' },
+            { value: 15, text: '15' },
             { value: 25, text: '25' },
             { value: 50, text: '50' },
             { value: 100, text: '100' },
@@ -239,11 +268,22 @@
             { value: 1000, text: '1,000' },
           ],
 
-          cardsFields: [
+          safesFields: [
             { key: 'index', label: '#', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
-            { key: 'card', label: 'Card', sortable: false, thStyle: 'width: 70%;', tdClass: 'text-truncate' },
-            { key: 'active', label: 'Active', sortable: false, thStyle: 'width: 20%;', tdClass: 'text-truncate' },
+            { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
+            { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
+            { key: 'safe', label: 'Safe', sortable: false, thStyle: 'width: 30%;', tdClass: 'text-truncate' },
+            { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 30%;', tdClass: 'text-truncate' },
           ],
+
+          // {
+          //   "chainId": "1",
+          //   "safeAddressIndex": "38277",
+          //   "blockNumber": 21468205,
+          //   "logIndex": 494,
+          //   "txHashIndex": 15739,
+          //   "factoryAddressIndex": 0
+          // },
 
           addressesFields: [
             { key: 'one', label: '', sortable: false, thStyle: 'width: 100%;', tdClass: 'text-left' },

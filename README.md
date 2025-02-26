@@ -22,6 +22,17 @@ Web3 dapp: https://bokkypoobah.github.io/GnosisSafeExplorer/ (WIP)
 
 ---
 
+### Sample Screens
+
+Safe 1.1.1 only
+
+<kbd><img src="images/SampleScreen01.png" width="400" /></kbd>
+
+
+<br />
+
+---
+
 ### Reference
 
 * https://docs.safe.global/advanced/smart-account-supported-networks
