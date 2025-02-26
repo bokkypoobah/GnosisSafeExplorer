@@ -917,20 +917,31 @@
             const latestBlockNumber = block && block.number || null;
             console.log(moment().format("HH:mm:ss") + " retrieveEvents - latestBlockNumber: " + latestBlockNumber);
 
-            const factoryLogs = await provider.getLogs({
-              address: factoryAddress,
-              // fromBlock: 0,
-              fromBlock: latestBlockNumber - 100000,
-              toBlock: latestBlockNumber,
-              topics: [[
-                  '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80',
-                  // '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31'
-                ],
-                // null, // accountsAs32Bytes,
-                // null
-              ],
-            });
-            console.log(moment().format("HH:mm:ss") + " retrieveEvents - factoryLogs: " + JSON.stringify(factoryLogs));
+            async function processLogs(fromBlock, toBlock, logs) {
+              console.log(moment().format("HH:mm:ss") + " retrieveEvents - processLogs: " + fromBlock + ", toBlock: " + toBlock + ", logs: " + JSON.stringify(logs));
+            }
+
+            async function getLogsFromRange(fromBlock, toBlock) {
+              console.log(moment().format("HH:mm:ss") + " retrieveEvents - getLogsFromRange: " + fromBlock + ", toBlock: " + toBlock);
+              try {
+                const logs = await provider.getLogs({
+                  address: factoryAddress,
+                  fromBlock,
+                  toBlock,
+                  topics: [[
+                      '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80',
+                    ],
+                  ],
+                });
+                await processLogs(fromBlock, toBlock, logs);
+                // console.log(moment().format("HH:mm:ss") + " retrieveEvents - factoryLogs: " + JSON.stringify(factoryLogs));
+              } catch (e) {
+                const mid = parseInt((fromBlock + toBlock) / 2);
+                await getLogsFromRange(fromBlock, mid);
+                await getLogsFromRange(parseInt(mid) + 1, toBlock);
+              }
+            }
+            getLogsFromRange(latestBlockNumber - 100000, latestBlockNumber);
 
           },
 
