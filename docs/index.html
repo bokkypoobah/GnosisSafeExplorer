@@ -74,6 +74,11 @@
           <template #modal-title>
             Safe {{ modalSafe.safe || '' }}
           </template>
+          <font size="-2">
+            <pre>
+{{ modalSafe }}
+            </pre>
+          </font>
           <!-- <b-form-group label="Graffiti:" label-cols="3" label-align="right" description="Up to 32 characters, alphanumeric plus '-', '_' and '.' permitted">
             <b-form-input type="text" size="sm" v-model.trim="modalGraffiti.graffiti" placeholder="graffiti"></b-form-input>
           </b-form-group> -->
@@ -258,6 +263,7 @@
             txHashIndex: null,
             factoryAddressIndex: null,
             factory: null,
+            events: [],
           },
 
           sync: {
