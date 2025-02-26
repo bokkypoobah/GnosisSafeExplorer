@@ -60,11 +60,11 @@
           </b-navbar-nav>
         </b-navbar>
 
-        <b-progress v-if="sync.section != null" height="2.5rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-1 p-1">
+        <!-- <b-progress v-if="sync.section != null" height="2.5rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-1 p-1">
           <b-progress-bar :value="sync.completed">
             {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
           </b-progress-bar>
-        </b-progress>
+        </b-progress> -->
 
         <!-- <b-alert v-if="false" size="sm" dismissible variant="warning" show class="m-1 my-0">
           Warning: This is experimental unaudited software. Please check your transaction data carefully before signing
@@ -86,6 +86,11 @@
             <div v-if="!sync.section" class="mt-0 pr-1">
               <b-button size="sm" @click="retrieveSafeFactoryEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
             </div>
+            <b-progress v-if="sync.section != null" height="2.5rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-1 p-1">
+              <b-progress-bar :value="sync.completed">
+                {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
+              </b-progress-bar>
+            </b-progress>
             <div class="mt-0 flex-grow-1">
             </div>
             <div class="mt-0 pl-1">
@@ -128,6 +133,9 @@
               <template #cell(safe)="data">
                 <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item.safeAddressIndex]" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
                   {{ indexToAddress[data.item.safeAddressIndex] }}
+                </b-link>
+                <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + indexToAddress[data.item.safeAddressIndex]" v-b-popover.hover.bottom="'View in app.safe.global'" target="_blank">
+                  <b-icon-wallet shift-v="+2" font-scale="0.9" variant="primary"></b-icon-wallet>
                 </b-link>
               </template>
               <template #cell(factory)="data">
@@ -213,19 +221,11 @@
 
           safes: {},
 
-          debug: "Debug",
-
-          // cards: {}, // address0 -> slot# -> address
-
-          selectedSlot: 9, // null,
-          selectedAction: "transfereth", // null,
-
           connected: false,
           chainId: null,
           coinbase: null,
           blockNumber: null,
           timestamp: null,
-          forceRefresh: 0,
 
           settings: {
             safesTable: {
@@ -244,8 +244,6 @@
             error: null, // TODO
             // halt: false,
           },
-
-          // etherscanData: {},
 
           // blockTimestamps: {},
 
@@ -269,11 +267,11 @@
           ],
 
           safesFields: [
-            { key: 'index', label: '#', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
-            { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
-            { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
-            { key: 'safe', label: 'Safe', sortable: false, thStyle: 'width: 30%;', tdClass: 'text-truncate' },
-            { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 30%;', tdClass: 'text-truncate' },
+            { key: 'index', label: '#', sortable: false, thStyle: 'width: 7%;', tdClass: 'text-truncate' },
+            { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
+            { key: 'safe', label: 'Safe', sortable: false, thStyle: 'width: 35%;', tdClass: 'text-truncate' },
+            { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 35%;', tdClass: 'text-truncate' },
+            { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
           ],
 
           db: {
@@ -348,52 +346,6 @@
                 }
               });
             }
-
-          //   const nfcCardAddresses = {};
-          //   for (const [cardId, cardData] of Object.entries(this.settings.cards)) {
-          //     for (const [slot, slotData] of Object.entries(cardData.slots)) {
-          //       if (!(slotData.address in nfcCardAddresses)) {
-          //         nfcCardAddresses[slotData.address] = cardData.name + ' - #' + slot;
-          //       }
-          //     }
-          //   }
-          //   for (const [address, addressData] of Object.entries(this.settings.addresses)) {
-          //     let include = true;
-          //     if (regex && !regex.test(address) && !regex.test(addressData.name)) {
-          //       include = false;
-          //     }
-          //     let type = addressData.type;
-          //     if (address in nfcCardAddresses) {
-          //       type = "nfccard";
-          //     }
-          //     if (this.settings.addressesTable.addressType && this.settings.addressesTable.addressType != type) {
-          //       include = false;
-          //     }
-          //     if (include) {
-          //       results.push( { address, ...addressData, type } );
-          //     }
-          //   }
-          //   if (this.settings.addressesTable.sortOption == 'addressasc') {
-          //     results.sort((a, b) => {
-          //       return ('' + a.address).localeCompare(b.address);
-          //     });
-          //   } else if (this.settings.addressesTable.sortOption == 'addressdsc') {
-          //     results.sort((a, b) => {
-          //       return ('' + b.address).localeCompare(a.address);
-          //     });
-          //   } else if (this.settings.addressesTable.sortOption == 'nameasc') {
-          //     results.sort((a, b) => {
-          //       const nameA = a.name || a.address;
-          //       const nameB = b.name || b.address;
-          //       return ('' + nameA).localeCompare(nameB);
-          //     });
-          //   } else if (this.settings.addressesTable.sortOption == 'namedsc') {
-          //     results.sort((a, b) => {
-          //       const nameA = a.name || a.address;
-          //       const nameB = b.name || b.address;
-          //       return ('' + nameB).localeCompare(nameA);
-          //     });
-          //   }
             return results;
           },
           pagedFilteredSortedSafes() {
@@ -548,6 +500,7 @@
                   ],
                 });
                 await processLogs(fromBlock, toBlock, logs);
+                t.sync.completed = toBlock;
               } catch (e) {
                 console.error(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - Error: " + e.message);
                 const mid = parseInt((fromBlock + toBlock) / 2);
@@ -556,6 +509,7 @@
               }
             }
 
+            const t = this;
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
 
@@ -565,7 +519,9 @@
             const block = await provider.getBlock();
             const latestBlockNumber = block && block.number || null;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - latestBlockNumber: " + latestBlockNumber);
-
+            this.sync.section = "Syncing";
+            this.sync.total = latestBlockNumber;
+            this.sync.completed = 0;
             const factoryAddress = ADDRESSES["1.1.1"] && ADDRESSES["1.1.1"]["1"] && ADDRESSES["1.1.1"]["1"]["proxy_factory"] || null;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - factoryAddress: " + JSON.stringify(factoryAddress));
             const factoryABI = ABIS["1.1.1"] && ABIS["1.1.1"]["proxy_factory"] || null;
@@ -614,6 +570,7 @@
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 100000;
             const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - startBlock: " + startBlock);
             await getLogsFromRange(startBlock, latestBlockNumber);
 
@@ -629,8 +586,8 @@
             }).catch(function(error) {
               console.log("error: " + error);
             });
-
             await this.loadCurrentData();
+            this.sync.section = null;
           },
           async resetData() {
             this.$bvModal.msgBoxConfirm('Reset all data?', {
@@ -690,230 +647,6 @@
               Vue.set(this, 'blockTimestamps', blockTimestamps);
             }
             console.log(moment().format("HH:mm:ss") + " syncBlockTimestamps END");
-          },
-
-          async syncAccounts(provider, devMode) {
-            console.log(moment().format("HH:mm:ss") + " syncAccounts BEGIN");
-            const accounts = devMode ? {} : this.accounts;
-            if (!(this.chainId in accounts)) {
-              accounts[this.chainId] = {};
-            }
-            const newAccountsMap = {};
-            const events = this.events[this.chainId] || {};
-            for (const blockNumber of Object.keys(events).sort((a, b) => { return a - b })) {
-              const blockNumberData = events[blockNumber];
-              for (const logIndex of Object.keys(blockNumberData).sort((a, b) => { return a - b })) {
-                const eventData = events[blockNumber][logIndex];
-                if (!(eventData.owner in accounts[this.chainId]) && !(eventData.owner in newAccountsMap)) {
-                  newAccountsMap[eventData.owner] = { source: "owner" };
-                }
-                if (!(eventData.owner in accounts[this.chainId]) && !(eventData.contract in newAccountsMap)) {
-                  newAccountsMap[eventData.contract] = { source: "contract" };
-                }
-                if (!(eventData.owner in accounts[this.chainId]) && !(eventData.spender in newAccountsMap)) {
-                  newAccountsMap[eventData.spender] = { source: "spender" };
-                }
-              }
-            }
-            const ensReverseRecordsContract = new ethers.Contract(ENSREVERSERECORDSADDRESS, ENSREVERSERECORDSABI, provider);
-            this.sync.completed = 0;
-            this.sync.total = Object.keys(newAccountsMap).length;
-            this.sync.section = 'Accounts';
-            const erc165Abi = [ "function supportsInterface(bytes4 interfaceID) external view returns (bool)" ];
-
-            for (const [account, accountData] of Object.entries(newAccountsMap)) {
-              if ((account in CUSTOMNAMES)) {
-                accountData.type = CUSTOMNAMES[account][0];
-                accountData.symbol = CUSTOMNAMES[account][1];
-                accountData.name = CUSTOMNAMES[account][2];
-                accountData.decimals = CUSTOMNAMES[account].length >= 4 ? CUSTOMNAMES[account][3] : undefined;
-              } else {
-                let accountType = null;
-                let symbol = undefined;
-                let name = undefined;
-                let decimals = undefined;
-                let totalSupply = undefined;
-                const code = await provider.getCode(account);
-                if (code.length == 2) {
-                  accountType = "eoa";
-                } else {
-                  const erc165Contract = new ethers.Contract(account, erc165Abi, provider);
-                  if (!accountType) {
-                    try {
-                      const result = await erc165Contract.supportsInterface(ERC721_INTERFACE);
-                      if (result) {
-                        accountType = "erc721";
-                      }
-                    } catch (e1) {
-                    }
-                  }
-                  if (!accountType) {
-                    try {
-                      const result = await erc165Contract.supportsInterface(ERC1155_INTERFACE);
-                      if (result) {
-                        accountType = "erc1155";
-                      }
-                    } catch (e1) {
-                    }
-                  }
-                  const erc20Contract = new ethers.Contract(account, ERC20ABI, provider);
-                  try {
-                    symbol = await erc20Contract.symbol();
-                  } catch (e1) {
-                  }
-                  try {
-                    name = await erc20Contract.name();
-                  } catch (e1) {
-                  }
-                  try {
-                    decimals = await erc20Contract.decimals();
-                  } catch (e1) {
-                  }
-                  try {
-                    totalSupply = await erc20Contract.totalSupply();
-                  } catch (e1) {
-                  }
-                }
-                console.log(moment().format("HH:mm:ss") + " syncAccounts " + account + " => code.length: " + code.length + ", accountType: " + accountType + ", symbol: " + symbol + ", name: " + name + ", decimals: " + decimals + ", totalSupply: " + totalSupply);
-                if (!accountType && decimals && totalSupply) {
-                  accountType = "erc20";
-                  accountData.decimals = parseInt(decimals);
-                  accountData.totalSupply = totalSupply.toString();
-                }
-                accountData.type = accountType || "unknown";
-                accountData.symbol = symbol;
-                accountData.name = name;
-              }
-              accounts[this.chainId][account] = accountData;
-              this.sync.completed++;
-              if (this.sync.halt) {
-                break;
-              }
-            }
-            // ETH Mainnet ENS
-            if (this.chainId == 1) {
-              for (const [account, accountData] of Object.entries(accounts[this.chainId])) {
-                const type = accountData.customType || accountData.type;
-                console.log(account + " " + type + " " + accountData.customType);
-                if (!(["erc20", "erc721", "erc1155", "ftexchange", "nftexchange"].includes(type)) && !(account in CUSTOMNAMES) && !this.sync.halt) {
-                  const allnames = await ensReverseRecordsContract.getNames([account]);
-                  if (allnames.length >= 0 && allnames[0].length > 0) {
-                    accounts[this.chainId][account].name = allnames[0];
-                  }
-                }
-              }
-            }
-            // console.log(moment().format("HH:mm:ss") + " syncAccounts - accounts[" + this.chainId + "]:" + JSON.stringify(accounts[this.chainId] || {}, null, 2));
-            if (!this.sync.halt) {
-              localStorage.approvalAccounts = JSON.stringify(accounts);
-              Vue.set(this, 'accounts', accounts);
-            }
-            console.log(moment().format("HH:mm:ss") + " syncAccounts END");
-          },
-
-          async processData(provider) {
-            console.log(moment().format("HH:mm:ss") + " processData BEGIN");
-            const accounts = this.accounts;
-            const events = this.events[this.chainId] || {};
-            for (const blockNumber of Object.keys(events).sort((a, b) => { return a - b })) {
-              const blockNumberData = events[blockNumber];
-              for (const logIndex of Object.keys(blockNumberData).sort((a, b) => { return a - b })) {
-                const eventData = events[blockNumber][logIndex];
-                const contract = eventData.contract;
-                const account = accounts[this.chainId] && accounts[this.chainId][contract] || null;
-                // console.log(event.blockNumber + "." + event.txIndex + "." + event.logIndex + " " + JSON.stringify(event) + " " + JSON.stringify(account));
-                if (account) {
-                  const type = account.customType || account.type;
-                  if (type == "erc20") {
-                    if (!('approvals' in account)) {
-                      account.approvals = {};
-                    }
-                    if (!(eventData.owner in account.approvals)) {
-                      account.approvals[eventData.owner] = {};
-                    }
-                    account.approvals[eventData.owner][eventData.spender] = eventData.value;
-                  } else if (type == "erc721") {
-                    if (eventData.eventName == "Approval") {
-                      if (!('approvals' in account)) {
-                        account.approvals = {};
-                      }
-                      if (!(eventData.owner in account.approvals)) {
-                        account.approvals[eventData.owner] = {};
-                      }
-                      account.approvals[eventData.owner][eventData.value] = eventData.spender;
-                    } else if (eventData.eventName == "ApprovalForAll") {
-                      if (!('approvalsForAll' in account)) {
-                        account.approvalsForAll = {};
-                      }
-                      if (!(eventData.owner in account.approvalsForAll)) {
-                        account.approvalsForAll[eventData.owner] = {};
-                      }
-                      account.approvalsForAll[eventData.owner][eventData.spender] = eventData.value;
-                    }
-                  } else if (type == "erc1155") {
-                    if (!('approvalsForAll' in account)) {
-                      account.approvalsForAll = {};
-                    }
-                    if (!(eventData.owner in account.approvalsForAll)) {
-                      account.approvalsForAll[eventData.owner] = {};
-                    }
-                    account.approvalsForAll[eventData.owner][eventData.spender] = eventData.value;
-                  }
-                  Vue.set(this.accounts[this.chainId], contract, account);
-                } else {
-                  console.log(moment().format("HH:mm:ss") + " processData - account: " + contract + " not found");
-                }
-              }
-            }
-            // Get current ERC-20 allowances as these amounts are reduced by `transferFrom(...)` calls
-            this.sync.total = 0;
-            for (const [account, accountData] of Object.entries(accounts[this.chainId])) {
-              const type = accountData.customType || accountData.type;
-              if (type == "erc20") {
-                for (const owner of this.accountsToSearch) {
-                  const approvals = 'approvals' in accountData && accountData.approvals && accountData.approvals[owner] || {};
-                  for (const [spender, approved] of Object.entries(approvals)) {
-                    this.sync.total++;
-                  }
-                }
-              }
-            }
-            this.sync.completed = 0;
-            this.sync.section = 'Latest ERC-20 Allowances';
-            for (const [account, accountData] of Object.entries(accounts[this.chainId])) {
-              const type = accountData.customType || accountData.type;
-              if (type == "erc20" && !this.sync.halt) {
-                for (const owner of this.accountsToSearch) {
-                  const approvals = 'approvals' in accountData && accountData.approvals && accountData.approvals[owner] || {};
-                  for (const [spender, approved] of Object.entries(approvals)) {
-                    const erc20Contract = new ethers.Contract(account, ERC20ABI, provider);
-                    const newValue = await erc20Contract.allowance(owner, spender);
-                    accountData.approvals[owner][spender] = newValue.toString();
-                    Vue.set(this.accounts[this.chainId], account, accountData);
-                    this.sync.completed++;
-                  }
-                }
-              }
-            }
-            if (!this.sync.halt) {
-              localStorage.approvalAccounts = JSON.stringify(accounts);
-              Vue.set(this, 'accounts', accounts);
-            }
-            this.forceRefresh++; // UI refresh workaround
-            console.log(moment().format("HH:mm:ss") + " processData END");
-          },
-
-          customTypeUpdated(address, type) {
-            Vue.set(this.accounts[this.chainId][address], 'customType', type);
-            localStorage.approvalAccounts = JSON.stringify(this.accounts);
-          },
-          customNameUpdated(address, name) {
-            Vue.set(this.accounts[this.chainId][address], 'customName', name);
-            localStorage.approvalAccounts = JSON.stringify(this.accounts);
-          },
-          customDecimalsUpdated(address, decimals) {
-            Vue.set(this.accounts[this.chainId][address], 'customDecimals', decimals);
-            localStorage.approvalAccounts = JSON.stringify(this.accounts);
           },
 
           saveSettings() {
