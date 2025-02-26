@@ -26,7 +26,7 @@ Web3 dapp: https://bokkypoobah.github.io/GnosisSafeExplorer/ (WIP)
 
 Safe 1.1.1 only
 
-<kbd><img src="images/SampleScreen01.png" width="400" /></kbd>
+<kbd><img src="images/SampleScreen01.png" width="800" /></kbd>
 
 
 <br />
