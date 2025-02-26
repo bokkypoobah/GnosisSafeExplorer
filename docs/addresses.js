@@ -1,12 +1,47 @@
+// Safe version => chainId
 const ADDRESSES = {
-  "1.1.1": { // Safe version
-    1 : { // Mainnet
+  "1.1.1": {
+    1 : {
       "create_and_add_modules": "0xF61A721642B0c0C8b334bA3763BA1326F53798C0",
       "create_call": "0x8538FcBccba7f5303d2C679Fa5d7A629A8c9bf4A",
       "default_callback_handler": "0xd5D82B6aDDc9027B22dCA772Aa68D5d74cdBdF44",
       "gnosis_safe": "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F",
       "multi_send": "0x8D29bE29923b68abfDD21e541b9374737B49cdAD",
       "proxy_factory": "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B",
+    },
+  },
+  "1.2.0": {
+    1 : {
+      "gnosis_safe": "0x6851D6fDFAfD08c0295C392436245E5bc78B0185",
+    },
+  },
+  "1.3.0": {
+    1 : {
+      "compatibility_fallback_handler": "0xf48f2B2d2a534e402487b3ee7C18c33Aec0Fe5e4",
+      "create_call": "0x7cbB62EaA69F79e6873cD1ecB2392971036cFAa4",
+      "gnosis_safe": "0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552",
+      "gnosis_safe_l2": "0x3E5c63644E683549055b9Be8653de26E0B4CD36E",
+      "multi_send": "0xA238CBeb142c10Ef7Ad8442C6D1f9E89e07e7761",
+      "multi_send_call_only": "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D",
+      "proxy_factory": "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2",
+      "sign_message_lib": "0xA65387F16B013cf2Af4605Ad8aA5ec25a2cbA3a2",
+      "simulate_tx_accessor": "0x59AD6735bCd8152B84860Cb256dD9e96b85F69Da",
+    },
+  },
+  "1.4.1": {
+    1 : {
+      "compatibility_fallback_handler": "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99",
+      "create_call": "0x9b35Af71d77eaf8d7e40252370304687390A1A52",
+      "multi_send": "0x38869bf66a61cF6bDB996A6aE40D5853Fd43B526",
+      "multi_send_call_only": "0x9641d764fc13c8B624c04430C7356C1C7C8102e2",
+      "safe": "0x41675C099F32341bf84BFc5382aF534df5C7461a",
+      "safe_l2": "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762",
+      "safe_migration": "0x526643F69b81B008F46d95CD5ced5eC0edFFDaC6",
+      "safe_proxy_factory": "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67",
+      "safe_to_l2_migration": "0xfF83F6335d8930cBad1c0D439A841f01888D9f69",
+      "safe_to_l2_setup": "0xBD89A1CE4DDe368FFAB0eC35506eEcE0b1fFdc54",
+      "sign_message_lib": "0xd53cd0aB83D845Ac265BE939c57F53AD838012c9",
+      "simulate_tx_accessor": "0x3d4BA2E0884aa488718476ca2FB8Efc291A46199",
     },
   },
 }
