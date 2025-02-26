@@ -141,13 +141,24 @@
           </div>
 
           <b-card no-body class="m-1 p-1 border-0" bg-variant="light">
-            Blah
+            <b-form-group label="" label-cols="3" label-align="right" class="m-0 mt-2" :description="!connected ? 'Click [Connect] the first time you use this tool' : ''">
+              <b-button size="sm" @click="retrieveEvents();" variant="primary">
+                Retrieve Events
+              </b-button>
+            </b-form-group>
           </b-card>
 
           <!-- :INFO -->
-          <b-card v-if="settings.mode == 'info' || (settings.mode == 'card' && Object.keys(settings.cards).length == 0)" no-body class="m-1 p-1 border-0" bg-variant="light">
+          <b-card v-if="false && (settings.mode == 'info' || (settings.mode == 'card' && Object.keys(settings.cards).length == 0))" no-body class="m-1 p-1 border-0" bg-variant="light">
             <b-card-body class="mt-1 p-1">
               <h6>Welcome to GnosisSafeExplorer (WIP)</h6>
+
+              <!-- <br />
+
+              1. Click [Connect] on the top right -->
+
+              <br />
+              <br />
 
               We are not affiliated with Gnosis .
               <!-- <br />
@@ -891,6 +902,12 @@
 
         // --- METHODS ---
         methods: {
+
+          async retrieveEvents() {
+            console.log(moment().format("HH:mm:ss") + " retrieveEvents");
+          },
+
+
           async showModalNFT(item) {
             // console.log(moment().format("HH:mm:ss") + " showModalNFT - item: " + JSON.stringify(item, null, 2));
             this.modalNFT.item = item;
