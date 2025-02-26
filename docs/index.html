@@ -919,6 +919,19 @@
 
             async function processLogs(fromBlock, toBlock, logs) {
               console.log(moment().format("HH:mm:ss") + " retrieveEvents - processLogs: " + fromBlock + ", toBlock: " + toBlock + ", logs: " + JSON.stringify(logs));
+              const records = [];
+              for (const log of logs) {
+                if (!log.removed) {
+                  console.log(moment().format("HH:mm:ss") + " retrieveEvents - log: " + JSON.stringify(log));
+                  // const contract = log.address;
+                  console.log("  data: " + log.data);
+                  // 0x0000000000000000000000007d3c233b153261562c65aaf3bfb327a3eaa479f8
+                  //           1         2         3         4         5         6
+                  // 0123456789012345678901234567890123456789012345678901234567890123456789
+                  const safeAddress = ethers.utils.getAddress('0x' + log.data.substring(26, 66));
+                  console.log("  data: " + log.data.substring(26, 66) + " => " + safeAddress);
+                }
+              }
             }
 
             async function getLogsFromRange(fromBlock, toBlock) {
