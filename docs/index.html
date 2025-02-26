@@ -327,7 +327,7 @@
         computed: {
 
           allSafes() {
-            console.log(moment().format("HH:mm:ss") + " allSafes");
+            // console.log(moment().format("HH:mm:ss") + " allSafes");
             const results = [];
             for (const [chainId, chainData] of Object.entries(this.safes)) {
               for (const [safeAddressIndex, safeData] of Object.entries(chainData)) {
@@ -338,10 +338,27 @@
           },
 
           filteredSortedSafes() {
-            console.log(moment().format("HH:mm:ss") + " filteredSortedSafes");
+            console.log(moment().format("HH:mm:ss") + " filteredSortedSafes - filter: " + this.settings.safesTable.filter);
             const results = [];
+            let regex = null;
+            if (this.settings.safesTable.filter != null && this.settings.safesTable.filter.length > 0) {
+              try {
+                regex = new RegExp(this.settings.safesTable.filter.toLowerCase());
+              } catch (e) {
+                console.log(moment().format("HH:mm:ss") + " filteredSortedSafes - regex error: " + e.message);
+                regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
+              }
+            }
             for (const safe of this.allSafes) {
-              results.push(safe);
+              let include = true;
+              if (regex) {
+                if (!(regex.test(this.indexToAddress[safe.safeAddressIndex].toLowerCase()))) {
+                  include = false;
+                }
+              }
+              if (include) {
+                results.push(safe);
+              }
             }
             if (this.settings.safesTable.sortOption == 'blocknumberasc') {
               results.sort((a, b) => {
@@ -361,15 +378,6 @@
               });
             }
 
-          //   let regex = null;
-          //   if (this.settings.addressesTable.filter != null && this.settings.addressesTable.filter.length > 0) {
-          //     try {
-          //       regex = new RegExp(this.settings.addressesTable.filter, 'i');
-          //     } catch (e) {
-          //       console.log(moment().format("HH:mm:ss") + " filteredSortedAddresses - regex error: " + e.message);
-          //       regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
-          //     }
-          //   }
           //   const nfcCardAddresses = {};
           //   for (const [cardId, cardData] of Object.entries(this.settings.cards)) {
           //     for (const [slot, slotData] of Object.entries(cardData.slots)) {
@@ -2579,7 +2587,7 @@
               if (this.settings.safesTable.currentPage > 1) {
                 this.settings.safesTable.currentPage = 1;
               }
-              console.log(moment().format("HH:mm:ss") + " mounted - this.settings: " + JSON.stringify(this.settings, null, 2).substring(0, 200));
+              // console.log(moment().format("HH:mm:ss") + " mounted - this.settings: " + JSON.stringify(this.settings, null, 2).substring(0, 200));
             }
           }
           (async() => {
