@@ -60,12 +60,6 @@
           </b-navbar-nav>
         </b-navbar>
 
-        <!-- <b-progress v-if="sync.section != null" height="2.5rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-1 p-1">
-          <b-progress-bar :value="sync.completed">
-            {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
-          </b-progress-bar>
-        </b-progress> -->
-
         <!-- <b-alert v-if="false" size="sm" dismissible variant="warning" show class="m-1 my-0">
           Warning: This is experimental unaudited software. Please check your transaction data carefully before signing
         </b-alert> -->
@@ -74,6 +68,24 @@
             Please install the MetaMask extension and connect to the Ethereum Mainnet or an EVM compatible chain. Then refresh this page, and click the [Connect] button on the top right.
           </b-card-text>
         </b-card> -->
+
+        <!-- :MODALSAFE -->
+        <b-modal id="modal-safe" hide-footer size="lg" body-class="m-0 p-1 pt-2" body-bg-variant="light">
+          <template #modal-title>
+            Safe
+          </template>
+          <!-- <b-form-group label="Graffiti:" label-cols="3" label-align="right" description="Up to 32 characters, alphanumeric plus '-', '_' and '.' permitted">
+            <b-form-input type="text" size="sm" v-model.trim="modalGraffiti.graffiti" placeholder="graffiti"></b-form-input>
+          </b-form-group> -->
+          <!-- <b-form-group label="" label-cols="3" label-align="right" :description="modalGraffiti.prompt">
+            <b-button size="sm" @click="updateGraffiti();" variant="outline">
+              <b-iconstack font-scale="1">
+                <b-icon stacked icon="wifi" variant="primary" scale="0.8"></b-icon>
+                <b-icon stacked icon="file" variant="primary" scale="1.5"></b-icon>
+              </b-iconstack>
+            </b-button>
+          </b-form-group> -->
+        </b-modal>
 
         <b-card no-body class="p-0 mt-0 border-0" style="min-height: 600px;">
           <!-- :MENU -->
@@ -108,7 +120,7 @@
           </div>
 
           <b-card no-body class="m-1 p-0 border-0" bg-variant="light">
-            <b-table small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve all deployed Safes v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
+            <b-table ref="safesTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve all deployed Safes v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
               <template #cell(index)="data">
                 <font size="-1" class="text-muted">
                   {{ parseInt(data.index) + ((settings.safesTable.currentPage - 1) * settings.safesTable.pageSize) + 1 }}
@@ -237,6 +249,10 @@
             version: 0,
           },
 
+          modalSafe: {
+
+          },
+
           sync: {
             section: null,
             total: null,
@@ -358,16 +374,21 @@
         // --- METHODS ---
         methods: {
           async safesRowSelected(item) {
-            console.log(moment().format("HH:mm:ss") + " safesRowSelected - item: " + JSON.stringify(item, null, 2));
-            // if (item && item.length > 0) {
+            if (item && item.length > 0) {
+              console.log(moment().format("HH:mm:ss") + " safesRowSelected - item: " + JSON.stringify(item, null, 2));
             //   this.modalToken.chainId = item[0].chainId;
             //   this.modalToken.token = item[0].token;
             //   this.modalToken.type = item[0].type;
             //   this.modalToken.balance = item[0].balance;
             //   this.modalToken.flows = item[0].flows;
-            //   this.$bvModal.show('modal-token');
-            //   this.$refs.tokensTable.clearSelected();
-            // }
+              this.$bvModal.show('modal-safe');
+              this.$refs.safesTable.clearSelected();
+              this.retrieveSafeEvents();
+            }
+          },
+
+          async retrieveSafeEvents() {
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - this.modalSafe: " + JSON.stringify(this.modalSafe, null, 2));
           },
 
           async loadCurrentData() {
