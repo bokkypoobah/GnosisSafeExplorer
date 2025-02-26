@@ -205,6 +205,13 @@
         // --- DATA ---
         data: {
 
+          addressToIndex: {},
+          indexToAddress: [],
+          txHashToIndex: {},
+          indexToTxHash: [],
+
+          safes: {},
+
           debug: "Debug",
 
           // cards: {}, // address0 -> slot# -> address
@@ -461,10 +468,10 @@
           ],
 
           db: {
-            name: "gnosissafeexplorer088a",
+            name: "gnosissafeexplorer088b",
             version: 1,
             schemaDefinition: {
-              safes: '[chainId+blockNumber+logIndex],safe,factory',
+              safes: '[chainId+blockNumber+logIndex],safeAddressIndex,factoryAddressIndex',
               cache: '&objectName',
             },
             updated: null,
@@ -903,6 +910,53 @@
 
         // --- METHODS ---
         methods: {
+          async loadCurrentData() {
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData");
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            for (const name of ['indexToAddress', 'indexToTxHash']) {
+              const dataItems = await db.cache.where("objectName").equals(name).toArray();
+              if (dataItems.length == 1) {
+                Vue.set(this, name, dataItems[0].object);
+              }
+            }
+            const addressToIndex = {};
+            for (const [index, address] of this.indexToAddress.entries()) {
+              addressToIndex[address] = index;
+            }
+            Vue.set(this, 'addressToIndex', addressToIndex);
+            const txHashToIndex = {};
+            for (const [index, address] of this.indexToTxHash.entries()) {
+              txHashToIndex[address] = index;
+            }
+            Vue.set(this, 'txHashToIndex', txHashToIndex);
+
+            const DB_PROCESSING_BATCH_SIZE = 5000;
+
+            let rows = 0;
+            let done = false;
+            const safes = {};
+            do {
+              let data = await db.safes.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+              console.log(moment().format("HH:mm:ss") + " loadCurrentData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+              for (const item of data) {
+                // console.log(moment().format("HH:mm:ss") + " loadCurrentData - item: " + JSON.stringify(item));
+                if (!(item.safeAddressIndex in safes)) {
+                  safes[item.safeAddressIndex] = {
+                    blockNumber: item.blockNumber,
+                    logIndex: item.logIndex,
+                    txHashIndex: item.txHashIndex,
+                    factoryAddressIndex: item.factoryAddressIndex,
+                  };
+                }
+              }
+              rows = parseInt(rows) + data.length;
+              done = data.length < DB_PROCESSING_BATCH_SIZE;
+            } while (!done);
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - safes: " + JSON.stringify(safes));
+            Vue.set(this, 'safes', safes);
+            db.close();
+          },
 
           async retrieveSafeFactoryEvents() {
             async function processLogs(fromBlock, toBlock, logs) {
@@ -911,18 +965,35 @@
               for (const log of logs) {
                 if (!log.removed) {
                   const safeAddress = ethers.utils.getAddress('0x' + log.data.substring(26, 66));
+
+                  if (!(safeAddress in addressToIndex)) {
+                    addressToIndex[safeAddress] = indexToAddress.length;
+                    indexToAddress.push(safeAddress);
+                  }
+                  const safeAddressIndex = addressToIndex[safeAddress];
+
+                  if (!(log.transactionHash in txHashToIndex)) {
+                    txHashToIndex[log.transactionHash] = indexToTxHash.length;
+                    indexToTxHash.push(log.transactionHash);
+                  }
+                  const txHashIndex = txHashToIndex[log.transactionHash];
+
                   records.push({
                     chainId,
                     blockNumber: parseInt(log.blockNumber),
                     logIndex: parseInt(log.logIndex),
                     txIndex: parseInt(log.transactionIndex),
+                    txHashIndex,
                     txHash: log.transactionHash,
+                    safeAddressIndex,
                     safe: safeAddress,
+                    factoryAddressIndex: addressToIndex[factoryAddress],
                     factory: log.address,
                   });
                 }
               }
               if (records.length) {
+                // console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - records: " + JSON.stringify(records, null, 2));
                 await db.safes.bulkAdd(records).then(function(lastKey) {
                   console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - bulkAdd lastKey: " + JSON.stringify(lastKey));
                 }).catch(Dexie.BulkError, function(e) {
@@ -956,17 +1027,81 @@
             const factoryABI = ABIS["1.1.1"] && ABIS["1.1.1"]["proxy_factory"] || null;
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
+
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const network = await provider.getNetwork();
             const chainId = network.chainId;
             const block = await provider.getBlock();
             const latestBlockNumber = block && block.number || null;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - latestBlockNumber: " + latestBlockNumber);
+
+            let indexToAddress = [];
+            let addressToIndex = {};
+            const indexToAddressDataItems = await db.cache.where("objectName").equals("indexToAddress").toArray();
+            if (indexToAddressDataItems.length == 1) {
+              indexToAddress = indexToAddressDataItems[0].object;
+              for (const [index, address] of indexToAddress.entries()) {
+                addressToIndex[address] = index;
+              }
+            }
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - addressToIndex 1: " + JSON.stringify(addressToIndex));
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - indexToAddress 1: " + JSON.stringify(indexToAddress));
+            let indexToTxHash = [];
+            let txHashToIndex = {};
+            const indexToTxHashDataItems = await db.cache.where("objectName").equals("indexToTxHash").toArray();
+            if (indexToTxHashDataItems.length == 1) {
+              indexToTxHash = indexToTxHashDataItems[0].object;
+              for (const [index, txHash] of indexToTxHash.entries()) {
+                txHashToIndex[txHash] = index;
+              }
+            }
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - txHashToIndex: " + JSON.stringify(txHashToIndex));
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - indexToTxHash: " + JSON.stringify(indexToTxHash));
+            // const newAddressIndexes = [];
+            // for (const address of [ADDRESS0, CRYPTOPUNKSV1ADDRESS, CRYPTOPUNKSV2ADDRESS, WRAPPEDCRYPTOPUNKSV1ADDRESS, WRAPPEDCRYPTOPUNKSV2ADDRESS, this.coinbase]) {
+            //   if (!(address in addressToIndex)) {
+            //     addressToIndex[address] = indexToAddress.length;
+            //     newAddressIndexes.push(indexToAddress.length);
+            //     indexToAddress.push(address);
+            //   }
+            // }
+            // for (const address of Object.keys(CUSTOMNAMES)) {
+            //   if (!(address in addressToIndex)) {
+            //     addressToIndex[address] = indexToAddress.length;
+            //     newAddressIndexes.push(indexToAddress.length);
+            //     indexToAddress.push(address);
+            //   }
+            // }
+            if (!(factoryAddress in addressToIndex)) {
+              addressToIndex[factoryAddress] = indexToAddress.length;
+              indexToAddress.push(factoryAddress);
+            }
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - addressToIndex 2: " + JSON.stringify(addressToIndex));
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - indexToAddress 2: " + JSON.stringify(indexToAddress));
+
             const latest = await db.safes.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - latest: " + JSON.stringify(latest));
             const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000000;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - startBlock: " + startBlock);
-            getLogsFromRange(startBlock, latestBlockNumber);
+            await getLogsFromRange(startBlock, latestBlockNumber);
+
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - addressToIndex 3: " + JSON.stringify(addressToIndex));
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - indexToAddress 3: " + JSON.stringify(indexToAddress));
+            Vue.set(this, "addressToIndex", addressToIndex);
+            Vue.set(this, "indexToAddress", indexToAddress);
+            await db.cache.put({ objectName: "indexToAddress", object: indexToAddress }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+            Vue.set(this, "txHashToIndex", txHashToIndex);
+            Vue.set(this, "indexToTxHash", indexToTxHash);
+            await db.cache.put({ objectName: "indexToTxHash", object: indexToTxHash }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+
+            await this.loadCurrentData();
           },
 
 
@@ -2550,6 +2685,7 @@
                 }
                 db.close();
               })();
+
           //     if (this.settings.eventsTable.currentPage > 1) {
           //       this.settings.eventsTable.currentPage = 1;
           //     }
@@ -2568,6 +2704,9 @@
           //     }
             }
           }
+          (async() => {
+            await this.loadCurrentData();
+          })();
         },
       })
     </script>
