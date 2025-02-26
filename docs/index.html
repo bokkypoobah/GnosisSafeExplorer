@@ -302,7 +302,7 @@
           },
 
           filteredSortedSafes() {
-            console.log(moment().format("HH:mm:ss") + " filteredSortedSafes - filter: " + this.settings.safesTable.filter);
+            // console.log(moment().format("HH:mm:ss") + " filteredSortedSafes - filter: " + this.settings.safesTable.filter);
             const results = [];
             const filter = this.settings.safesTable.filter != null && this.settings.safesTable.filter.length > 0 ? this.settings.safesTable.filter : null;
             // let regex = null;
@@ -398,7 +398,7 @@
           },
           pagedFilteredSortedSafes() {
             const results = this.filteredSortedSafes.slice((this.settings.safesTable.currentPage - 1) * this.settings.safesTable.pageSize, this.settings.safesTable.currentPage * this.settings.safesTable.pageSize);
-            console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedSafes - results: " + JSON.stringify(results, null, 2));
+            // console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedSafes - results: " + JSON.stringify(results, null, 2));
             return results;
           },
         },
@@ -407,6 +407,15 @@
         methods: {
           async safesRowSelected(item) {
             console.log(moment().format("HH:mm:ss") + " safesRowSelected - item: " + JSON.stringify(item, null, 2));
+            // if (item && item.length > 0) {
+            //   this.modalToken.chainId = item[0].chainId;
+            //   this.modalToken.token = item[0].token;
+            //   this.modalToken.type = item[0].type;
+            //   this.modalToken.balance = item[0].balance;
+            //   this.modalToken.flows = item[0].flows;
+            //   this.$bvModal.show('modal-token');
+            //   this.$refs.tokensTable.clearSelected();
+            // }
           },
 
           async loadCurrentData() {
@@ -501,7 +510,8 @@
               console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - getLogsFromRange: " + fromBlock + ", toBlock: " + toBlock);
               try {
                 const logs = await provider.getLogs({
-                  address: factoryAddress,
+                  // address: factoryAddress,
+                  address: null,
                   fromBlock,
                   toBlock,
                   topics: [
@@ -516,9 +526,6 @@
               }
             }
 
-            const factoryAddress = ADDRESSES["1.1.1"] && ADDRESSES["1.1.1"]["1"] && ADDRESSES["1.1.1"]["1"]["proxy_factory"] || null;
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - factoryAddress: " + JSON.stringify(factoryAddress));
-            const factoryABI = ABIS["1.1.1"] && ABIS["1.1.1"]["proxy_factory"] || null;
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
 
@@ -528,6 +535,22 @@
             const block = await provider.getBlock();
             const latestBlockNumber = block && block.number || null;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - latestBlockNumber: " + latestBlockNumber);
+
+            for (const [version, versionData] of Object.entries(ADDRESSES)) {
+              // console.log(version + " => " + JSON.stringify(versionData));
+              for (const [chainId, chainData] of Object.entries(versionData)) {
+                for (const [contractName, contractData] of Object.entries(chainData)) {
+                  if (contractName == "proxy_factory" || contractName == "safe_proxy_factory") {
+                    console.log(version + "/" + chainId + "/" + contractName + " => " + JSON.stringify(contractData));
+                  }
+                }
+              }
+            }
+            return;
+
+            const factoryAddress = ADDRESSES["1.1.1"] && ADDRESSES["1.1.1"]["1"] && ADDRESSES["1.1.1"]["1"]["proxy_factory"] || null;
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - factoryAddress: " + JSON.stringify(factoryAddress));
+            const factoryABI = ABIS["1.1.1"] && ABIS["1.1.1"]["proxy_factory"] || null;
 
             let indexToAddress = [];
             let addressToIndex = {};
