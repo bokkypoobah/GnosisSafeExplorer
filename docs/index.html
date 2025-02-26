@@ -103,7 +103,7 @@
           </div>
 
           <b-card no-body class="m-1 p-0 border-0" bg-variant="light">
-            <b-table small fixed striped responsive hover :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve Safes v1.1.1" head-variant="light" class="mx-0 my-0">
+            <b-table small fixed striped responsive hover :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve Safes v1.1.1. Filtering is currently slow" head-variant="light" class="mx-0 my-0">
               <template #cell(index)="data">
                 <font size="-1" class="text-muted">
                   {{ parseInt(data.index) + ((settings.safesTable.currentPage - 1) * settings.safesTable.pageSize) + 1 }}
