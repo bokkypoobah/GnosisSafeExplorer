@@ -86,7 +86,7 @@
             <div v-if="!sync.section" class="mt-0 pr-1">
               <b-button size="sm" @click="retrieveSafeFactoryEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
             </div>
-            <b-progress v-if="sync.section != null" height="2.5rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-1 p-1">
+            <b-progress v-if="sync.section != null" height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 24.0rem;">
               <b-progress-bar :value="sync.completed">
                 {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
               </b-progress-bar>
@@ -275,10 +275,10 @@
           ],
 
           db: {
-            name: "gnosissafeexplorer088c",
+            name: "gnosissafeexplorer088d",
             version: 1,
             schemaDefinition: {
-              safes: '[chainId+blockNumber+logIndex],safeAddressIndex,factoryAddressIndex',
+              safes: '[chainId+blockNumber+logIndex],safe,factory',
               cache: '&objectName',
             },
             updated: null,
@@ -396,6 +396,9 @@
             const safes = {};
             do {
               let data = await db.safes.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+              // Testing 0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4 ByBit
+              // Testing eth:0x9fC3dc011b461664c835F2527fffb1169b3C213e EF: Defi Multisig
+              // let data = await db.safes.where('safe').startsWithIgnoreCase('0x9fC3').offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
               console.log(moment().format("HH:mm:ss") + " loadCurrentData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
               for (const item of data) {
                 if (!(item.chainId in safes)) {
