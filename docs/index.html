@@ -1,0 +1,3371 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>BurnerProTool</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="BurnerProTool (c) Bok Consulting Pty Ltd 2025" />
+    <meta name="author" content="BokkyPooBah" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@BokkyPooBah" />
+    <meta name="twitter:creator" content="@BokkyPooBah" />
+    <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="css/bootstrap-vue.min.css"/>
+    <link type="text/css" rel="stylesheet" href="css/bootstrap-vue-icons.min.css"/>
+    <link type="text/css" rel="stylesheet" href="css/app.css" />
+    <script src="js/vue.js"></script>
+    <script src="js/bootstrap-vue.min.js"></script>
+    <script src="js/bootstrap-vue-icons.min.js"></script>
+    <script src="js/ethers-5.7.umd.min.js" type="application/javascript"></script>
+    <script src="js/moment.min.js"></script>
+    <script src="js/libhalo_1.10.11.js"></script>
+    <script src="js/dexie.js"></script>
+    <script src="globals.js"></script>
+    <script src="chains.js"></script>
+    <script src="customNames.js"></script>
+    <script src="deploymentData.js"></script>
+    <script src="inferTxInfo.js"></script>
+    <script src="parseEtherscan.js"></script>
+    <script src="parseReservoir.js"></script>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/site.webmanifest">
+    <link rel="mask-icon" href="images/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-config" content="images/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+  </head>
+  <body>
+    <div id="app">
+      <b-container fluid class="m-0 p-0">
+        <b-navbar toggleable="sm" variant="light" class="mx-1 my-0 p-0">
+          <b-navbar-brand to="https://bokkypoobah.github.io/BurnerProTool/" variant="primary">
+            <b-avatar rounded variant="light" size="3.0rem" src="images/ZombieBaby_004_transparentbg_zoomed.png" v-b-popover.hover.bottom="'gm'" class="ml-0"></b-avatar>
+            <font size="-1" v-b-popover.hover.bottom="'gm gm gm'">BurnerProTool</font>
+          </b-navbar-brand>
+          <b-navbar-nav class="ml-auto">
+            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings();" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'Scan'">Scan</b-nav-item> -->
+            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'Actions'">Actions</b-nav-item> -->
+            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings();" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'Approvals'">Approvals</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'Events'">Events</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings();" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover="'Accounts'">Accounts</b-nav-item> -->
+            <!-- <b-avatar v-if="coinbase && coinbase != nameOrShortAddress(coinbase)" rounded variant="light" size="3.0rem" :src="'https://metadata.ens.domains/mainnet/avatar/' + nameOrShortAddress(coinbase, 100)" v-b-popover.hover="'Your ENS avatar if set'"></b-avatar> -->
+            <b-button size="sm" variant="outline-primary" class="ml-1 mr-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.bottom="'Click to update wallet'">{{ coinbase ? nameOrShortAddress(coinbase, 16) : 'Connect' }}</b-button>
+          </b-navbar-nav>
+        </b-navbar>
+
+        <b-progress v-if="sync.section != null" height="2.5rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-1 p-1">
+          <b-progress-bar :value="sync.completed">
+            {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
+          </b-progress-bar>
+        </b-progress>
+
+        <!-- :MODALCARD -->
+        <b-modal id="modal-card" hide-footer size="md" body-class="m-0 p-1" body-bg-variant="light">
+          <template #modal-title>
+            Card {{ modalCard.cardId && settings.cards[modalCard.cardId] && ("'" + settings.cards[modalCard.cardId].name + "'") }}
+          </template>
+          <b-alert v-if="modalCard.cardId && settings.cards[modalCard.cardId] && settings.cards[modalCard.cardId].initialised && settings.cards[modalCard.cardId].selectedSlot != 9" size="sm" dismissible variant="warning" show class="m-0">
+            <span v-if="settings.cards[modalCard.cardId].selectedSlot == 8">
+              WARNING: os.burner.pro only uses slot 9, and you don't have the password for slot 8
+            </span>
+            <span v-else>
+              WARNING: os.burner.pro only uses slot 9, and slots 1 & 2 are not password protected
+            </span>
+          </b-alert>
+          <b-form-group label="Name:" label-cols="3" label-align="right" class="m-0 mt-2">
+            <b-form-input type="text" size="sm" :value="modalCard.cardId && settings.cards[modalCard.cardId] && settings.cards[modalCard.cardId].name" @change="updateName(modalCard.cardId, $event)" debounce="1200" placeholder="name" class="w-50"></b-form-input>
+          </b-form-group>
+          <b-form-group label="Status:" label-cols="3" label-align="right" :description="modalCardCardStatus.message" class="m-0 mt-1">
+            <b-form-select size="sm" disabled :value="modalCardCardStatus.code" :options="cardStatusOptions" class="w-50"></b-form-select>
+          </b-form-group>
+          <b-table small fixed striped responsive hover :fields="slotsFields" :items="slots" show-empty head-variant="light" class="mx-0 my-0 mt-1">
+            <template #cell(slot)="data">
+              <b-form-checkbox size="sm" :checked="settings.cards[modalCard.cardId] && settings.cards[modalCard.cardId].selectedSlot == data.item.slot" @change="updateSelectedSlot(modalCard.cardId, data.item.slot)">
+                <font size="-1">
+                  {{ data.item.slot }}
+                </font>
+              </b-form-checkbox>
+            </template>
+            <template #cell(address)="data">
+              <b-link @click="showModalAddress(data.item.address)" target="_blank">
+                <font size="-1">{{ nameOrShortAddress(data.item.address) }}</font>
+              </b-link>
+              <b-button size="sm" @click="copyToClipboard(data.item.address);" variant="outline">
+                <b-icon-clipboard shift-v="+2" font-scale="0.9" variant="primary"></b-icon-clipboard>
+              </b-button>
+            </template>
+            <template #cell(info)="data">
+              <b-icon :icon="data.item.isPasswordProtected ? 'lock-fill' : 'unlock'" shift-v="+1" font-scale="1.0" :variant="data.item.isPasswordProtected ? 'primary' : 'secondary'" v-b-popover.hover="data.item.isPasswordProtected ? 'Password protected' : 'Not password protected'"></b-icon>
+              <b-icon icon="box-arrow-up-right" shift-v="+1" font-scale="1.0" :variant="data.item.isExported ? 'primary' : 'secondary'" v-b-popover.hover="data.item.isExported ? 'Exported' : 'Not exported'"></b-icon>
+              <b-icon icon="box-arrow-in-down-right" shift-v="+1" font-scale="1.0" :variant="data.item.isImported ? 'primary' : 'secondary'" v-b-popover.hover="data.item.isImported ? 'Imported' : 'Not imported'"></b-icon>
+            </template>
+          </b-table>
+          <b-form-group label="" label-cols="3" label-align="right" class="m-0 mt-2">
+            <b-button size="sm" @click="modalCardDeleteCard(modalCard.cardId, modalCard.name);" variant="warning">
+              Delete
+            </b-button>
+          </b-form-group>
+        </b-modal>
+
+        <!-- :MODALGRAFFITI -->
+        <b-modal id="modal-graffiti" hide-footer size="md" body-class="m-0 p-1 pt-2" body-bg-variant="light">
+          <template #modal-title>
+            Set Graffiti For {{ activeCardName }}
+          </template>
+          <b-form-group label="Graffiti:" label-cols="3" label-align="right" description="Up to 32 characters, alphanumeric plus '-', '_' and '.' permitted">
+            <b-form-input type="text" size="sm" v-model.trim="modalGraffiti.graffiti" placeholder="graffiti"></b-form-input>
+          </b-form-group>
+          <b-form-group label="" label-cols="3" label-align="right" :description="modalGraffiti.prompt">
+            <b-button size="sm" @click="updateGraffiti();" variant="outline">
+              <b-iconstack font-scale="1">
+                <b-icon stacked icon="wifi" variant="primary" scale="0.8"></b-icon>
+                <b-icon stacked icon="file" variant="primary" scale="1.5"></b-icon>
+              </b-iconstack>
+            </b-button>
+          </b-form-group>
+        </b-modal>
+
+        <!-- :MODALTOKEN -->
+        <b-modal id="modal-token" hide-footer size="md" body-class="m-0 p-1 pt-2" body-bg-variant="light">
+          <template #modal-title>
+            {{ nameOrShortAddress(modalToken.token) }}
+          </template>
+
+          Balance: {{ formatTokens(modalToken.token, modalToken.balance, 0) }}
+
+          <!-- <b-tabs small v-model="modalNFT.tabIndex" align="right" class="text-right" content-class="m-0 p-0" >
+            <b-tab title="NFT" no-body></b-tab>
+            <b-tab title="Transfer" no-body></b-tab>
+          </b-tabs> -->
+
+        </b-modal>
+
+        <!-- :MODALNFT -->
+        <b-modal id="modal-nft" hide-footer size="md" body-class="m-0 p-1 pt-2" body-bg-variant="light">
+          <template #modal-title>
+            {{ modalNFT.item && modalNFT.item.name }}
+          </template>
+          <b-tabs small v-model="modalNFT.tabIndex" align="right" class="text-right" content-class="m-0 p-0" >
+            <b-tab title="NFT" no-body></b-tab>
+            <b-tab title="Transfer" no-body></b-tab>
+          </b-tabs>
+
+          <div v-if="modalNFT.tabIndex == 0" class="mt-1">
+            <div class="text-center">
+              <b-avatar v-if="modalNFT.item" button rounded size="20rem" :src="modalNFT.item.image"></b-avatar>
+            </div>
+            <b-form-group v-if="modalNFT.item" label="Name:" label-cols="3" label-align="right" class="m-0 mt-2">
+              <b-form-input type="text" readonly size="sm" v-model.trim="modalNFT.item.name"></b-form-input>
+            </b-form-group>
+            <b-form-group v-if="modalNFT.item" label="Collection:" label-cols="3" label-align="right" class="m-0">
+              <b-form-input type="text" readonly size="sm" v-model.trim="modalNFT.item.collectionName"></b-form-input>
+            </b-form-group>
+            <b-form-group v-if="modalNFT.item" label="Description:" label-cols="3" label-align="right" class="m-0">
+              <b-textarea readonly :value="modalNFT.item.description" style="font-size: 12px;" rows="3" max-rows="7"></b-textarea>
+            </b-form-group>
+          </div>
+          <div v-if="modalNFT.tabIndex == 1" class="mt-1">
+            <b-form-group label="To:" label-for="modalnft-to">
+              <b-input-group>
+                <b-form-input id="modalnft-to" v-model.trim="modalNFT.to" style="max-width: 30.0rem;"></b-form-input>
+              </b-input-group>
+            </b-form-group>
+            <b-form-group v-if="modalNFT.item && modalNFT.item.type == 'erc1155'" label="Tokens:" label-for="modalnft-tokens" :description="modalNFT.tokens + ' of ' + modalNFT.item.count">
+              <b-input-group>
+                <b-form-input type="range" id="modalnft-tokens" v-model.trim="modalNFT.tokens" min="0" :max="modalNFT.item.count"></b-form-input>
+              </b-input-group>
+            </b-form-group>
+            <!-- <b-form-group label="" label-cols="3" :description="!connected && 'Click [Connect] in the main menu' || ''">
+              <b-button size="sm" @click="modalNFTRetrieveParameters()" variant="outline-primary">Retrieve parameters</b-button>
+            </b-form-group> -->
+            <b-row class="m-0 p-0">
+              <b-col cols="6" class="m-0 p-0">
+                <b-form-group label="Nonce:" label-for="modalnft-nonce">
+                  <b-input-group class="w-50">
+                    <b-form-input id="modalnft-nonce" v-model.trim="modalNFT.nonce"></b-form-input>
+                  </b-input-group>
+                </b-form-group>
+              </b-col>
+              <b-col cols="6" class="m-0 p-0">
+                <b-form-group label="Gas Limit:" label-for="modalnft-gaslimit">
+                  <b-input-group class="w-50">
+                    <b-form-input id="modalnft-gaslimit" v-model.trim="modalNFT.gasLimit"></b-form-input>
+                  </b-input-group>
+                </b-form-group>
+              </b-col>
+            </b-row>
+            <b-row class="m-0 p-0">
+              <b-col cols="6" class="m-0 p-0">
+                <b-form-group label="Max Fee / Gas:" label-for="modalnft-maxfeepergas">
+                  <b-input-group class="w-75">
+                    <b-form-input id="modalnft-maxfeepergas" v-model.trim="modalNFT.maxFeePerGas"></b-form-input>
+                  </b-input-group>
+                </b-form-group>
+              </b-col>
+              <b-col cols="6" class="m-0 p-0">
+                <b-form-group label="Max Priority Fee / Gas:" label-for="modalnft-maxpriorityfeepergas">
+                  <b-input-group class="w-75">
+                    <b-form-input id="modalnft-maxpriorityfeepergas" v-model.trim="modalNFT.maxPriorityFeePerGas"></b-form-input>
+                  </b-input-group>
+                </b-form-group>
+              </b-col>
+            </b-row>
+            <b-form-group label="password" label-for="modalnft-password">
+              <b-input-group>
+                <b-form-input type="password" id="modalnft-password" v-model.trim="modalNFT.password" style="max-width: 10.0rem;"></b-form-input>
+              </b-input-group>
+            </b-form-group>
+            <b-form-group label="" label-for="modalnft-to" label-cols="4" :description="!connected && 'Click [Connect] in the main menu' || ''">
+              <b-button size="sm" :disabled="!modalNFT.to || (modalNFT.item && modalNFT.item.type == 'erc1155' && modalNFT.tokens == 0)" @click="modalNFTTransfer()" variant="warning">Scan NFC & Transfer</b-button>
+            </b-form-group>
+          </div>
+        </b-modal>
+
+        <!-- :MODALADDRESS -->
+        <b-modal id="modal-address" hide-footer size="md" body-class="m-0 p-1 pt-2" body-bg-variant="light">
+          <template #modal-title>
+            Address {{ modalAddress.address && (modalAddress.address.substring(0, 6) + '...' + modalAddress.address.slice(-4)) }}
+          </template>
+          <b-form-group label="Address:" label-cols="3" label-align="right" class="mt-1">
+            <div class="d-flex m-0 p-0">
+              <div class="mt-0 pr-1">
+                <b-button v-if="modalAddress.address" size="sm" :href="'https://etherscan.io/address/' + modalAddress.address" target="_blank" variant="link" class="mt-1">
+                  {{ modalAddress.address.substring(0, 10) + '...' + modalAddress.address.slice(-8) }}
+                </b-button>
+              </div>
+              <div class="mt-0 flex-grow-1">
+              </div>
+              <div class="mt-0 pl-1">
+                <b-button size="sm" @click="copyToClipboard(modalAddress.address);" variant="outline" class="m-0 mt-1 p-0">
+                  <b-icon-clipboard font-scale="0.9" variant="primary"></b-icon-clipboard>
+                </b-button>
+              </div>
+            </div>
+          </b-form-group>
+          <b-form-group label="Type:" label-cols="3" label-align="right" class="m-0">
+            <b-form-select :disabled="modalAddressAddressOnCards.length > 0" size="sm" :value="modalAddressAddressType" @change="modalAddressAddressTypeSelected($event);" :options="addressTypeOptions" class="w-50"></b-form-select>
+          </b-form-group>
+          <b-form-group label="Name:" label-cols="3" label-align="right" class="m-0">
+            <b-form-input size="sm" :value="modalAddressAddressName" @change="modalAddressAddressNameUpdated($event);" class="w-75"></b-form-input>
+          </b-form-group>
+          <b-form-group v-if="modalAddressAddressType == 'erc20'" label="Decimals:" label-cols="3" label-align="right" class="m-0" description="0 to 18 decimal places">
+            <b-form-input size="sm" type="number" min="0" max="18" step="1" :value="modalAddressAddressDecimals" @change="modalAddressAddressDecimalsUpdated($event);" class="w-25"></b-form-input>
+          </b-form-group>
+          <b-form-group v-if="modalAddressAddressOnCards.length > 0" label="Cards:" label-cols="3" label-align="right" class="m-0">
+            <font size="-1">
+              <b-table small fixed striped responsive hover :fields="modalAddressAddressOnCardsFields" :items="modalAddressAddressOnCards" show-empty empty-html="n/a" head-variant="light" class="mx-0 my-0 mt-1">
+                <template #cell(card)="data">
+                  {{ data.item.name }}
+                </template>
+                <template #cell(slot)="data">
+                  <b-form-checkbox size="sm" disabled :checked="data.item.selected">
+                    {{ data.item.slot }}
+                  </b-form-checkbox>
+                </template>
+              </b-table>
+            </font>
+          </b-form-group>
+          <!-- <b-form-group label="Sort:" label-for="modaltxs-sort" label-size="sm" label-align="right" label-cols="4" content-cols="8">
+            <b-form-select size="sm" id="modaltxs-sort" v-model="settings.txsTable.sortOption" @change="saveSettings" :options="sortOptions" class="w-50"></b-form-select>
+          </b-form-group>
+          <b-form-group label="Page size:" label-for="modaltxs-pagesize" label-size="sm" label-align="right" label-cols="4" content-cols="8">
+            <b-form-select size="sm" id="modaltxs-pagesize" v-model="settings.txsTable.pageSize" @change="saveSettings" :options="pageSizes" class="w-25"></b-form-select>
+          </b-form-group> -->
+        </b-modal>
+
+        <!-- :MODALNEWADDRESS -->
+        <b-modal id="modal-newaddress" hide-footer size="md" body-class="m-0 p-1 pt-2" body-bg-variant="light">
+          <template #modal-title>
+            New Address
+          </template>
+          <b-form>
+            <b-form-group label="Address:" label-cols="3" label-size="sm" label-align="right" class="my-1" :state="!modalNewAddress.addressError" :invalid-feedback="modalNewAddress.addressError" :description="modalNewAddress.alt && modalNewAddress.alt.length == 42 ? modalNewAddress.alt.substring(0, 10) + '...' + modalNewAddress.alt.slice(-8) : modalNewAddress.alt">
+              <!-- <template #description>
+                TODO: Add hyperlink to description
+              </template> -->
+              <b-form-input size="sm" v-model.trim="modalNewAddress.address" @change="modalNewAddressAddressUpdated($event);" placeholder="Address or ENS name"></b-form-input>
+            </b-form-group>
+
+            <b-form-group label="Type:" label-cols="3" label-size="sm" label-align="right" class="my-1">
+              <b-form-select size="sm" v-model="modalNewAddress.type" :options="addressTypeOptions.filter(e => e.value != 'nfccard')" class="w-50"></b-form-select>
+            </b-form-group>
+
+            <b-form-group label="Name:" label-cols="3" label-size="sm" label-align="right" class="my-1">
+              <b-form-input size="sm" v-model.trim="modalNewAddress.name" placeholder="optional" class="w-50"></b-form-input>
+            </b-form-group>
+
+            <b-form-group label="Description:" label-cols="3" label-size="sm" label-align="right" class="my-1">
+              <b-form-input size="sm" v-model.trim="modalNewAddress.description" placeholder="optional" class="w-100"></b-form-input>
+            </b-form-group>
+
+            <b-form-group v-if="modalNewAddress.type == 'erc721' || modalNewAddress.type == 'erc1155'" label="Slug:" label-cols="3" label-size="sm" label-align="right" class="m-0">
+              <b-form-input size="sm" v-model.trim="modalNewAddress.slug" placeholder="collection slug" class="w-50"></b-form-input>
+            </b-form-group>
+
+            <b-form-group v-if="modalNewAddress.type == 'erc20'" label="Decimals:" label-cols="3" label-size="sm" label-align="right" class="m-0" description="0 to 18 decimal places">
+              <b-form-input size="sm" type="number" min="0" max="18" step="1" v-model="modalNewAddress.decimals" class="w-25"></b-form-input>
+            </b-form-group>
+
+            <b-form-group label="" label-cols="3" label-size="sm" label-align="right" class="m-0">
+              <b-button size="sm" :disabled="!modalNewAddress.address || modalNewAddress.addressOk != true" @click="modalNewAddressAdd()" variant="primary">
+                Add
+              </b-button>
+            </b-form-group>
+
+            <b-form-group v-if="false" label="" label-cols="3" label-size="sm" label-align="right">
+              <!-- <b-button-group vertical> -->
+              <b-button @click="modalNewAddress.canTransferFrom = !modalNewAddress.canTransferFrom" variant="transparent">
+                <b-icon :icon="modalNewAddress.canTransferFrom ? 'arrow-up-right-square-fill' : 'arrow-up-right-square'" shift-v="+1" font-scale="1.0" variant="primary"></b-icon>
+                <font size="-1">{{ modalNewAddress.canTransferFrom ? 'Transfer from permitted' : 'Transfer from not permitted' }}</font>
+              </b-button>
+              <b-button @click="modalNewAddress.canTransferTo = !modalNewAddress.canTransferTo" variant="transparent">
+                <b-icon :icon="modalNewAddress.canTransferTo ? 'arrow-down-right-square-fill' : 'arrow-down-right-square'" shift-v="+1" font-scale="1.0" variant="primary"></b-icon>
+                <font size="-1">{{ modalNewAddress.canTransferTo ? 'Transfer to permitted' : 'Transfer to not permitted' }}</font>
+              </b-button>
+              <b-button @click="modalNewAddress.canTransfer = !modalNewAddress.canTransfer" variant="transparent">
+                <b-icon :icon="modalNewAddress.canTransfer ? 'arrow-right-square-fill' : 'arrow-right-square'" shift-v="+1" font-scale="1.0" variant="primary"></b-icon>
+                <font size="-1">{{ modalNewAddress.canTransfer ? 'Transfer permitted' : 'Transfer not permitted' }}</font>
+              </b-button>
+              <!-- </b-button-group> -->
+            </b-form-group>
+
+            <!-- <b-form-group label="Name:" label-cols="3" label-align="right" class="m-0">
+              <b-form-input size="sm" :value="modalAddressAddressName" @change="modalAddressAddressNameUpdated($event);" class="w-75"></b-form-input>
+            </b-form-group> -->
+            <!-- <b-form-group v-if="modalAddressAddressType == 'erc20'" label="Decimals:" label-cols="3" label-align="right" class="m-0" description="0 to 18 decimal places">
+              <b-form-input size="sm" type="number" min="0" max="18" step="1" :value="modalAddressAddressDecimals" @change="modalAddressAddressDecimalsUpdated($event);" class="w-25"></b-form-input>
+            </b-form-group> -->
+            <!-- <b-form-group v-if="modalAddressAddressOnCards.length > 0" label="Cards:" label-cols="3" label-align="right" class="m-0">
+              <font size="-1">
+                <b-table small fixed striped responsive hover :fields="modalAddressAddressOnCardsFields" :items="modalAddressAddressOnCards" show-empty empty-html="n/a" head-variant="light" class="mx-0 my-0 mt-1">
+                  <template #cell(card)="data">
+                    {{ data.item.name }}
+                  </template>
+                  <template #cell(slot)="data">
+                    <b-form-checkbox size="sm" disabled :checked="data.item.selected">
+                      {{ data.item.slot }}
+                    </b-form-checkbox>
+                  </template>
+                </b-table>
+              </font>
+            </b-form-group> -->
+          </b-form>
+        </b-modal>
+
+        <!-- <b-alert v-if="false" size="sm" dismissible variant="warning" show class="m-1 my-0">
+          Warning: This is experimental unaudited software. Please check your transaction data carefully before signing
+        </b-alert> -->
+        <!-- <b-card class="m-2 p-1" header-class="warningheader" header="Welcome" v-if="false && !coinbase">
+          <b-card-text>
+            Please install the MetaMask extension and connect to the Ethereum Mainnet or an EVM compatible chain. Then refresh this page, and click the [Connect] button on the top right.
+          </b-card-text>
+        </b-card> -->
+
+        <b-card no-body class="p-0 mt-0 border-0" style="min-height: 600px;">
+          <!-- :MENU -->
+          <div class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
+            <div class="mt-0 pr-0">
+              <b-form-select :disabled="sync.section != null" size="sm" v-model="settings.selectedCard" :options="cardsOptions" @change="saveSettings" style="max-width: 30.0rem;"></b-form-select>
+            </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
+            <div class="mt-0">
+              <b-button-group size="sm">
+                <b-button size="sm" @click="scanNFC();" variant="outline">
+                  <!-- <b-iconstack font-scale="1" animation="cylon"> -->
+                  <b-iconstack font-scale="1">
+                    <b-icon stacked icon="wifi" variant="primary" scale="0.8"></b-icon>
+                    <b-icon stacked icon="file" variant="primary" scale="1.5"></b-icon>
+                  </b-iconstack>
+                </b-button>
+                <font size="-1" class="mt-1 text-muted d-none d-sm-block">
+                  Scan NFC card
+                </font>
+              </b-button-group>
+            </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
+            <div class="mt-0">
+              <b-button-group size="sm">
+                <b-button @click="settings.mode = 'card'; saveSettings();" variant="link">
+                  <b-iconstack font-scale="1">
+                    <b-icon stacked :icon="settings.mode == 'card' ? 'lock-fill' : 'lock'" variant="primary" scale="0.6"></b-icon>
+                    <b-icon stacked icon="file" variant="primary" scale="1.2"></b-icon>
+                  </b-iconstack>
+                </b-button>
+                <font size="-1" class="mt-1 d-none d-sm-block" :class="{'text-muted': settings.mode != 'card'}">
+                  Card
+                </font>
+                <b-button @click="settings.mode = 'cards'; saveSettings();" variant="none">
+                  <b-iconstack font-scale="1">
+                    <b-icon stacked :icon="settings.mode == 'cards' ? 'lock-fill' : 'lock'" shift-h="-1" shift-v="-1" variant="primary" scale="0.6"></b-icon>
+                    <b-icon stacked icon="files" variant="primary" scale="1.0"></b-icon>
+                  </b-iconstack>
+                </b-button>
+                <font size="-1" class="mt-1 d-none d-sm-block" :class="{'text-muted': settings.mode != 'cards'}">
+                  Cards
+                </font>
+                <b-button @click="settings.mode = 'addresses'; saveSettings();" variant="link">
+                  <b-icon :icon="settings.mode == 'addresses' ? 'people-fill' : 'people'" font-scale="1.0" variant="primary"></b-icon>
+                </b-button>
+                <font size="-1" class="mt-1 d-none d-sm-block" :class="{'text-muted': settings.mode != 'addresses'}">
+                  Addresses
+                </font>
+                <b-button @click="settings.mode = 'info'; saveSettings();" variant="link">
+                  <b-icon :icon="settings.mode == 'info' ? 'info-circle-fill' : 'info-circle'" font-scale="1.0" variant="primary"></b-icon>
+                </b-button>
+                <font size="-1" class="mt-1 d-none d-sm-block" :class="{'text-muted': settings.mode != 'info'}">
+                  Info
+                </font>
+                <b-button @click="settings.mode = 'config'; saveSettings();" variant="link">
+                  <b-icon :icon="settings.mode == 'config' ? 'gear-fill' : 'gear'" font-scale="1.0" variant="primary"></b-icon>
+                </b-button>
+                <font size="-1" class="mt-1 d-none d-sm-block" :class="{'text-muted': settings.mode != 'config'}">
+                  Config
+                </font>
+              </b-button-group>
+            </div>
+          </div>
+
+          <!-- :CARD -->
+          <b-card v-if="settings.mode == 'card' && Object.keys(settings.cards).length > 0" no-body class="m-1 p-1 border-0" bg-variant="light">
+            <b-tabs small v-model="settings.tabIndex" @input="saveSettings" class="text-right" content-class="m-0 p-0">
+              <template #tabs-end>
+                <b-link v-if="activeAddress" @click="showModalAddress(activeAddress);" class="ml-5 mt-2">
+                  <font size="-1">{{ nameOrShortAddress(activeAddress) }}</font>
+                </b-link>
+                <b-dropdown v-if="activeAddress" size="sm" right text="" variant="link" class="m-0 p-0">
+                  <b-dropdown-text>{{ activeAddress.substring(0, 10) + '...' + activeAddress.slice(-8) }}</b-dropdown-text>
+                  <b-dropdown-divider></b-dropdown-divider>
+                  <b-dropdown-item @click="copyToClipboard(activeAddress);">Copy to clipboard</b-dropdown-item>
+                  <b-dropdown-item :href="'https://etherscan.io/address/' + activeAddress" target="_blank">View in Etherscan.io</b-dropdown-item>
+                  <b-dropdown-item :href="'https://opensea.io/' + activeAddress" target="_blank">View in OpenSea.io</b-dropdown-item>
+                  <b-dropdown-item :href="'https://blur.io/' + activeAddress" target="_blank">View in Blur.io</b-dropdown-item>
+                </b-dropdown>
+              </template>
+              <b-tab title="Tokens" no-body></b-tab>
+              <b-tab title="NFTs" no-body></b-tab>
+              <b-tab title="Txs" no-body></b-tab>
+            </b-tabs>
+
+            <!-- :CARDTOKENS -->
+            <b-card-body v-if="settings.tabIndex == 0" class="m-0 p-1" body-bg-variant="white">
+              <b-navbar toggleable="md" type="light" variant="none" class="m-0 p-0">
+                <b-nav-form>
+                  <b-form-input type="text" size="sm" v-model.trim="settings.tokensTable.filter" @change="saveSettings" debounce="1200" placeholder="🔍 name/addr" style="max-width: 7.0rem;"></b-form-input>
+                </b-nav-form>
+                <b-nav-form>
+                  <b-button v-if="activeAddress" :disabled="sync.section != null" size="sm" @click="syncIt();" variant="outline">
+                    <b-icon-cloud-download shift-v="+1" font-scale="1" variant="primary"></b-icon-cloud-download>
+                  </b-button>
+                </b-nav-form>
+                <b-nav-form>
+                  <b-pagination size="sm" v-model="settings.tokensTable.currentPage" @input="saveSettings" :total-rows="filteredSortedNFTs.length" :per-page="settings.tokensTable.pageSize" limit="3" class="m-0 p-0 ml-md-1"></b-pagination>
+                </b-nav-form>
+                <b-navbar-toggle target="tokens-nav-collapse" class="m-0 mr-1 p-0 border-0" style="outline: none;">
+                  <template #default="{ expanded }">
+                    <b-icon :icon="expanded ? 'chevron-double-up' : 'chevron-double-down'" variant="primary"></b-icon>
+                  </template>
+                </b-navbar-toggle>
+                <b-collapse id="tokens-nav-collapse" is-nav>
+                  <b-navbar-nav small class="ml-auto">
+                    <b-nav-form>
+                      <div class="d-flex mt-1 mt-md-0">
+                        <div class="m-0 p-0">
+                          <b-form-select size="sm" id="tokensoptions-sort" v-model="settings.tokensTable.sortOption" @change="saveSettings" :options="sortOptions" style="max-width: 12.0rem;"></b-form-select>
+                        </div>
+                        <div class="m-0 ml-1 p-0">
+                          <b-form-select size="sm" id="tokensoptions-pagesize" v-model="settings.tokensTable.pageSize" @change="saveSettings" :options="pageSizes" style="max-width: 6.0rem;"></b-form-select>
+                        </div>
+                      </div>
+                    </b-nav-form>
+                  </b-navbar-nav>
+                </b-collapse>
+              </b-navbar>
+              <b-table ref="tokensTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='tokensRowSelected' :fields="tokensFields" :items="pagedFilteredSortedTokens" show-empty empty-html="Scan your Burner.pro NFC card, enter your API keys in the Config page and click the cloud download button to begin" head-variant="light" class="mx-0 my-0 mt-1" style="min-height: 333px;" thead-class="d-none">
+                <template #cell(one)="data">
+                  <b-row class="m-0 p-0">
+                    <b-col class="m-0 p-0">
+                      <font size="-1">{{ (parseInt(data.index) + ((settings.tokensTable.currentPage - 1) * settings.tokensTable.pageSize) + 1) + '.' }}</font>
+                    </b-col>
+                    <b-col cols="5" class="m-0 p-0">
+                      {{ nameOrShortAddress(data.item.token) }}
+                      <br />
+                      <b-badge pill variant="transparent" class="px-0">{{ data.item.chainId == 1 ? "ETH Mainnet" : ("chainId: " + data.item.chainId) }}</b-badge>
+                    </b-col>
+                    <b-col cols="6" class="m-0 p-0">
+                      <font size="-1">
+                        {{ formatTokens(data.item.token, data.item.balance, 0) }}
+                      </font>
+                    </b-col>
+                  </b-row>
+                </template>
+              </b-table>
+              <!-- <font size="-1">
+                <pre>
+{{ pagedFilteredSortedTokens }}
+                </pre>
+              </font> -->
+            </b-card-body>
+
+            <!-- :CARDNFTS -->
+            <b-card-body v-if="settings.tabIndex == 1" class="m-0 p-1" body-bg-variant="white">
+              <b-navbar toggleable="md" type="light" variant="none" class="m-0 p-0">
+                <b-nav-form>
+                  <b-form-input type="text" size="sm" v-model.trim="settings.nftsTable.filter" @change="saveSettings" debounce="1200" placeholder="🔍 name" style="max-width: 7.0rem;"></b-form-input>
+                </b-nav-form>
+                <b-nav-form>
+                  <b-button v-if="activeAddress" :disabled="sync.section != null" size="sm" @click="syncIt();" variant="outline">
+                    <b-icon-cloud-download shift-v="+1" font-scale="1" variant="primary"></b-icon-cloud-download>
+                  </b-button>
+                </b-nav-form>
+                <b-nav-form>
+                  <b-pagination size="sm" v-model="settings.nftsTable.currentPage" @input="saveSettings" :total-rows="filteredSortedNFTs.length" :per-page="settings.nftsTable.pageSize" limit="3" class="m-0 p-0 ml-md-1"></b-pagination>
+                </b-nav-form>
+                <b-navbar-toggle target="nfts-nav-collapse" class="m-0 mr-1 p-0 border-0" style="outline: none;">
+                  <template #default="{ expanded }">
+                    <b-icon :icon="expanded ? 'chevron-double-up' : 'chevron-double-down'" variant="primary"></b-icon>
+                  </template>
+                </b-navbar-toggle>
+                <b-collapse id="nfts-nav-collapse" is-nav>
+                  <b-navbar-nav small class="ml-auto">
+                    <b-nav-form>
+                      <div class="d-flex mt-1 mt-md-0">
+                        <div class="m-0 p-0">
+                          <b-form-select size="sm" id="nftsoptions-sort" v-model="settings.nftsTable.sortOption" @change="saveSettings" :options="sortOptions" style="max-width: 12.0rem;"></b-form-select>
+                        </div>
+                        <div class="m-0 ml-1 p-0">
+                          <b-form-select size="sm" id="nftsoptions-pagesize" v-model="settings.nftsTable.pageSize" @change="saveSettings" :options="pageSizes" style="max-width: 6.0rem;"></b-form-select>
+                        </div>
+                      </div>
+                    </b-nav-form>
+                  </b-navbar-nav>
+                </b-collapse>
+              </b-navbar>
+              <b-card-group deck class="m-1 ml-0 p-0">
+                <div v-for="(item, index) of pagedFilteredSortedNFTs" v-bind:key="index">
+                  <b-card no-body header-class="p-1" img-top class="m-1 p-0 border-0">
+                    <div class="d-flex m-0 p-0">
+                      <div class="mt-0 pr-1">
+                        <!-- <b-embed v-if="item.media" type="iframe" aspect="16by9" :src="item.media" allowfullscreen></b-embed> -->
+                        <b-avatar button rounded @click="showModalNFT(item);" size="10rem" :src="item.image"></b-avatar>
+                      </div>
+                      <div class="flex-fill mt-0 pl-1">
+                        <b-link :href="'https://opensea.io/assets/ethereum/' + item.contract + '/' + item.tokenId" target="_blank">
+                          {{ item.name }}
+                        </b-link>
+                        <b-badge pill v-if="item.type == 'erc1155'" variant="light">{{ 'x' + item.count }}</b-badge>
+                        <br />
+                        <b-link :href="'https://opensea.io/collection/' + item.collectionSlug" target="_blank">
+                          <font size="-1">{{ item.collectionName }}</font>
+                        </b-link>
+                        <br />
+                        <font size="-1">
+                          <b-badge pill v-if="item.lastSale" variant="light" class="m-0 p-0">{{ 'Last: ' + item.lastSale.amount + (item.lastSale.currency == "ETH" ? "e" : " " + item.lastSale.currency) }}</b-badge>
+                          <b-badge pill v-if="item.price" variant="light" class="m-0 p-0">{{ 'Price: ' + item.price.amount + (item.price.currency == "ETH" ? "e": " " + item.price.currency) }}</b-badge>
+                          <b-badge pill v-if="item.price" variant="light" class="m-0 p-0">{{ 'Bid: ' + item.topBid.amount + (item.topBid.currency == "WETH" ? "w": " " + item.topBid.currency) }}</b-badge>
+                        </font>
+                        <br />
+                        <b-textarea :value="item.description" class="m-0 p-1" style="font-size: 12px; border: none;" rows="3" max-rows="4"></b-textarea>
+                      </div>
+                    </div>
+                  </b-card>
+                </div>
+              </b-card-group>
+            </b-card-body>
+
+            <!-- :CARDTXS -->
+            <b-card-body v-if="settings.tabIndex == 2" class="m-0 p-1" body-bg-variant="white">
+              <b-navbar toggleable="md" type="light" variant="none" class="m-0 p-0">
+                <b-nav-form>
+                  <b-form-input type="text" size="sm" v-model.trim="settings.txsTable.filter" @change="saveSettings" debounce="1200" placeholder="🔍 name" style="max-width: 7.0rem;"></b-form-input>
+                </b-nav-form>
+                <b-nav-form>
+                  <b-button v-if="activeAddress" :disabled="sync.section != null" size="sm" @click="syncIt();" variant="outline">
+                    <b-icon-cloud-download shift-v="+1" font-scale="1" variant="primary"></b-icon-cloud-download>
+                  </b-button>
+                </b-nav-form>
+                <b-nav-form>
+                  <b-pagination size="sm" v-model="settings.txsTable.currentPage" @input="saveSettings" :total-rows="filteredSortedTxs.length" :per-page="settings.txsTable.pageSize" limit="3" class="m-0 p-0 ml-md-1"></b-pagination>
+                </b-nav-form>
+                <b-navbar-toggle target="txs-nav-collapse" class="m-0 mr-1 p-0 border-0" style="outline: none;">
+                  <template #default="{ expanded }">
+                    <b-icon :icon="expanded ? 'chevron-double-up' : 'chevron-double-down'" variant="primary"></b-icon>
+                  </template>
+                </b-navbar-toggle>
+                <b-collapse id="txs-nav-collapse" is-nav>
+                  <b-navbar-nav small class="ml-auto">
+                    <b-nav-form>
+                      <div class="d-flex mt-1 mt-md-0">
+                        <div class="m-0 p-0">
+                          <b-form-select size="sm" id="txsoptions-sort" v-model="settings.txsTable.sortOption" @change="saveSettings" :options="sortOptions" style="max-width: 12.0rem;"></b-form-select>
+                        </div>
+                        <div class="m-0 ml-1 p-0">
+                          <b-form-select size="sm" id="txsoptions-pagesize" v-model="settings.txsTable.pageSize" @change="saveSettings" :options="pageSizes" style="max-width: 6.0rem;"></b-form-select>
+                        </div>
+                      </div>
+                    </b-nav-form>
+                  </b-navbar-nav>
+                </b-collapse>
+              </b-navbar>
+              <b-card-group deck class="m-1 ml-0 p-0">
+                <div v-for="(item, index) of pagedFilteredSortedTxs" v-bind:key="index">
+                  <b-card no-body class="m-1 p-0 border-0">
+                    <!-- <div class="d-flex m-0 p-0"> -->
+                      <!-- <div class="mt-0 pr-1"> -->
+                        <!-- <b-embed v-if="item.media" type="iframe" aspect="16by9" :src="item.media" allowfullscreen></b-embed> -->
+                        <!-- <b-avatar button rounded @click="showModalNFT(item);" size="10rem" :src="item.image"></b-avatar> -->
+
+                        <div>
+                          <font size="-1">{{ (parseInt(index) + ((settings.txsTable.currentPage - 1) * settings.txsTable.pageSize) + 1) + '.' }}</font>
+                          <b-link :href="'https://etherscan.io/tx/' + item.txHash" target="_blank">
+                            <font size="-1">{{ formatTimestamp(item.timestamp) }}</font>
+                          </b-link>
+                          <!-- <b-link v-if="item.from" :href="'https://etherscan.io/address/' + item.from" target="_blank"> -->
+                          <b-link v-if="item.from" @click="showModalAddress(item.from)">
+                            <font size="-1">{{ nameOrShortAddress(item.from) }}</font>
+                          </b-link>
+                          <br />
+                          <b-icon-arrow-right font-scale="0.9" variant="secondary" class="ml-3"></b-icon-arrow-right>
+                          <!-- <b-link v-if="item.contract" :href="'https://etherscan.io/address/' + item.contract" target="_blank"> -->
+                          <b-link v-if="item.contract" @click="showModalAddress(item.contract)">
+                            <font size="-1">{{ nameOrShortAddress(item.contract) }}</font>
+                          </b-link>
+                          <br />
+                          <b-badge v-if="item.action" pill variant="light" class="m-0 ml-3 p-0">{{ item.action }}</b-badge>
+                          <b-badge v-if="item.value" pill variant="light" class="m-0 p-0">{{ item.value }}</b-badge>
+                        </div>
+                        <b-textarea readonly :value="JSON.stringify(item, null, 2)" class="m-0 ml-2 p-1" style="font-size: 12px; border: 1;" rows="3" max-rows="7" class="w-100"></b-textarea>
+
+                        <!-- <font v-if="true || !item.action" size="-1">
+                          <pre>
+{{ item }}
+                          </pre>
+                        </font> -->
+                        <!-- {{ JSON.stringify(item).substring(0, 100) }} -->
+                      <!-- </div> -->
+                      <!-- <div class="flex-fill mt-0 pl-1">
+                        <b-link :href="'https://opensea.io/assets/ethereum/' + item.contract + '/' + item.tokenId" target="_blank">
+                          {{ item.name }}
+                        </b-link>
+                        <b-badge pill v-if="item.type == 'erc1155'" variant="light">{{ 'x' + item.count }}</b-badge>
+                        <br />
+                        <b-link :href="'https://opensea.io/collection/' + item.collectionSlug" target="_blank">
+                          <font size="-1">{{ item.collectionName }}</font>
+                        </b-link>
+                        <br />
+                        <font size="-1">
+                          <b-badge pill v-if="item.lastSale" variant="light" class="m-0 p-0">{{ 'Last: ' + item.lastSale.amount + (item.lastSale.currency == "ETH" ? "e" : " " + item.lastSale.currency) }}</b-badge>
+                          <b-badge pill v-if="item.price" variant="light" class="m-0 p-0">{{ 'Price: ' + item.price.amount + (item.price.currency == "ETH" ? "e": " " + item.price.currency) }}</b-badge>
+                          <b-badge pill v-if="item.price" variant="light" class="m-0 p-0">{{ 'Bid: ' + item.topBid.amount + (item.topBid.currency == "WETH" ? "w": " " + item.topBid.currency) }}</b-badge>
+                        </font>
+                        <br />
+                        <b-textarea :value="item.description" class="m-0 p-1" style="font-size: 12px; border: none;" rows="3" max-rows="4"></b-textarea>
+                      </div> -->
+                    <!-- </div> -->
+                  </b-card>
+                </div>
+              </b-card-group>
+
+              <!-- <b-form-group label="Etherscan:" label-cols="5" label-align="right" description="Set API Key in the Config menu">
+                <b-button v-if="activeAddress" size="sm" @click="downloadFromEtherscan(activeAddress);" variant="outline">
+                  <b-icon-cloud-download shift-v="+2" font-scale="1" variant="primary"></b-icon-cloud-download>
+                </b-button>
+              </b-form-group> -->
+              <hr />
+              <b-form-group label="CryptoCompare:" label-cols="5" label-align="right" description="Set API Key in the Config menu">
+                <b-button v-if="activeAddress" size="sm" @click="downloadFromCryptoCompare();" variant="outline">
+                  <b-icon-cloud-download shift-v="+2" font-scale="1" variant="primary"></b-icon-cloud-download>
+                </b-button>
+              </b-form-group>
+            </b-card-body>
+
+          </b-card>
+
+          <!-- :CARDS -->
+          <b-card v-if="settings.mode == 'cards'" no-body class="m-1 p-1 border-0" bg-variant="light">
+            <b-navbar toggleable="md" type="light" variant="light" class="m-0 p-0">
+              <b-nav-form>
+                <b-form-input type="text" size="sm" v-model.trim="settings.cardsTable.filter" @change="saveSettings" debounce="1200" placeholder="🔍 addr/name" style="max-width: 7.0rem;"></b-form-input>
+              </b-nav-form>
+              <b-nav-form>
+                <b-pagination size="sm" v-model="settings.cardsTable.currentPage" @input="saveSettings" :total-rows="filteredSortedCards.length" :per-page="settings.cardsTable.pageSize" limit="3" class="m-0 p-0 ml-md-1"></b-pagination>
+              </b-nav-form>
+              <b-navbar-toggle target="modalcards-nav-collapse" class="m-0 mr-1 p-0 border-0" style="outline: none;">
+                <template #default="{ expanded }">
+                  <b-icon :icon="expanded ? 'chevron-double-up' : 'chevron-double-down'" variant="primary"></b-icon>
+                </template>
+              </b-navbar-toggle>
+              <b-collapse id="modalcards-nav-collapse" is-nav>
+                <b-navbar-nav small class="ml-auto">
+                  <b-nav-form>
+                    <div class="d-flex mt-1 mt-md-0">
+                      <div class="m-0 p-0">
+                        <b-form-select size="sm" v-model="settings.cardsTable.sortOption" @change="saveSettings" :options="sortOptions" style="max-width: 12.0rem;"></b-form-select>
+                      </div>
+                      <div class="m-0 ml-1 p-0">
+                        <b-form-select size="sm" v-model="settings.cardsTable.pageSize" @change="saveSettings" :options="pageSizes" style="max-width: 6.0rem;"></b-form-select>
+                      </div>
+                    </div>
+                  </b-nav-form>
+                </b-navbar-nav>
+              </b-collapse>
+            </b-navbar>
+            <b-table ref="cardsTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='cardsRowSelected' :fields="cardsFields" :items="pagedFilteredSortedCards" show-empty empty-html="Press Escape. Then scan your Burner.pro NFC card to begin" head-variant="light" class="mx-0 my-0 mt-1" style="min-height: 333px;">
+              <template #cell(index)="data">
+                <font size="-1">{{ (parseInt(data.index) + ((settings.cardsTable.currentPage - 1) * settings.cardsTable.pageSize) + 1) + '.' }}</font>
+              </template>
+              <template #cell(card)="data">
+                {{ data.item.name }}
+                <br />
+                <div v-if="data.item.initialised">
+                  <b-link @click="showModalAddress(data.item.address)" target="_blank">
+                    <font size="-1">{{ nameOrShortAddress(data.item.address) }}</font>
+                  </b-link>
+                  <b-button size="sm" @click="copyToClipboard(data.item.address);" variant="outline">
+                    <b-icon-clipboard shift-v="+2" font-scale="0.9" variant="primary"></b-icon-clipboard>
+                  </b-button>
+                </div>
+                <div v-else>
+                  <font size="-1">(Uninitialised)</font>
+                </div>
+              </template>
+              <template #cell(active)="data">
+                <b-form-checkbox size="sm" :checked="settings.selectedCard == data.item.cardId" @change="updateSelectedCard(data.item.cardId)">
+                </b-form-checkbox>
+              </template>
+            </b-table>
+          </b-card>
+
+          <!-- :ADDRESSES -->
+          <b-card v-if="settings.mode == 'addresses'" no-body class="m-1 p-1 border-0" bg-variant="light">
+            <b-navbar toggleable="md" type="light" variant="light" class="m-0 p-0">
+              <b-nav-form>
+                <b-form-input type="text" size="sm" v-model.trim="settings.addressesTable.filter" @change="saveSettings" debounce="1200" placeholder="🔍 addr/name" style="max-width: 7.0rem;"></b-form-input>
+              </b-nav-form>
+              <b-nav-form>
+                <b-button size="sm" @click="showModalNewAddress();" variant="outline">
+                  <b-icon-plus shift-v="+1" font-scale="1" variant="primary"></b-icon-plus>
+                </b-button>
+              </b-nav-form>
+              <b-nav-form>
+                <b-pagination size="sm" v-model="settings.addressesTable.currentPage" @input="saveSettings" :total-rows="filteredSortedAddresses.length" :per-page="settings.addressesTable.pageSize" limit="3" class="m-0 p-0 ml-md-1"></b-pagination>
+              </b-nav-form>
+              <b-navbar-toggle target="modaladdresses-nav-collapse" class="m-0 mr-1 p-0 border-0" style="outline: none;">
+                <template #default="{ expanded }">
+                  <b-icon :icon="expanded ? 'chevron-double-up' : 'chevron-double-down'" variant="primary"></b-icon>
+                </template>
+              </b-navbar-toggle>
+              <b-collapse id="modaladdresses-nav-collapse" is-nav>
+                <b-navbar-nav small class="ml-auto">
+                  <b-nav-form>
+                    <div class="d-flex mt-1 mt-md-0">
+                      <div class="m-0 p-0">
+                        <b-form-select size="sm" v-model="settings.addressesTable.addressType" @change="saveSettings" :options="addressTypeFilterOptions" style="max-width: 12.0rem;"></b-form-select>
+                      </div>
+                      <div class="m-0 ml-1 p-0">
+                        <b-form-select size="sm" v-model="settings.addressesTable.sortOption" @change="saveSettings" :options="sortOptions" style="max-width: 12.0rem;"></b-form-select>
+                      </div>
+                      <div class="m-0 ml-1 p-0">
+                        <b-form-select size="sm" v-model="settings.addressesTable.pageSize" @change="saveSettings" :options="pageSizes" style="max-width: 6.0rem;"></b-form-select>
+                      </div>
+                    </div>
+                  </b-nav-form>
+                </b-navbar-nav>
+              </b-collapse>
+            </b-navbar>
+            <b-table ref="addressesTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='addressesRowSelected':fields="addressesFields" :items="pagedFilteredSortedAddresses" show-empty empty-html="No records found" head-variant="light" class="mx-0 my-0 mt-1" style="min-height: 333px;" thead-class="d-none">
+              <template #cell(one)="data">
+                <b-row class="m-0 p-0">
+                  <b-col class="m-0 p-0">
+                    <font size="-1">{{ (parseInt(data.index) + ((settings.addressesTable.currentPage - 1) * settings.addressesTable.pageSize) + 1) + '.' }}</font>
+                  </b-col>
+                  <b-col cols="11" class="m-0 p-0">
+                    <!-- <b-link @click="showModalAddress(data.item.address)" target="_blank"> -->
+                      <font size="-1">{{ data.item.address.substring(0, 6) + '...' + data.item.address.slice(-4) }}</font>
+                    <!-- </b-link> -->
+                    <b-dropdown size="sm" text="" variant="link" class="m-0 p-0">
+                      <b-dropdown-text>{{ data.item.address.substring(0, 10) + '...' + data.item.address.slice(-8) }}</b-dropdown-text>
+                      <b-dropdown-divider></b-dropdown-divider>
+                      <b-dropdown-item @click="copyToClipboard(data.item.address);">Copy to clipboard</b-dropdown-item>
+                      <b-dropdown-item :href="'https://etherscan.io/address/' + data.item.address" target="_blank">View in Etherscan.io</b-dropdown-item>
+                      <b-dropdown-item v-if="['nfccard'].includes(data.item.type)" :href="'https://opensea.io/' + data.item.address" target="_blank">View address in OpenSea.io</b-dropdown-item>
+                      <b-dropdown-item v-if="data.item.slug" :href="'https://opensea.io/collection/' + data.item.slug" target="_blank">View collection in OpenSea.io</b-dropdown-item>
+                      <!-- <b-dropdown-item :href="'https://blur.io/' + data.item.address" target="_blank">View in Blur.io</b-dropdown-item> -->
+                    </b-dropdown>
+                    <font size="-1">{{ nameOrShortAddress(data.item.address) }}</font>
+                    <br />
+                    <b-badge pill variant="transparent" class="m-0 p-0">
+                      {{ addressTypeOptions.filter((e) => e.value == data.item.type)[0] && addressTypeOptions.filter((e) => e.value == data.item.type)[0].text }}
+                    </b-badge>
+                  </b-col>
+                </b-row>
+                <!-- <b-form-checkbox size="sm" :checked="settings.selectedCard == data.item.cardId" @change="updateSelectedCard(data.item.cardId)">
+                </b-form-checkbox> -->
+              </template>
+              <!-- <template #cell(select)="data">
+                <b-form-checkbox size="sm" :checked="settings.selectedCard == data.item.cardId" @change="updateSelectedCard(data.item.cardId)">
+                </b-form-checkbox>
+              </template> -->
+              <!-- <template #cell(name)="data">
+                <b-form-input type="text" size="sm" v-model.trim="data.item.name" @change="updateName(data.item.cardId, $event)" debounce="1200" placeholder="name"></b-form-input>
+              </template> -->
+              <!-- <template #cell(address)="data">
+                <div v-if="data.item.initialised">
+                  <b-link @click="showModalAddress(data.item.address)" target="_blank">
+                    <font size="-1">{{ nameOrShortAddress(data.item.address) }}</font>
+                  </b-link>
+                  <b-button size="sm" @click="copyToClipboard(data.item.address);" variant="outline">
+                    <b-icon-clipboard shift-v="+2" font-scale="0.9" variant="primary"></b-icon-clipboard>
+                  </b-button>
+                </div>
+                <div v-else>
+                  <font size="-1">(Uninitialised)</font>
+                </div>
+              </template> -->
+              <!-- <template #cell(card)="data">
+                <b-button size="sm" @click="showModalCard(data.item.cardId, data.item.name);" variant="outline">
+                  <b-iconstack font-scale="1">
+                    <b-icon stacked icon="lock" shift-h="0" shift-v="0" variant="primary" scale="0.6"></b-icon>
+                    <b-icon stacked icon="file" variant="primary" scale="1.0"></b-icon>
+                  </b-iconstack>
+                </b-button>
+              </template> -->
+            </b-table>
+          </b-card>
+
+          <!-- :INFO -->
+          <b-card v-if="settings.mode == 'info' || (settings.mode == 'card' && Object.keys(settings.cards).length == 0)" no-body class="m-1 p-1 border-0" bg-variant="light">
+            <b-card-body class="mt-1 p-1">
+              <h6>Welcome to BurnerProTool (WIP)</h6>
+              For managing your <b-link href="https://burner.pro" target="_blank">burner.pro</b-link> NFC card Ethereum wallets.
+              <br />
+              <br />
+              <b-iconstack font-scale="1">
+                <b-icon stacked icon="wifi" variant="primary" scale="0.8"></b-icon>
+                <b-icon stacked icon="file" variant="primary" scale="1.5"></b-icon>
+              </b-iconstack> Scan NFC card
+              <br />
+              <b-iconstack font-scale="1">
+                <b-icon stacked :icon="settings.mode == 'card' ? 'lock-fill' : 'lock'" variant="primary" scale="0.6"></b-icon>
+                <b-icon stacked icon="file" variant="primary" scale="1.2"></b-icon>
+              </b-iconstack> Card
+              <br />
+              <!-- <b-icon-files shift-v="+1" font-scale="1.0" variant="primary"></b-icon-files> View cards -->
+              <b-iconstack font-scale="1">
+                <b-icon stacked :icon="settings.mode == 'cards' ? 'lock-fill' : 'lock'" shift-h="-1" shift-v="-1" variant="primary" scale="0.6"></b-icon>
+                <b-icon stacked icon="files" variant="primary" scale="1.0"></b-icon>
+              </b-iconstack>
+              Cards
+              <br />
+              <b-icon :icon="settings.mode == 'addresses' ? 'people-fill' : 'people'" font-scale="1.0" variant="primary"></b-icon> Addresses
+              <br />
+              <b-icon :icon="settings.mode == 'info' ? 'info-circle-fill' : 'info-circle'" font-scale="1.0" variant="primary"></b-icon> Info
+              <br />
+              <b-icon :icon="settings.mode == 'config' ? 'gear-fill' : 'gear'" font-scale="1.0" variant="primary"></b-icon> Config
+              <br />
+              <br />
+              Usage:
+              <ul>
+                <li>
+                  Best used on mobile phone web browsers with NFC and web3 support, e.g., <b-link href="https://brave.com/" target="_blank">Brave</b-link>
+                </li>
+                <li>
+                  <b-iconstack font-scale="1">
+                    <b-icon stacked icon="wifi" variant="primary" scale="0.8"></b-icon>
+                    <b-icon stacked icon="file" variant="primary" scale="1.5"></b-icon>
+                  </b-iconstack> Scan NFC card to begin
+                </li>
+                <li>
+                  To test without an NFC card, click <b-button size="sm" variant="primary">Insert Test Data</b-button> in <b-icon :icon="settings.mode == 'config' ? 'gear-fill' : 'gear'" font-scale="1.0" variant="primary"></b-icon> Config
+                </li>
+                <li>
+                  Add your Etherscan and CryptoCompare API keys in <b-icon :icon="settings.mode == 'config' ? 'gear-fill' : 'gear'" font-scale="1.0" variant="primary"></b-icon> Config
+                </li>
+              </ul>
+              We are not affiliated with burner.pro .
+              <br />
+              <font size="-1">Enjoy!</font>
+              <br />
+              <font size="-1">(c) BokkyPooBah / Bok Consulting Pty Ltd 2025. The MIT Licence</font>
+            </b-card-body>
+          </b-card>
+
+          <!-- :CONFIG -->
+          <b-card v-if="settings.mode == 'config'" no-body class="m-1 p-1 border-0" bg-variant="light">
+            <!-- <h5>Configuration</h5> -->
+            <b-form-group label="API Keys" label-size="md" label-class="font-weight-bold pt-0" class="mt-3 mb-0">
+              <b-form-group label="Etherscan:" label-for="etherscan-apikey">
+                <b-form-input type="text" size="sm" id="etherscan-apikey" v-model.trim="settings.etherscanAPIKey" @change="saveSettings();" placeholder="See https://etherscan.io/apis"></b-form-input>
+              </b-form-group>
+              <b-form-group label="CryptoCompare:" label-for="cryptocompar ie-apikey">
+                <b-form-input type="text" size="sm" id="cryptocompare-apikey" v-model.trim="settings.cryptoCompareAPIKey" @change="saveSettings();" placeholder="See https://www.cryptocompare.com/cryptopian/api-keys"></b-form-input>
+              </b-form-group>
+            </b-form-group>
+            <b-form-group label="Test Data" label-size="md" label-class="font-weight-bold pt-0" class="mt-3 mb-0">
+              <b-form-group label="" label-cols="4" label-align="right">
+                <b-button size="sm" @click="insertTestData()" variant="primary">Insert Test Data</b-button>
+              </b-form-group>
+            </b-form-group>
+            <b-form-group label-cols-lg="2" label="Reset Data" label-size="md" label-class="font-weight-bold pt-0" class="mt-3 mb-0">
+              <b-form-group label="" label-cols="4" label-align="right">
+                <b-button size="sm" @click="resetData()" variant="warning">Reset Data</b-button>
+              </b-form-group>
+            </b-form-group>
+          </b-card>
+
+          <b-card v-if="false" no-body class="m-1 p-1" bg-variant="light">
+            <!-- Card View --->
+            <b-card-body v-if="settings.tabIndex == 3" class="m-0 p-1" body-bg-variant="white">
+              <b-form-group label="Name:" label-for="card-name" class="mt-2">
+                <b-input-group>
+                  <b-form-input readonly id="card-name" :value="activeCardName"></b-form-input>
+                </b-input-group>
+              </b-form-group>
+              <b-form-group label="Graffiti:" label-for="card-graffiti" class="mt-2" description="This text is potentially writeable by any NFC reader">
+                <b-input-group>
+                  <b-form-input readonly id="card-graffiti" :value="activeCardGraffiti"></b-form-input>
+                  <b-input-group-append>
+                    <b-button size="sm" @click="showModalGraffiti();" variant="primary">
+                      <b-icon-pencil-square font-scale="1" variant="outline"></b-icon-pencil-square>
+                    </b-button>
+                  </b-input-group-append>
+                </b-input-group>
+              </b-form-group>
+            </b-card-body>
+            <b-form-textarea readonly size="sm" v-model.trim="debug" rows="3" max-rows="20" class="mt-1"></b-form-textarea>
+          </b-card>
+
+          <b-card v-if="false && settings.tabIndex == 1 && filteredSortedSlots.length > 0" no-body class="my-0 p-1">
+            <b-form-group label="Active address" label-for="selected-slot">
+              <b-input-group>
+                <b-form-select id="selected-slot" v-model="selectedSlot" :options="slotsOptions" style="max-width: 30.0rem;"></b-form-select>
+                <b-input-group-append>
+                  <b-button :disabled="!selectedSlot" :href="'https://etherscan.io/address/' + (slots[selectedSlot] && slots[selectedSlot].address)" variant="link" v-b-popover.hover.ds500="'View in explorer'" target="_blank" class="m-0 ml-3 p-0"><b-icon-link45deg shift-v="-4" font-scale="1.2"></b-icon-link45deg></b-button>
+                  <b-button :disabled="!selectedSlot" @click="copyToClipboard((slots[selectedSlot] && slots[selectedSlot].address));" variant="link" class="m-0 ml-1 p-0"><b-icon-clipboard shift-v="+1" font-scale="1.1"></b-icon-clipboard></b-button>
+                </b-input-group-append>
+              </b-input-group>
+            </b-form-group>
+            <b-form-group label="Action" label-for="selected-action">
+              <b-input-group>
+                <b-form-select id="selected-action" v-model="selectedAction" :options="actionOptions" style="max-width: 10.0rem;"></b-form-select>
+              </b-input-group>
+            </b-form-group>
+            <b-form-group label="To" label-for="action-to">
+              <b-input-group>
+                <b-form-input id="action-to" v-model.trim="action.to" style="max-width: 30.0rem;"></b-form-input>
+              </b-input-group>
+            </b-form-group>
+            <b-form-group label="Value" label-for="action-value">
+              <b-input-group>
+                <b-form-input id="action-value" v-model.trim="action.value" style="max-width: 10.0rem;"></b-form-input>
+                <b-input-group-append>
+                  <b-form-select v-model="action.valueType" :options="valueTypeOptions"></b-form-select>
+                </b-input-group-append>
+              </b-input-group>
+            </b-form-group>
+            <b-form-group label="Gas Limit" label-for="action-gaslimit">
+              <b-input-group>
+                <b-form-input id="action-gaslimit" v-model.trim="action.gasLimit" style="max-width: 10.0rem;"></b-form-input>
+              </b-input-group>
+            </b-form-group>
+            <b-form-group label="Max Fee Per Gas" label-for="action-maxfeepergas">
+              <b-input-group>
+                <b-form-input id="action-maxfeepergas" v-model.trim="action.maxFeePerGas" style="max-width: 10.0rem;"></b-form-input>
+                <b-input-group-append>
+                  <b-form-select v-model="action.maxFeePerGasType" :options="valueTypeOptions"></b-form-select>
+                </b-input-group-append>
+              </b-input-group>
+            </b-form-group>
+            <b-form-group label="Max Priority Fee Per Gas" label-for="action-maxpriorityfeepergas">
+              <b-input-group>
+                <b-form-input id="action-maxpriorityfeepergas" v-model.trim="action.maxPriorityFeePerGas" style="max-width: 10.0rem;"></b-form-input>
+                <b-input-group-append>
+                  <b-form-select v-model="action.maxPriorityFeePerGasType" :options="valueTypeOptions"></b-form-select>
+                </b-input-group-append>
+              </b-input-group>
+            </b-form-group>
+            <b-form-group label="Chain Id" label-for="action-chainId">
+              <b-input-group>
+                <b-form-input id="action-chainId" v-model.trim="action.chainId" style="max-width: 10.0rem;"></b-form-input>
+              </b-input-group>
+            </b-form-group>
+            <b-form-group label="Transaction Type" label-for="action-type">
+              <b-input-group>
+                <b-form-input id="action-type" v-model.trim="action.transactionType" style="max-width: 10.0rem;"></b-form-input>
+              </b-input-group>
+            </b-form-group>
+            <b-form-group label="Nonce" label-for="action-nonce">
+              <b-input-group>
+                <b-form-input id="action-nonce" v-model.trim="action.nonce" style="max-width: 10.0rem;"></b-form-input>
+              </b-input-group>
+            </b-form-group>
+            <b-form-group label="password" label-for="action-password">
+              <b-input-group>
+                <b-form-input type="password" id="action-password" v-model.trim="action.password" style="max-width: 10.0rem;"></b-form-input>
+              </b-input-group>
+            </b-form-group>
+            <b-button size="sm" :disabled="false" @click="signEthTx();" variant="primary" v-b-popover.hover.bottom="'Scan NFC To Sign'" style="max-width: 10.0rem;">Scan NFC To Sign</b-button>
+            <b-form-textarea readonly size="sm" v-model.trim="debug" rows="3" max-rows="20" class="mt-1"></b-form-textarea>
+          </b-card>
+
+        </b-card>
+
+        <b-card no-header body-class="m-0 p-0" class="m-0 p-0 border-0">
+          <div class="d-flex flex-wrap m-0 p-0">
+            <div class="ml-0 mt-1 pl-1">
+              <font v-if="connected" size="-2">
+                <!-- <b-link v-if="coinbase" :href="'https://etherscan.io/address/' + coinbase" v-b-popover.hover.bottom="'Coinbase'" target="_blank">
+                  {{ coinbase.substring(0, 10) }}
+                </b-link> -->
+                <b-link v-if="chainId" :href="'https://etherscan.io/'" v-b-popover.hover.bottom="'Network'" target="_blank">
+                  {{ chainId == '1' ? 'Mainnet' : 'Unsupported' }}
+                </b-link>
+                <b-link v-if="blockNumber" :href="'https://etherscan.io/block/' + blockNumber" v-b-popover.hover.bottom="'Latest block'" target="_blank">
+                  {{ '#' + commify0(blockNumber) }}
+                </b-link>
+                <b-link v-if="blockNumber" :href="'https://etherscan.io/block/' + blockNumber" v-b-popover.hover.bottom="formatTimestamp(timestamp)" target="_blank">
+                  {{ formatTimeDiff(timestamp) }}
+                </b-link>
+              </font>
+            </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
+            <div v-if="settings.mode != 'info' && !(settings.mode == 'card' && Object.keys(settings.cards).length == 0)" class="mt-0 pl-1 pr-1">
+              <font size="-1">
+                gm, and enjoy! <i>BurnerProTool</i> &copy; Bok Consulting Pty Ltd 2025. The MIT Licence
+              </font>
+            </div>
+          </div>
+        </b-card>
+      </b-container>
+    </div>
+
+    <script>
+      window.app = new Vue({
+        el: '#app',
+        // --- DATA ---
+        data: {
+
+          debug: "Debug",
+
+          // cards: {}, // address0 -> slot# -> address
+
+          selectedSlot: 9, // null,
+          selectedAction: "transfereth", // null,
+
+          action: {
+            to: "0x8E872af87B462F2B3b6f42b76B2f1a5f4D240F5E", // null,
+            value: "0.00000003", // null,
+            valueType: "ether",
+            gasLimit: "21000", // null,
+            gasPrice: null, // testing
+            maxFeePerGas: "7", // null,
+            maxFeePerGasType: "gwei",
+            maxPriorityFeePerGas: "0.007", // null
+            maxPriorityFeePerGasType: "gwei",
+            chainId: 1,
+            transactionType: 2,
+            nonce: 5, // null
+            data: null,
+            password: null,
+          },
+
+          connected: false,
+          chainId: null,
+          coinbase: null,
+          blockNumber: null,
+          timestamp: null,
+          forceRefresh: 0,
+
+          settings: {
+            mode: 'card', // 'card', 'cards', 'addresses', 'info', 'config'
+            tabIndex: 0,
+            cards: {},
+            addresses: {},
+            selectedCard: null,
+            etherscanAPIKey: null,
+            cryptoCompareAPIKey: null,
+            cardsTable: {
+              filter: null,
+              currentPage: 1,
+              pageSize: 10,
+              sortOption: 'nameasc',
+            },
+            addressesTable: {
+              filter: null,
+              addressType: null,
+              currentPage: 1,
+              pageSize: 10,
+              sortOption: 'nameasc',
+            },
+            tokensTable: {
+              filter: null,
+              currentPage: 1,
+              pageSize: 10,
+              sortOption: 'nameasc',
+            },
+            nftsTable: {
+              filter: null,
+              currentPage: 1,
+              pageSize: 10,
+              sortOption: 'nameasc',
+            },
+            txsTable: {
+              filter: null,
+              currentPage: 1,
+              pageSize: 10,
+              sortOption: 'nameasc',
+            },
+            version: 9,
+          },
+
+          modalCard: {
+            cardId: null,
+          },
+
+          modalGraffiti: {
+            graffiti: null,
+            prompt: null,
+          },
+
+          modalToken: {
+            chainId: null,
+            token: null,
+            balance: null,
+            flows: [],
+          },
+
+          modalNFT: {
+            tabIndex: 0,
+            item: null,
+            to: "0xA2113f1E9A66c3B0A75BB466bbBfeEeC987ac92e", // TODO: null,
+            tokens: "1", // TODO: null, ERC-1155
+            nonce: null,
+            gasLimit: "100000", // TODO: null,
+            maxFeePerGas: null,
+            maxPriorityFeePerGas: null,
+            password: null,
+
+            // item: {
+            //   "chainId": "1",
+            //   "contract": "0x286e531f363768fed5e18b468f5b76a9ffc33af5",
+            //   "type": "erc1155",
+            //   "collectionName": "Nyan Balloon",
+            //   "collectionSlug": "nyanballoon",
+            //   "tokenId": "7",
+            //   "count": "2",
+            //   "name": "Super Nyan Balloon",
+            //   "description": "Nyan Balloon is a character I personally created back in October 2011 that was originally meant to serve as a backstory to a certain space cat. Ultimately, I felt this idea should be unique to the person that imagines it.\n\nThis piece has been digitally remastered for 2023 and I hope it's enjoyed by everyone who collects it ✨🎈\n\nYou may view the original video here:  \nhttps://www.youtube.com/watch?v=In1IKpcviIc",
+            //   "image": "https://img.reservoir.tools/images/v2/mainnet/hc%2BnPcLmWxs%2FDW99DlBQ42k40ZoyYV5jCIms5qHjwvveWhEWY3fo8di0LLSegFQWLPFTwYz17NduegJDMeuu72jwUKQDrPWLt07x7AsMssldAVJ%2FIQez3uQ%2B0Y1VbeXvAW%2FGLpURm5X97%2BnFBHktSVzkes%2BV1aoviVLzEda0IhV7CEqhi2paPvLnuppSjoW15U%2BpI8K0jfeJAE8H%2BrPT5g%3D%3D.gif?width=512",
+            //   "media": null,
+            //   "acquiredAt": 1736802335,
+            //   "lastSale": {
+            //     "timestamp": 1736802335,
+            //     "currency": "ETH",
+            //     "amount": 0.01,
+            //     "amountUSD": 32.64071
+            //   },
+            //   "price": {
+            //     "source": "okx.com",
+            //     "expiry": 1737374243,
+            //     "currency": "ETH",
+            //     "amount": 0.01,
+            //     "amountUSD": 32.64071
+            //   },
+            //   "topBid": {
+            //     "source": "opensea.io",
+            //     "currency": "WETH",
+            //     "amount": 0.0058,
+            //     "amountUSD": 18.93607,
+            //     "netAmount": 0.00566,
+            //     "netAmountUSD": 18.46267
+            //   },
+            // },
+          },
+
+          modalAddress: {
+            address: "0x8E872af87B462F2B3b6f42b76B2f1a5f4D240F5E", // TODO: null,
+            newAddressError: null,
+            newAddressMessage: null, // null - no validation, false - error, true ok
+          },
+          modalNewAddress: {
+            address: null,
+            alt: null,
+            type: null,
+            name: null,
+            description: null,
+            slug: null,
+            decimals: null,
+
+            canTransferFrom: false,
+            canTransferTo: false,
+            canTransfer: false,
+            junk: false,
+
+            addressOk: null,
+            addressError: null,
+          },
+
+          sync: {
+            section: null,
+            total: null,
+            completed: null,
+            error: null, // TODO
+            // halt: false,
+          },
+
+          reservoirData: {},
+          etherscanData: {},
+
+          events: {},
+          accounts: {},
+          blockTimestamps: {},
+
+          sortOptions: [
+            { value: 'addressasc', text: '▲ Addr' },
+            { value: 'addressdsc', text: '▼ Addr' },
+            { value: 'nameasc', text: '▲ Name' },
+            { value: 'namedsc', text: '▼ Name' },
+          ],
+          pageSizes: [
+            { value: 2, text: '2' },
+            { value: 5, text: '5' },
+            { value: 10, text: '10' },
+            { value: 25, text: '25' },
+            { value: 50, text: '50' },
+            { value: 100, text: '100' },
+          ],
+
+          cardStatusOptions: [
+            { value: null, text: '(unknown)' },
+            { value: 'noninitialised', text: 'Not Initialised' },
+            { value: 'exported', text: 'Exported' },
+            { value: 'imported', text: 'Imported' },
+            { value: 'importedandexported', text: 'Imported, then Exported' },
+            { value: 'notimportedorexported', text: 'Not Imported and Not Exported' },
+          ],
+
+          addressTypeFilterOptions: [
+            { value: null, text: '(all)' },
+            { value: 'nfccard', text: 'NFC Card' },
+            { value: 'eoa', text: 'EOA' },
+            { value: 'erc20', text: 'ERC-20' },
+            { value: 'erc721', text: 'ERC-721' },
+            { value: 'erc1155', text: 'ERC-1155' },
+            { value: 'ftexchange', text: 'ERC-20 Exchange' },
+            { value: 'nftexchange', text: 'NFT Exchange' },
+            { value: 'ens', text: 'ENS Contract' },
+            { value: 'contract', text: 'Contract' },
+          ],
+
+          addressTypeOptions: [
+            { value: null, text: '(select)' },
+            { value: 'nfccard', text: 'NFC Card' },
+            { value: 'eoa', text: 'EOA' },
+            { value: 'ens', text: 'ENS Name' },
+            { value: 'erc20', text: 'ERC-20' },
+            { value: 'erc721', text: 'ERC-721' },
+            { value: 'erc1155', text: 'ERC-1155' },
+            { value: 'ftexchange', text: 'ERC-20 Exchange' },
+            { value: 'nftexchange', text: 'NFT Exchange' },
+            { value: 'ens', text: 'ENS Contract' },
+            { value: 'contract', text: 'Contract' },
+          ],
+
+          actionOptions: [
+            { value: null, text: 'Select action' },
+            { value: 'transfereth', text: 'Transfer ETH' },
+            { value: 'transfererc20', text: 'Transfer ERC-20', disabled: true },
+            { value: 'transfernft', text: 'Transfer NFT', disabled: true },
+          ],
+
+          valueTypeOptions: [
+            { value: 'ether', text: 'eth' },
+            { value: 'gwei', text: 'gwei' },
+            { value: 'wei', text: 'wei' },
+          ],
+
+          cardsFields: [
+            { key: 'index', label: '#', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
+            { key: 'card', label: 'Card', sortable: false, thStyle: 'width: 70%;', tdClass: 'text-truncate' },
+            { key: 'active', label: 'Active', sortable: false, thStyle: 'width: 20%;', tdClass: 'text-truncate' },
+          ],
+
+          addressesFields: [
+            { key: 'one', label: '', sortable: false, thStyle: 'width: 100%;', tdClass: 'text-left' },
+            // { key: 'select', label: '', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
+            // { key: 'address', label: 'Address', sortable: false, thStyle: 'width: 45%;', tdClass: 'text-truncate' },
+            // { key: 'name', label: 'Name', sortable: false, thStyle: 'width: 30%;', tdClass: 'text-truncate' },
+            // { key: 'card', label: 'Card', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
+          ],
+
+          tokensFields: [
+            { key: 'one', label: '', sortable: false, thStyle: 'width: 100%;', tdClass: 'text-left' },
+            // { key: 'select', label: '', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
+            // { key: 'address', label: 'Address', sortable: false, thStyle: 'width: 45%;', tdClass: 'text-truncate' },
+            // { key: 'name', label: 'Name', sortable: false, thStyle: 'width: 30%;', tdClass: 'text-truncate' },
+            // { key: 'card', label: 'Card', sortable: false, thStyle: 'width: 15%;', thClass: 'text-left', tdClass: 'text-left' },
+          ],
+
+          slotsFields: [
+            { key: 'slot', label: 'Slot', sortable: false, thStyle: 'width: 20%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'address', label: 'Address', sortable: false, thStyle: 'width: 55%;', thClass: 'text-left', tdClass: 'text-left' },
+            { key: 'info', label: 'Info', sortable: false, thStyle: 'width: 25%;', thClass: 'text-right', tdClass: 'text-right' },
+          ],
+
+          modalAddressAddressOnCardsFields: [
+            { key: 'card', label: 'Card', sortable: false, thStyle: 'width: 70%;', tdClass: 'text-left' },
+            { key: 'slot', label: 'Slot', sortable: false, thStyle: 'width: 30%;', tdClass: 'text-left' },
+          ],
+
+          db: {
+            name: "burnerprotooldata088a",
+            version: 1,
+            schemaDefinition: {
+              cache: '&objectName',
+            },
+            updated: null,
+          },
+        },
+
+        // --- COMPUTED ---
+        computed: {
+
+          activeAddress() {
+            // console.log(moment().format("HH:mm:ss") + " activeAddress");
+            if (this.settings.selectedCard && this.settings.selectedCard in this.settings.cards) {
+              if (this.settings.cards[this.settings.selectedCard].selectedSlot) {
+                return this.settings.cards[this.settings.selectedCard].slots[this.settings.cards[this.settings.selectedCard].selectedSlot].address;
+              }
+            }
+            return null;
+          },
+          activeCardName() {
+            console.log(moment().format("HH:mm:ss") + " activeCardName");
+            if (this.settings.selectedCard && this.settings.selectedCard in this.settings.cards) {
+              return this.settings.cards[this.settings.selectedCard].name;
+            }
+            return null;
+          },
+          activeCardGraffiti() {
+            console.log(moment().format("HH:mm:ss") + " activeCardGraffiti");
+            if (this.settings.selectedCard && this.settings.selectedCard in this.settings.cards) {
+              return this.settings.cards[this.settings.selectedCard].graffiti;
+            }
+            return null;
+          },
+
+          cardsOptions() {
+            const results = [];
+            if (Object.keys(this.settings.cards) == 0) {
+              results.push({ value: null, text: "(Scan NFC to begin)" });
+            }
+            for (const [cardId, cardData] of Object.entries(this.settings.cards)) {
+              const address = cardData.initialised ? cardData.slots[cardData.selectedSlot].address : "(Uninitialised)";
+              const name = cardData.initialised ? cardData.name || address.substring(0, 10) : "(Uninitialised)";
+              results.push({ value: cardId, text: name });
+            }
+            // const keys = Object.keys(this.slots);
+            // keys.sort((a, b) => {
+            //   return parseInt(b) - parseInt(a);
+            // });
+            // for (const key of keys) {
+            //   results.push({ value: key, text: '' + key + '. ' + this.slots[key].address.substring(0, 10) + '...' + this.slots[key].address.slice(-8) })
+            // }
+            return results;
+          },
+
+          filteredSortedCards() {
+            const results = [];
+            let regex = null;
+            if (this.settings.cardsTable.filter != null && this.settings.cardsTable.filter.length > 0) {
+              try {
+                regex = new RegExp(this.settings.cardsTable.filter, 'i');
+              } catch (e) {
+                console.log(moment().format("HH:mm:ss") + " filteredSortedCards - regex error: " + e.message);
+                regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
+              }
+            }
+            for (const [cardId, cardData] of Object.entries(this.settings.cards)) {
+              let include = true;
+              const address = cardData.initialised ? cardData.slots[cardData.selectedSlot].address : "Uninitialised";
+              if (regex && !regex.test(address) && !regex.test(cardData.name)) {
+                include = false;
+              }
+              if (include) {
+                results.push( { cardId, ...cardData, address } );
+              }
+            }
+            if (this.settings.cardsTable.sortOption == 'addressasc') {
+              results.sort((a, b) => {
+                const addressA = a.initialised ? a.slots[a.selectedSlot].address : "Uninitialised";
+                const addressB = b.initialised ? b.slots[b.selectedSlot].address : "Uninitialised";
+                return ('' + addressA).localeCompare(addressB);
+              });
+            } else if (this.settings.cardsTable.sortOption == 'addressdsc') {
+              results.sort((a, b) => {
+                const addressA = a.initialised ? a.slots[a.selectedSlot].address : "Uninitialised";
+                const addressB = b.initialised ? b.slots[b.selectedSlot].address : "Uninitialised";
+                return ('' + addressB).localeCompare(addressA);
+              });
+            } else if (this.settings.cardsTable.sortOption == 'nameasc') {
+              results.sort((a, b) => {
+                const addressA = a.initialised ? a.slots[a.selectedSlot].address : "Uninitialised";
+                const addressB = b.initialised ? b.slots[b.selectedSlot].address : "Uninitialised";
+                const nameA = a.initialised ? a.name || addressA.substring(0, 10) : "Uninitialised";
+                const nameB = b.initialised ? b.name || addressB.substring(0, 10) : "Uninitialised";
+                return ('' + nameA).localeCompare(nameB);
+              });
+            } else if (this.settings.cardsTable.sortOption == 'namedsc') {
+              results.sort((a, b) => {
+                const addressA = a.initialised ? a.slots[a.selectedSlot].address : "Uninitialised";
+                const addressB = b.initialised ? b.slots[b.selectedSlot].address : "Uninitialised";
+                const nameA = a.initialised ? a.name || addressA.substring(0, 10) : "Uninitialised";
+                const nameB = b.initialised ? b.name || addressB.substring(0, 10) : "Uninitialised";
+                return ('' + nameB).localeCompare(nameA);
+              });
+            }
+            return results;
+          },
+          pagedFilteredSortedCards() {
+            const results = this.filteredSortedCards.slice((this.settings.cardsTable.currentPage - 1) * this.settings.cardsTable.pageSize, this.settings.cardsTable.currentPage * this.settings.cardsTable.pageSize);
+            // console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedCards - results: " + JSON.stringify(results, null, 2));
+            return results;
+          },
+
+          filteredSortedAddresses() {
+            // console.log(moment().format("HH:mm:ss") + " filteredSortedAddresses - this.settings.addresses: " + JSON.stringify(this.settings.addresses, null, 2));
+            const results = [];
+            let regex = null;
+            if (this.settings.addressesTable.filter != null && this.settings.addressesTable.filter.length > 0) {
+              try {
+                regex = new RegExp(this.settings.addressesTable.filter, 'i');
+              } catch (e) {
+                console.log(moment().format("HH:mm:ss") + " filteredSortedAddresses - regex error: " + e.message);
+                regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
+              }
+            }
+            const nfcCardAddresses = {};
+            for (const [cardId, cardData] of Object.entries(this.settings.cards)) {
+              for (const [slot, slotData] of Object.entries(cardData.slots)) {
+                if (!(slotData.address in nfcCardAddresses)) {
+                  nfcCardAddresses[slotData.address] = cardData.name + ' - #' + slot;
+                }
+              }
+            }
+            for (const [address, addressData] of Object.entries(this.settings.addresses)) {
+              let include = true;
+              if (regex && !regex.test(address) && !regex.test(addressData.name)) {
+                include = false;
+              }
+              let type = addressData.type;
+              if (address in nfcCardAddresses) {
+                type = "nfccard";
+              }
+              if (this.settings.addressesTable.addressType && this.settings.addressesTable.addressType != type) {
+                include = false;
+              }
+              if (include) {
+                results.push( { address, ...addressData, type } );
+              }
+            }
+            if (this.settings.addressesTable.sortOption == 'addressasc') {
+              results.sort((a, b) => {
+                return ('' + a.address).localeCompare(b.address);
+              });
+            } else if (this.settings.addressesTable.sortOption == 'addressdsc') {
+              results.sort((a, b) => {
+                return ('' + b.address).localeCompare(a.address);
+              });
+            } else if (this.settings.addressesTable.sortOption == 'nameasc') {
+              results.sort((a, b) => {
+                const nameA = a.name || a.address;
+                const nameB = b.name || b.address;
+                return ('' + nameA).localeCompare(nameB);
+              });
+            } else if (this.settings.addressesTable.sortOption == 'namedsc') {
+              results.sort((a, b) => {
+                const nameA = a.name || a.address;
+                const nameB = b.name || b.address;
+                return ('' + nameB).localeCompare(nameA);
+              });
+            }
+            return results;
+          },
+          pagedFilteredSortedAddresses() {
+            const results = this.filteredSortedAddresses.slice((this.settings.addressesTable.currentPage - 1) * this.settings.addressesTable.pageSize, this.settings.addressesTable.currentPage * this.settings.addressesTable.pageSize);
+            // console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedAddresses - results: " + JSON.stringify(results, null, 2));
+            return results;
+          },
+
+          slotsOptions() {
+            const results = [];
+            results.push({ value: null, text: "Select address" });
+            const keys = Object.keys(this.slots);
+            keys.sort((a, b) => {
+              return parseInt(b) - parseInt(a);
+            });
+            for (const key of keys) {
+              results.push({ value: key, text: '' + key + '. ' + this.slots[key].address.substring(0, 10) + '...' + this.slots[key].address.slice(-8) })
+            }
+            return results;
+          },
+
+          // TODO: Delete
+          filteredSortedSlots() {
+            const results = [];
+            for (const [slot, slotData] of Object.entries(this.slots)) {
+              results.push( { slot, ...slotData } );
+            }
+            results.sort((a, b) => {
+              return b.slot - a.slot;
+            });
+            return results;
+          },
+
+          slots() {
+            const results = [];
+            if (this.modalCard.cardId && this.modalCard.cardId in this.settings.cards) {
+              for (const [slot, slotData] of Object.entries(this.settings.cards[this.modalCard.cardId].slots)) {
+                results.push({ slot, ...slotData })
+              }
+            }
+            return results;
+          },
+
+          modalCardCardStatus() {
+            let code = null;
+            let message = null;
+            if (this.modalCard.cardId && this.modalCard.cardId in this.settings.cards) {
+              if (!this.settings.cards[this.modalCard.cardId].initialised) {
+                code = "noninitialised";
+                message = "This card has not been initialised";
+              } else if (this.settings.cards[this.modalCard.cardId].slots["9"]) {
+                const slot9 = this.settings.cards[this.modalCard.cardId].slots["9"];
+                if (slot9.isExported && !slot9.isImported) {
+                  code = "exported";
+                  message = "This card has been duplicated - slot 9 private key has been exported";
+                } else if (!slot9.isExported && slot9.isImported) {
+                  code = "imported";
+                  message = "This card is a duplicate - slot 9 private key has been imported";
+                } else if (slot9.isExported && slot9.isImported) {
+                  code = "importedandexported";
+                  message = "This card is a duplicate that has been duplicated - slot 9 private key has been imported, then exported";
+                } else {
+                  code = "notimportedorexported";
+                  message = "This card has not been duplicated - slot 9 private key has been not been imported or exported";
+                }
+              }
+            }
+            return { code, message };
+          },
+
+          modalAddressAddressOnCards() {
+            const results = [];
+            for (const [cardId, cardData] of Object.entries(this.settings.cards)) {
+              const address = cardData.initialised ? cardData.slots[cardData.selectedSlot].address : "Uninitialised";
+              const name = cardData.initialised ? cardData.name || address.substring(0, 10) : "Uninitialised";
+              for (const [slot, slotData] of Object.entries(cardData.slots)) {
+                if (this.modalAddress.address == slotData.address) {
+                  results.push({ name, slot, selected: slot == cardData.selectedSlot });
+                }
+              }
+            }
+            return results;
+          },
+
+          modalAddressAddressType() {
+            // console.log(moment().format("HH:mm:ss") + " modalAddressAddressType - this.modalAddress.address: " + this.modalAddress.address);
+            if (this.modalAddressAddressOnCards.length > 0) {
+              return "nfccard";
+            } else {
+              if (this.modalAddress.address in this.settings.addresses && this.settings.addresses[this.modalAddress.address].type) {
+                return this.settings.addresses[this.modalAddress.address].type;
+              }
+              if (this.modalAddress.address in CUSTOMNAMES) {
+                return CUSTOMNAMES[this.modalAddress.address][0];
+              }
+            }
+            return null;
+          },
+
+          modalAddressAddressName() {
+            // console.log(moment().format("HH:mm:ss") + " modalAddressAddressName - this.modalAddress.address: " + this.modalAddress.address);
+            if (this.modalAddress.address in this.settings.addresses && this.settings.addresses[this.modalAddress.address].name) {
+              return this.settings.addresses[this.modalAddress.address].name;
+            }
+            if (this.modalAddress.address in CUSTOMNAMES) {
+              return CUSTOMNAMES[this.modalAddress.address][1];
+            }
+            return null;
+          },
+
+          modalAddressAddressDecimals() {
+            // console.log(moment().format("HH:mm:ss") + " modalAddressAddressDecimals - this.modalAddress.address: " + this.modalAddress.address);
+            if (this.modalAddress.address in this.settings.addresses && this.settings.addresses[this.modalAddress.address].name) {
+              return this.settings.addresses[this.modalAddress.address].decimals;
+            }
+            if (this.modalAddress.address in CUSTOMNAMES) {
+              return CUSTOMNAMES[this.modalAddress.address][3];
+            }
+            return null;
+          },
+
+          tokens() {
+            // console.log(moment().format("HH:mm:ss") + " tokens - this.activeAddress: " + this.activeAddress);
+            const txFlows = [];
+            for (const [chainId, chainData] of Object.entries(this.activeAddress && this.etherscanData[this.activeAddress] || {})) {
+              for (const [txHash, txData] of Object.entries(chainData)) {
+                const info = getTxFlows(chainId, txHash, txData, this.activeAddress);
+                if (info.length > 0) {
+                  txFlows.push(...info);
+                }
+              }
+            }
+            txFlows.sort((a, b) => {
+              if (a.blockNumber == b.blockNumber) {
+                return ('' + a.txHash).localeCompare(b.txHash);
+              } else {
+                return a.blockNumber - b.blockNumber;
+              }
+            });
+            const collator = {};
+            for (const txFlow of txFlows) {
+              if (!(txFlow.chainId in collator)) {
+                collator[txFlow.chainId] = {};
+              }
+              if (txFlow.from == this.activeAddress || txFlow.to == this.activeAddress) {
+                if (txFlow.type == "value" || txFlow.type == "internal" || txFlow.type == "gas") {
+                  if (!("eth" in collator[txFlow.chainId])) {
+                    collator[txFlow.chainId]["eth"] = {
+                      type: "eth",
+                      balance: 0,
+                      flows: [],
+                    };
+                  }
+                  if (txFlow.from == this.activeAddress) {
+                    collator[txFlow.chainId]["eth"].balance = ethers.BigNumber.from(collator[txFlow.chainId]["eth"].balance).sub(txFlow.tokens).toString();
+                    collator[txFlow.chainId]["eth"].flows.push({ tokens: ethers.BigNumber.from("0").sub(txFlow.tokens).toString(), timestamp: txFlow.timestamp, txHash: txFlow.txHash, type: txFlow.type });
+                  }
+                  if (txFlow.to == this.activeAddress) {
+                    collator[txFlow.chainId]["eth"].balance = ethers.BigNumber.from(collator[txFlow.chainId]["eth"].balance).add(txFlow.tokens).toString();
+                    collator[txFlow.chainId]["eth"].flows.push({ tokens: ethers.BigNumber.from(txFlow.tokens).toString(), timestamp: txFlow.timestamp, txHash: txFlow.txHash, type: txFlow.type });
+                  }
+                } else if (txFlow.type == "erc20") {
+                  if (!(txFlow.token in collator[txFlow.chainId])) {
+                    collator[txFlow.chainId][txFlow.token] = {
+                      type: "erc20",
+                      balance: "0",
+                      flows: [],
+                    };
+                  }
+                  if (txFlow.from == this.activeAddress) {
+                    collator[txFlow.chainId][txFlow.token].balance = ethers.BigNumber.from(collator[txFlow.chainId][txFlow.token].balance).sub(txFlow.tokens).toString();
+                    collator[txFlow.chainId][txFlow.token].flows.push({ tokens: ethers.BigNumber.from("0").sub(txFlow.tokens).toString(), timestamp: txFlow.timestamp, txHash: txFlow.txHash, type: txFlow.type });
+                  }
+                  if (txFlow.to == this.activeAddress) {
+                    collator[txFlow.chainId][txFlow.token].balance = ethers.BigNumber.from(collator[txFlow.chainId][txFlow.token].balance).add(txFlow.tokens).toString();
+                    collator[txFlow.chainId][txFlow.token].flows.push({ tokens: ethers.BigNumber.from(txFlow.tokens).toString(), timestamp: txFlow.timestamp, txHash: txFlow.txHash, type: txFlow.type });
+                  }
+                }
+              }
+            }
+            const results = [];
+            for (const [chainId, chainData] of Object.entries(collator)) {
+              for (const [token, tokenData] of Object.entries(collator[chainId])) {
+                const flows = tokenData.flows;
+                flows.sort((a, b) => {
+                  if (a.blockNumber == b.blockNumber) {
+                    return ('' + a.txHash).localeCompare(b.txHash);
+                  } else {
+                    return b.blockNumber - a.blockNumber;
+                  }
+                });
+                results.push({ chainId, token, balance: tokenData.balance, flows });
+              }
+            }
+            return results;
+          },
+          filteredSortedTokens() {
+            return this.tokens;
+          },
+          pagedFilteredSortedTokens() {
+            return this.filteredSortedTokens.slice((this.settings.tokensTable.currentPage - 1) * this.settings.tokensTable.pageSize, this.settings.tokensTable.currentPage * this.settings.tokensTable.pageSize);
+          },
+
+          nfts() {
+            const results = [];
+            for (const [chainId, chainData] of Object.entries(this.activeAddress && this.reservoirData[this.activeAddress] || {})) {
+              for (const [contract, contractData] of Object.entries(chainData)) {
+                for (const [tokenId, tokenData] of Object.entries(contractData.tokens)) {
+                  results.push({
+                    chainId,
+                    contract,
+                    type: contractData.type,
+                    collectionName: contractData.name,
+                    collectionSlug: contractData.slug,
+                    tokenId,
+                    ...tokenData,
+                  });
+                }
+              }
+            }
+            return results;
+          },
+          filteredSortedNFTs() {
+            return this.nfts;
+          },
+          pagedFilteredSortedNFTs() {
+            return this.filteredSortedNFTs.slice((this.settings.nftsTable.currentPage - 1) * this.settings.nftsTable.pageSize, this.settings.nftsTable.currentPage * this.settings.nftsTable.pageSize);
+          },
+
+          txs() {
+            const results = [];
+            for (const [chainId, chainData] of Object.entries(this.activeAddress && this.etherscanData[this.activeAddress] || {})) {
+              // console.log(chainId + " => " + JSON.stringify(chainData).substring(0, 200));
+              for (const [txHash, txData] of Object.entries(chainData)) {
+                // console.log(chainId + "/" + txHash.substring(0, 20) + " => " + JSON.stringify(txData).substring(0, 200));
+                const info = inferTxInfo(txData);
+                results.push({
+                  ...info,
+                  chainId,
+                  txHash,
+                  ...txData,
+                });
+                // break;
+              }
+              // for (const [contract, contractData] of Object.entries(chainData)) {
+              //   for (const [tokenId, tokenData] of Object.entries(contractData.tokens)) {
+              //     results.push({
+              //       chainId,
+              //       contract,
+              //       type: contractData.type,
+              //       collectionName: contractData.name,
+              //       collectionSlug: contractData.slug,
+              //       tokenId,
+              //       ...tokenData,
+              //     });
+              //   }
+              // }
+            }
+            return results;
+          },
+          filteredSortedTxs() {
+            return this.txs;
+          },
+          pagedFilteredSortedTxs() {
+            return this.filteredSortedTxs.slice((this.settings.txsTable.currentPage - 1) * this.settings.txsTable.pageSize, this.settings.txsTable.currentPage * this.settings.txsTable.pageSize);
+          },
+        },
+
+        // --- METHODS ---
+        methods: {
+          async showModalNFT(item) {
+            // console.log(moment().format("HH:mm:ss") + " showModalNFT - item: " + JSON.stringify(item, null, 2));
+            this.modalNFT.item = item;
+            this.$bvModal.show('modal-nft');
+            await this.modalNFTRetrieveParameters();
+          },
+          showModalAddress(address) {
+            console.log(moment().format("HH:mm:ss") + " showModalAddress: " + address);
+            this.modalAddress.address = address;
+            this.$bvModal.show('modal-address');
+          },
+          showModalNewAddress(address) {
+            console.log(moment().format("HH:mm:ss") + " showModalNewAddress");
+            this.modalNewAddress.address = null;
+            this.modalNewAddress.alt = null;
+            this.modalNewAddress.addressOk = null;
+            this.modalNewAddress.addressError = null;
+            this.$bvModal.show('modal-newaddress');
+          },
+
+          cardsRowSelected(item) {
+            console.log(moment().format("HH:mm:ss") + " cardsRowSelected - item: " + JSON.stringify(item, null, 2));
+            if (item && item.length > 0) {
+              this.modalCard.cardId = item[0].cardId;
+              this.$bvModal.show('modal-card');
+              this.$refs.cardsTable.clearSelected();
+            }
+          },
+
+          addressesRowSelected(item) {
+            console.log(moment().format("HH:mm:ss") + " addressesRowSelected - item: " + JSON.stringify(item, null, 2));
+            if (item && item.length > 0) {
+              this.modalAddress.address = item[0].address;
+              this.$bvModal.show('modal-address');
+              this.$refs.addressesTable.clearSelected();
+            }
+          },
+
+          tokensRowSelected(item) {
+            console.log(moment().format("HH:mm:ss") + " tokensRowSelected - item: " + JSON.stringify(item, null, 2));
+            if (item && item.length > 0) {
+              this.modalToken.chainId = item[0].chainId;
+              this.modalToken.token = item[0].token;
+              this.modalToken.type = item[0].type;
+              this.modalToken.balance = item[0].balance;
+              this.modalToken.flows = item[0].flows;
+              this.$bvModal.show('modal-token');
+            //   const account = item[0].account;
+            //   store.dispatch('viewAddress/viewAddress', item[0].account);
+              this.$refs.tokensTable.clearSelected();
+            }
+          },
+
+          modalAddressAddressTypeSelected(type) {
+            // console.log(moment().format("HH:mm:ss") + " modalAddressAddressTypeSelected - type: " + JSON.stringify(type));
+            if (!(this.modalAddress.address in this.settings.addresses)) {
+              Vue.set(this.settings.addresses, this.modalAddress.address, {
+                type,
+                symbol: null,
+                name: null,
+                decimals: null,
+                source: "input",
+              });
+            } else {
+              Vue.set(this.settings.addresses[this.modalAddress.address], 'type', type);
+            }
+            this.saveSettings();
+          },
+          modalAddressAddressNameUpdated(name) {
+            // console.log(moment().format("HH:mm:ss") + " modalAddressAddressNameUpdated - name: " + JSON.stringify(name));
+            if (!(this.modalAddress.address in this.settings.addresses)) {
+              Vue.set(this.settings.addresses, this.modalAddress.address, {
+                type: null,
+                symbol: null,
+                name,
+                decimals: null,
+                source: "input",
+              });
+            } else {
+              Vue.set(this.settings.addresses[this.modalAddress.address], 'name', name);
+            }
+            this.saveSettings();
+          },
+          modalAddressAddressDecimalsUpdated(decimals) {
+            // console.log(moment().format("HH:mm:ss") + " modalAddressAddressDecimalsUpdated - decimals: " + JSON.stringify(decimals));
+            if (!(this.modalAddress.address in this.settings.addresses)) {
+              Vue.set(this.settings.addresses, this.modalAddress.address, {
+                type: null,
+                symbol: null,
+                name: null,
+                decimals,
+                source: "input",
+              });
+            } else {
+              Vue.set(this.settings.addresses[this.modalAddress.address], 'decimals', decimals);
+            }
+            this.saveSettings();
+          },
+          async modalNewAddressAddressUpdated(address) {
+            console.log(moment().format("HH:mm:ss") + " modalNewAddressAddressUpdated - address: " + address);
+            this.modalNewAddress.alt = null;
+            this.modalNewAddress.addressOk = null;
+            this.modalNewAddress.addressError = null;
+            if (address) {
+              const provider = new ethers.providers.Web3Provider(window.ethereum);
+              try {
+                this.modalAddress.address = ethers.utils.getAddress(address);
+                this.modalNewAddress.addressOk = true;
+                try {
+                  this.modalNewAddress.alt = await provider.lookupAddress(this.modalAddress.address);
+                } catch (e1) {
+                }
+              } catch (e1) {
+                try {
+                  this.modalNewAddress.alt = await provider.resolveName(address);
+                  if (this.modalNewAddress.alt) {
+                    this.modalNewAddress.address = address;
+                    this.modalNewAddress.type = "ens";
+                    this.modalNewAddress.addressOk = true;
+                  } else {
+                    this.modalNewAddress.addressError = "Invalid address";
+                  }
+                } catch (e) {
+                  this.modalNewAddress.addressError = "Invalid address";
+                }
+              }
+              if (!this.modalNewAddress.addressError) {
+                if (this.modalAddress.address && this.modalAddress.address in this.settings.addresses) {
+                  this.modalNewAddress.addressError = "Duplicate entry";
+                } else if (this.modalAddress.alt && this.modalAddress.alt in this.settings.addresses) {
+                  this.modalNewAddress.addressError = "Duplicate entry";
+                }
+              }
+            }
+          },
+          modalNewAddressAdd() {
+            console.log(moment().format("HH:mm:ss") + " modalNewAddressAdd - this.modalNewAddress: " + JSON.stringify(this.modalNewAddress, null, 2));
+            this.addOrUpdateAddress({
+              address: this.modalNewAddress.address,
+              type: this.modalNewAddress.type,
+              name: this.modalNewAddress.name,
+              description: this.modalNewAddress.description,
+              slug: this.modalNewAddress.slug,
+              decimals: this.modalNewAddress.decimals,
+              source: "input",
+            });
+            this.saveSettings();
+          },
+          updateName(cardId, name) {
+            console.log(moment().format("HH:mm:ss") + " updateName: " + JSON.stringify(cardId) + ", name: " + JSON.stringify(name));
+            if (cardId in this.settings.cards) {
+              Vue.set(this.settings.cards[cardId], 'name', name);
+            }
+            this.saveSettings();
+          },
+          updateSelectedSlot(cardId, selectedSlot) {
+            console.log(moment().format("HH:mm:ss") + " updateSelectedSlot - cardId: " + cardId + ", selectedSlot: " + selectedSlot);
+            if (cardId in this.settings.cards) {
+              Vue.set(this.settings.cards[cardId], 'selectedSlot', selectedSlot);
+            }
+            this.saveSettings();
+          },
+          updateSelectedCard(selectedCard) {
+            console.log(moment().format("HH:mm:ss") + " updateSelectedCard - selectedCard: " + selectedCard);
+            this.settings.selectedCard = selectedCard;
+            this.saveSettings();
+          },
+          showModalCard(cardId, name) {
+            console.log(moment().format("HH:mm:ss") + " showModalCard - cardId: " + cardId + ", name: " + name);
+            this.modalCard.cardId = cardId;
+            // this.modalCard.name = name;
+            this.$bvModal.show('modal-card');
+          },
+          modalCardDeleteCard(cardId, name) {
+            console.log(moment().format("HH:mm:ss") + " modalCardDeleteCard - cardId: " + cardId + ", name: " + name);
+            this.$bvModal.msgBoxConfirm("Delete card" + (name ? (" '" + name + "'?") : "?"), {
+                title: 'Please Confirm',
+                size: 'sm',
+                buttonSize: 'sm',
+                okVariant: 'danger',
+                okTitle: 'Yes',
+                cancelTitle: 'No',
+                footerClass: 'p-2',
+                hideHeaderClose: false,
+                // centered: true
+              })
+              .then(async value1 => {
+                if (value1) {
+                  event.preventDefault();
+                  Vue.delete(this.settings.cards, cardId);
+                  this.settings.selectedCard = Object.keys(this.settings.cards).length > 0 && Object.keys(this.settings.cards)[0] || null;
+                  this.saveSettings();
+                  this.$bvModal.hide('modal-card');
+                }
+              })
+              .catch(err => {
+                // An error occurred
+              });
+          },
+          showModalGraffiti() {
+            this.modalGraffiti.graffiti = this.activeCardGraffiti;
+            this.modalGraffiti.prompt = "Click, then scan NFC card to set the graffiti";
+            this.$bvModal.show('modal-graffiti');
+          },
+          async updateGraffiti() {
+            localStorage.setItem('DEBUG_LIBHALO_WEB', '1'); // https://github.com/arx-research/libhalo/blob/master/docs/api-web.md#debugging-through-the-developers-console
+            console.log(moment().format("HH:mm:ss") + " updateGraffiti");
+            const command = {
+              name: "store_graffiti", // https://halo-demos.arx.org/examples/graffiti.html
+              slotNo: 1,
+              data: this.modalGraffiti.graffiti,
+            };
+            try {
+                const result = await execHaloCmdWeb(command);
+                console.log(JSON.stringify(result, null, 4));
+                this.debug = JSON.stringify(result, null, 2);
+                this.modalGraffiti.prompt = "Graffiti updated. Rescan this NFC card from the main menu";
+            } catch (e) {
+                console.log(moment().format("HH:mm:ss") + " updateGraffiti - ERROR: " + e.message);
+                this.debug = e.message;
+                this.modalGraffiti.prompt = "Graffiti updated failed: " + e.message;
+            }
+          },
+          async scanNFC() {
+            localStorage.setItem('DEBUG_LIBHALO_WEB', '1'); // https://github.com/arx-research/libhalo/blob/master/docs/api-web.md#debugging-through-the-developers-console
+            console.log(moment().format("HH:mm:ss") + " scanNFC");
+            const command = {
+              name: "get_data_struct", // https://github.com/arx-research/libhalo/blob/master/docs/halo-command-set.md#command-get_data_struct
+              spec: "compressedPublicKey:1,compressedPublicKey:2,compressedPublicKey:3,compressedPublicKey:4,compressedPublicKey:5,compressedPublicKey:6,compressedPublicKey:7,compressedPublicKey:8,compressedPublicKey:9,keySlotFlags:1,keySlotFlags:2,keySlotFlags:3,keySlotFlags:4,keySlotFlags:5,keySlotFlags:6,keySlotFlags:7,keySlotFlags:8,keySlotFlags:9,graffiti:1",
+            };
+            try {
+                const result = await execHaloCmdWeb(command);
+                console.log(JSON.stringify(result, null, 4));
+                this.processScanResult(result);
+                this.debug = JSON.stringify(this.settings, null, 2);
+            } catch (e) {
+                console.log(moment().format("HH:mm:ss") + " scanNFC - ERROR: " + e.message);
+                this.debug = e.message;
+            }
+          },
+          async resetData() {
+            this.$bvModal.msgBoxConfirm('Reset all data?', {
+                title: 'Please Confirm',
+                size: 'sm',
+                buttonSize: 'sm',
+                okVariant: 'danger',
+                okTitle: 'Yes',
+                cancelTitle: 'No',
+                footerClass: 'p-2',
+                hideHeaderClose: false,
+                // centered: true
+              })
+              .then(async value1 => {
+                if (value1) {
+                  event.preventDefault();
+                  delete localStorage.burnerProToolSettings;
+                  const db = new Dexie(this.db.name);
+                  db.version(this.db.version).stores(this.db.schemaDefinition);
+                  const status = await db.cache.clear();
+                  db.close();
+                  alert('This page will be reloaded in 5 seconds.')
+                  setTimeout(function() {
+                    window.location.reload();
+                  }, 5000);
+                }
+              })
+              .catch(err => {
+                // An error occurred
+              });
+          },
+
+          async modalNFTRetrieveParameters() {
+            console.log(moment().format("HH:mm:ss") + " modalNFTRetrieveParameters - modalNFT: " + JSON.stringify(this.modalNFT, null, 2));
+
+            // TODO: Testing
+            this.modalNFT.to = "0xA2113f1E9A66c3B0A75BB466bbBfeEeC987ac92e";
+            this.modalNFT.gasLimit = "123456";
+
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const feeData = await provider.getFeeData();
+            console.log(moment().format("HH:mm:ss") + " modalNFTRetrieveParameters - feeData: " + JSON.stringify(feeData, bigNumberReplacer, 2));
+            // feeData: {
+            //   "lastBaseFeePerGas": "7944313780",
+            //   "maxFeePerGas": "17388627560",
+            //   "maxPriorityFeePerGas": "1500000000",
+            //   "gasPrice": "7947083611"
+            // }
+
+            this.modalNFT.maxFeePerGas = ethers.utils.formatUnits(feeData.maxFeePerGas, "gwei");
+            console.log(moment().format("HH:mm:ss") + " modalNFTRetrieveParameters - this.modalNFT.maxFeePerGas: " + this.modalNFT.maxFeePerGas);
+
+            this.modalNFT.maxPriorityFeePerGas = ethers.utils.formatUnits(feeData.maxPriorityFeePerGas, "gwei");
+            console.log(moment().format("HH:mm:ss") + " modalNFTRetrieveParameters - this.modalNFT.maxPriorityFeePerGas: " + this.modalNFT.maxPriorityFeePerGas);
+
+            this.modalNFT.nonce = await provider.getTransactionCount(this.activeAddress);
+            console.log(moment().format("HH:mm:ss") + " modalNFTRetrieveParameters - this.modalNFT.nonce: " + this.modalNFT.nonce);
+            // const signer = new ethers.VoidSigner(this.activeAddress, provider);
+            // const contract = new ethers.Contract(ethers.utils.getAddress(this.modalNFT.item.contract), ERC721ABI, signer);
+            // const from = await signer.getAddress();
+            // console.log("from: " + from);
+            // const estimatedGas = await contract.transferFrom(from, ethers.utils.getAddress(this.modalNFT.to), this.modalNFT.item.tokenId);
+            // console.log("estimatedGas: " + estimatedGas);
+          },
+
+          async modalNFTTransfer() {
+            console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - modalNFT: " + JSON.stringify(this.modalNFT, null, 2));
+
+            let encodedData;
+
+            const from = ethers.utils.getAddress(this.activeAddress);
+            // console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - from: " + from);
+            const to = ethers.utils.getAddress(this.modalNFT.to);
+            // console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - to: " + to);
+
+            if (this.modalNFT.item.type == "erc721") {
+              const erc721TransferFromAbi = [
+                "function transferFrom(address from, address to, uint256 tokenId) external payable", // https://eips.ethereum.org/EIPS/eip-721
+              ];
+              const interface = new ethers.utils.Interface(erc721TransferFromAbi);
+              encodedData = interface.encodeFunctionData("transferFrom", [from, to, this.modalNFT.item.tokenId]);
+              console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - ERC-721 encodedData: " + JSON.stringify(encodedData, null, 2));
+            } else {
+              const erc1155SafeTransferFromAbi = [
+                "function safeTransferFrom(address from, address to, uint256 tokenId, uint256 tokens, bytes calldata _data) external", // https://eips.ethereum.org/EIPS/eip-1155
+              ];
+              const interface = new ethers.utils.Interface(erc1155SafeTransferFromAbi);
+              encodedData = interface.encodeFunctionData("safeTransferFrom", [from, to, this.modalNFT.item.tokenId, ethers.BigNumber.from(this.modalNFT.tokens), "0x"]);
+              console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - ERC-1155 encodedData: " + JSON.stringify(encodedData, null, 2));
+            }
+
+            const tx = {
+              to: ethers.utils.getAddress(this.modalNFT.item.contract),
+              // from: this.activeAddress, // TODO: Can use this for estimateGas
+              // from: "0xA2113f1E9A66c3B0A75BB466bbBfeEeC987ac92e", // TODO: for testing
+              value: "0",
+              data: encodedData,
+              chainId: parseInt(this.modalNFT.item.chainId),
+              nonce: parseInt(this.modalNFT.nonce),
+              gasPrice: null,
+              gasLimit: parseInt(this.modalNFT.gasLimit),
+              type: 2,
+              maxFeePerGas: ethers.BigNumber.from(ethers.utils.parseUnits(this.modalNFT.maxFeePerGas, "gwei")).toString(),
+              maxPriorityFeePerGas: ethers.BigNumber.from(ethers.utils.parseUnits(this.modalNFT.maxPriorityFeePerGas, "gwei")).toString(),
+            };
+            console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - tx: " + JSON.stringify(tx, null, 2));
+
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const estimatedGas = await provider.estimateGas(tx);
+            console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - estimatedGas: " + estimatedGas);
+            // const signer = new ethers.VoidSigner(this.activeAddress, provider);
+            // const contract = new ethers.Contract(ethers.utils.getAddress(this.modalNFT.item.contract), ERC721ABI, signer);
+            // const from = await signer.getAddress();
+            // console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - from: " + from);
+
+            const serializedTransaction = ethers.utils.serializeTransaction(tx);
+            console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - serializedTransaction: " + JSON.stringify(serializedTransaction, null, 2));
+            const digest = ethers.utils.keccak256(serializedTransaction);
+            console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - digest: " + JSON.stringify(digest, null, 2));
+
+            const decodedTransaction = ethers.utils.parseTransaction(serializedTransaction);
+            console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - decodedTransaction: " + JSON.stringify(decodedTransaction, bigNumberReplacer, 2));
+            let command = {
+                name: "sign",
+                keyNo: this.selectedSlot,
+                digest: digest.substring(2),
+                password: this.modalNFT.password,
+            };
+            console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - command: " + JSON.stringify({ ...command, password: undefined }, null, 2));
+            try {
+                const result = await execHaloCmdWeb(command);
+                console.log(JSON.stringify(result, null, 4));
+                if (result.signature && result.signature.raw) {
+                  const v = result.signature.raw.v;
+                  const r = "0x" + result.signature.raw.r;
+                  const s = "0x" + result.signature.raw.s;
+                  const signature = ethers.utils.joinSignature({ v, r, s });
+                  // const provider = new ethers.providers.Web3Provider(window.ethereum);
+                  try {
+                    const serializedTransaction = ethers.utils.serializeTransaction(tx, signature);
+                    const txResult = await provider.sendTransaction(serializedTransaction);
+                    console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - txResult: " + JSON.stringify(txResult, bigNumberReplacer, 2));
+                  } catch (e1) {
+                    console.log(moment().format("HH:mm:ss") + " modalNFTTransfer ERROR: " + e1.message);
+                    this.debug = "sendTransaction ERROR: " + e1.message;
+                  }
+                }
+            } catch (e) {
+              console.log(e);
+              console.log(moment().format("HH:mm:ss") + " modalNFTTransfer - execHaloCmdWeb - ERROR: " + e.message);
+            }
+          },
+
+          async insertTestData() {
+            console.log(moment().format("HH:mm:ss") + " insertTestData");
+            const result = {
+                "isPartial": false,
+                "data": {
+                    "compressedPublicKey:1": "02902c2a69ad17083d4cf83d1a8a742d3b16fb1c6ccd803bea5c870c7f60c0f6a9",
+                    "compressedPublicKey:2": "0292a44beb3d985876bd4a5562c04e7cb30fb4ac68e4cac8bc04f9b45948f3b66d",
+                    "compressedPublicKey:3": {
+                        "error": "keySlotNotGenerated"
+                    },
+                    "compressedPublicKey:4": {
+                        "error": "keySlotNotGenerated"
+                    },
+                    "compressedPublicKey:5": {
+                        "error": "keySlotNotGenerated"
+                    },
+                    "compressedPublicKey:6": {
+                        "error": "keySlotNotGenerated"
+                    },
+                    "compressedPublicKey:7": {
+                        "error": "keySlotNotGenerated"
+                    },
+                    "compressedPublicKey:8": "028efa8726964184dba9c863dfac81342b9295fd222d76e8041c8a4646aa655fdf",
+                    "compressedPublicKey:9": "031b94f277b2be5a667c5a8f0e78cce51a771d7758f6144b7e69312d71b85fcc47",
+                    "keySlotFlags:1": {
+                        "isPasswordProtected": false,
+                        "rawSignCommandNotUsed": false,
+                        "isImported": false,
+                        "isExported": false
+                    },
+                    "keySlotFlags:2": {
+                        "isPasswordProtected": false,
+                        "rawSignCommandNotUsed": false,
+                        "isImported": false,
+                        "isExported": false
+                    },
+                    "keySlotFlags:3": {
+                        "error": "keySlotNotGenerated"
+                    },
+                    "keySlotFlags:4": {
+                        "error": "keySlotNotGenerated"
+                    },
+                    "keySlotFlags:5": {
+                        "error": "keySlotNotGenerated"
+                    },
+                    "keySlotFlags:6": {
+                        "error": "keySlotNotGenerated"
+                    },
+                    "keySlotFlags:7": {
+                        "error": "keySlotNotGenerated"
+                    },
+                    "keySlotFlags:8": {
+                        "isPasswordProtected": true,
+                        "rawSignCommandNotUsed": true,
+                        "isImported": false,
+                        "isExported": false
+                    },
+                    "keySlotFlags:9": {
+                        "isPasswordProtected": true,
+                        "rawSignCommandNotUsed": false,
+                        "isImported": false,
+                        "isExported": true
+                    },
+                    "graffiti:1": "gmgmgm"
+                }
+            };
+            this.processScanResult(result);
+            const result1 = {
+              "isPartial": false,
+              "data": {
+                "compressedPublicKey:1": "03bb2f4fcf9da68dca98202e26cf9b4499abdbabe064267ea4984c2a9d1a3b3550",
+                "compressedPublicKey:2": "03060b020a2a9cfccfc8ecf1db627042ec2a3ccfa98c3e5d869de269619ce82c96",
+                "compressedPublicKey:3": {
+                  "error": "keySlotNotGenerated"
+                },
+                "compressedPublicKey:4": {
+                  "error": "keySlotNotGenerated"
+                },
+                "compressedPublicKey:5": {
+                  "error": "keySlotNotGenerated"
+                },
+                "compressedPublicKey:6": {
+                  "error": "keySlotNotGenerated"
+                },
+                "compressedPublicKey:7": {
+                  "error": "keySlotNotGenerated"
+                },
+                "compressedPublicKey:8": "031dea64138007a05fec18f03c5ac7fee96513b21d39c95cabe3a094acf824b450",
+                "compressedPublicKey:9": "031b94f277b2be5a667c5a8f0e78cce51a771d7758f6144b7e69312d71b85fcc47",
+                "keySlotFlags:1": {
+                  "isPasswordProtected": false,
+                  "rawSignCommandNotUsed": false,
+                  "isImported": false,
+                  "isExported": false
+                },
+                "keySlotFlags:2": {
+                  "isPasswordProtected": false,
+                  "rawSignCommandNotUsed": false,
+                  "isImported": false,
+                  "isExported": false
+                },
+                "keySlotFlags:3": {
+                  "error": "keySlotNotGenerated"
+                },
+                "keySlotFlags:4": {
+                  "error": "keySlotNotGenerated"
+                },
+                "keySlotFlags:5": {
+                  "error": "keySlotNotGenerated"
+                },
+                "keySlotFlags:6": {
+                  "error": "keySlotNotGenerated"
+                },
+                "keySlotFlags:7": {
+                  "error": "keySlotNotGenerated"
+                },
+                "keySlotFlags:8": {
+                  "isPasswordProtected": true,
+                  "rawSignCommandNotUsed": true,
+                  "isImported": false,
+                  "isExported": false
+                },
+                "keySlotFlags:9": {
+                  "isPasswordProtected": true,
+                  "rawSignCommandNotUsed": false,
+                  "isImported": true,
+                  "isExported": false
+                },
+                "graffiti:1": "GMGMGM"
+              }
+            };
+            this.processScanResult(result1);
+          },
+          processScanResult(result) {
+            console.log(moment().format("HH:mm:ss") + " processScanResults - result: " + JSON.stringify(result, null, 2));
+            if (result && result.data) {
+              const slots = {};
+              for (const [keyAndSlot, value] of Object.entries(result.data)) {
+                const [key, slot] = keyAndSlot.split(/:/);
+                // console.log(moment().format("HH:mm:ss") + " processScanResults - items: " + key + ":" + slot + " => " + JSON.stringify(value));
+                if (key == "compressedPublicKey") {
+                  if (!value.error) {
+                    if (!(('' + slot) in slots)) {
+                      slots[slot] = {
+                        compressedPublicKey: value,
+                        address: ethers.utils.computeAddress("0x" + value),
+                      };
+                    }
+                  }
+                } else if (key == "keySlotFlags") {
+                  if (!value.error) {
+                    if (('' + slot) in slots) {
+                      slots[slot].isPasswordProtected = value.isPasswordProtected;
+                      slots[slot].rawSignCommandNotUsed = value.rawSignCommandNotUsed;
+                      slots[slot].isImported = value.isImported;
+                      slots[slot].isExported = value.isExported;
+                    }
+                  }
+                } else if (key == "graffiti") {
+                  if (!value.error) {
+                    if (('' + slot) in slots) {
+                      slots[slot].graffiti = value;
+                    }
+                  }
+                }
+              }
+              console.log(moment().format("HH:mm:ss") + " processScanResults - slots: " + JSON.stringify(slots, null, 2));
+              const cardId = slots["1"] && slots["1"].address || null;
+              const initialised = !!(slots["9"] && slots["9"].address);
+              const graffiti = slots["1"] && slots["1"].graffiti || null;
+              if (cardId) {
+                if (!(cardId in this.settings.cards)) {
+                  Vue.set(this.settings.cards, cardId, {
+                    name: null,
+                    graffiti,
+                    initialised,
+                    selectedSlot: initialised ? 9 : null,
+                    slots,
+                  });
+                  console.log(moment().format("HH:mm:ss") + " processScanResults - new card: " + JSON.stringify(this.settings.cards, null, 2));
+                } else {
+                  Vue.set(this.settings.cards[cardId], 'slots', slots);
+                  Vue.set(this.settings.cards[cardId], 'graffiti', graffiti);
+                  Vue.set(this.settings.cards[cardId], 'initialised', initialised);
+                  if (!this.settings.cards[cardId].selectedSlot && initialised) {
+                    Vue.set(this.settings.cards[cardId], 'selectedSlot', 9);
+                  }
+                  console.log(moment().format("HH:mm:ss") + " processScanResults - update card: " + JSON.stringify(this.settings.cards, null, 2));
+                }
+                this.settings.selectedCard = cardId;
+                this.saveSettings();
+              }
+            }
+          },
+
+          async signEthTx() {
+            console.log(moment().format("HH:mm:ss") + " signEthTx - action: " + JSON.stringify(this.action, null, 2));
+            const tx = {
+              to: ethers.utils.getAddress(this.action.to),
+              value: ethers.BigNumber.from(ethers.utils.parseUnits(this.action.value, this.action.valueType)).toString(),
+              data: this.action.data,
+              chainId: parseInt(this.action.chainId),
+              nonce: parseInt(this.action.nonce),
+              gasPrice: null,
+              gasLimit: parseInt(this.action.gasLimit),
+              type: parseInt(this.action.transactionType),
+              maxFeePerGas: ethers.BigNumber.from(ethers.utils.parseUnits(this.action.maxFeePerGas, this.action.maxFeePerGasType)).toString(),
+              maxPriorityFeePerGas: ethers.BigNumber.from(ethers.utils.parseUnits(this.action.maxPriorityFeePerGas, this.action.maxPriorityFeePerGasType)).toString(),
+            };
+            console.log(moment().format("HH:mm:ss") + " signEthTx - tx: " + JSON.stringify(tx, null, 2));
+
+            const serializedTransaction = ethers.utils.serializeTransaction(tx);
+            console.log(moment().format("HH:mm:ss") + " signEthTx - serializedTransaction: " + JSON.stringify(serializedTransaction, null, 2));
+            const digest = ethers.utils.keccak256(serializedTransaction);
+            console.log(moment().format("HH:mm:ss") + " signEthTx - digest: " + JSON.stringify(digest, null, 2));
+            // const decodedTransaction = ethers.utils.parseTransaction(serializedTransaction);
+            // console.log(moment().format("HH:mm:ss") + " signEthTx - decodedTransaction: " + JSON.stringify(decodedTransaction, null, 2));
+            let command = {
+                name: "sign",
+                keyNo: this.selectedSlot,
+                digest: digest.substring(2),
+                password: this.action.password,
+            };
+            console.log(moment().format("HH:mm:ss") + " signEthTx - command: " + JSON.stringify(command, null, 2));
+            try {
+                const result = await execHaloCmdWeb(command);
+                console.log(JSON.stringify(result, null, 4));
+                if (result.signature && result.signature.raw) {
+                  const v = result.signature.raw.v;
+                  const r = "0x" + result.signature.raw.r;
+                  const s = "0x" + result.signature.raw.s;
+                  const signature = ethers.utils.joinSignature({ v, r, s });
+                  const provider = new ethers.providers.Web3Provider(window.ethereum);
+                  try {
+                    const serializedTransaction = ethers.utils.serializeTransaction(tx, signature);
+                    const txResult = await provider.sendTransaction(serializedTransaction);
+                    console.log(moment().format("HH:mm:ss") + " signEthTx - txResult: " + JSON.stringify(txResult, bigNumberReplacer, 2));
+                  } catch (e1) {
+                    console.log(moment().format("HH:mm:ss") + " signEthTx ERROR: " + e1.message);
+                    this.debug = "sendTransaction ERROR: " + e1.message;
+                  }
+                }
+            } catch (e) {
+              console.log(e);
+              console.log(moment().format("HH:mm:ss") + " signEthTx - execHaloCmdWeb - ERROR: " + e.message);
+            }
+          },
+
+          // async signingTest() {
+          //   console.log(moment().format("HH:mm:ss") + " signingTest");
+          //   const tx = {
+          //     to: "0x8e872af87b462f2b3b6f42b76b2f1a5f4d240f5e",
+          //     value: ethers.BigNumber.from(ethers.utils.parseUnits("0.000000003", "ether")).toString(),
+          //     data: "0x",
+          //     chainId: "0x1",
+          //     nonce: 5,
+          //     gasLimit: 21000,
+          //     gasPrice: null,
+          //     type: 2,
+          //     maxFeePerGas: ethers.BigNumber.from(ethers.utils.parseUnits("7.0", "gwei")).toString(),
+          //     maxPriorityFeePerGas: ethers.BigNumber.from(ethers.utils.parseUnits("0.007", "gwei")).toString(),
+          //     accessList: [],
+          //     // v: "0x",
+          //     // r: "0x",
+          //     // s: "0x",
+          //   };
+          //   console.log(moment().format("HH:mm:ss") + " signingTest - tx: " + JSON.stringify(tx, null, 2));
+          //   const serializedTransaction = ethers.utils.serializeTransaction(tx, false);
+          //   console.log(moment().format("HH:mm:ss") + " signingTest - serializedTransaction: " + JSON.stringify(serializedTransaction, null, 2));
+          //   const transactionHash = ethers.utils.hashMessage(serializedTransaction);
+          //   console.log(moment().format("HH:mm:ss") + " signingTest - transactionHash: " + JSON.stringify(transactionHash, null, 2));
+          //   const decodedTransaction = ethers.utils.parseTransaction(serializedTransaction);
+          //   console.log(moment().format("HH:mm:ss") + " signingTest - decodedTransaction: " + JSON.stringify(decodedTransaction, null, 2));
+          // },
+
+          // async signingTest1() {
+          //   console.log(moment().format("HH:mm:ss") + " signingTest1");
+          //   const provider = new ethers.providers.Web3Provider(window.ethereum);
+          //   const tx = await provider.getTransaction("0x3eafc1a364a2f7047958bd71f2d1b8c4a4e817584ceb9870d73c98d13d01cf15");
+          //   console.log(moment().format("HH:mm:ss") + " signingTest1 - tx: " + JSON.stringify(tx, null, 2));
+          //   const unsignedTx = {
+          //     to: tx.to,
+          //     value: tx.value,
+          //     data: tx.data,
+          //     gasLimit: tx.gasLimit,
+          //     maxFeePerGas: tx.maxFeePerGas,
+          //     maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
+          //     chainId: tx.chainId,
+          //     nonce: tx.nonce,
+          //     type: tx.type,
+          //   };
+          //   console.log(moment().format("HH:mm:ss") + " signingTest1 - unsignedTx: " + JSON.stringify(unsignedTx, null, 2));
+          //   const serializedTx = ethers.utils.serializeTransaction(unsignedTx);
+          //   console.log(moment().format("HH:mm:ss") + " signingTest1 - serializedTx: " + JSON.stringify(serializedTx, null, 2));
+          //   const { v, r, s } = tx;
+          //   console.log(moment().format("HH:mm:ss") + " signingTest1 - v: " + JSON.stringify(v, null, 2));
+          //   console.log(moment().format("HH:mm:ss") + " signingTest1 - r: " + JSON.stringify(r, null, 2));
+          //   console.log(moment().format("HH:mm:ss") + " signingTest1 - s: " + JSON.stringify(s, null, 2));
+          //   const signature = ethers.utils.joinSignature({ v, r, s });
+          //   console.log(moment().format("HH:mm:ss") + " signingTest1 - signature: " + JSON.stringify(signature, null, 2));
+          //   const recoveredAddress = ethers.utils.recoverAddress(ethers.utils.keccak256(serializedTx), signature);
+          //   console.log(moment().format("HH:mm:ss") + " signingTest1 - recoveredAddress: " + JSON.stringify(recoveredAddress, null, 2));
+          //
+          //   console.log(moment().format("HH:mm:ss") + " signingTest1 - signature: " + JSON.stringify(signature, null, 2));
+          //   const serializedSignedTx = ethers.utils.serializeTransaction(unsignedTx, signature);
+          //   console.log(moment().format("HH:mm:ss") + " signingTest1 - serializedSignedTx: " + JSON.stringify(serializedSignedTx, null, 2));
+          //   const hash = ethers.utils.keccak256(serializedSignedTx);
+          //   console.log(moment().format("HH:mm:ss") + " signingTest1 - hash: " + JSON.stringify(hash, null, 2));
+          // },
+
+          async syncIt() {
+            console.log(moment().format("HH:mm:ss") + " syncIt - activeAddress: " + this.activeAddress);
+            this.sync.total = 5;
+            this.sync.completed = 0;
+            await this.downloadFromEtherscan(this.activeAddress);
+            await this.downloadFromReservoir(this.activeAddress);
+            this.sync.section = null;
+          },
+
+          async downloadFromEtherscan(address) {
+            console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - address: " + address);
+
+            const useCache = false; // For testing without hitting the API
+            const chainId = 1;
+
+            const etherscanData = {};
+
+            this.sync.section = "Transactions from Etherscan";
+            let getTransactionsResult;
+            if (!useCache || !localStorage.cachedGetTransactionsResult) {
+              const getTransactionsUrl = "https://api.etherscan.io/v2/api?chainId=" + chainId + "&module=account&action=txlist&address=" + this.activeAddress + "&startblock=0&endblock=99999999&page=1&offset=100&sort=desc&apikey=" + this.settings.etherscanAPIKey;
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - getTransactionsUrl: " + getTransactionsUrl);
+              getTransactionsResult = await fetch(getTransactionsUrl)
+                .then(handleErrors)
+                .then(response => response.json())
+                .catch(function(error) {
+                  console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - ERROR: " + error);
+                  return {};
+                });
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - getTransactionsResult: " + JSON.stringify(getTransactionsResult, null, 2).substring(0, 200));
+              if (useCache) {
+                localStorage.cachedGetTransactionsResult = JSON.stringify(getTransactionsResult);
+              }
+            } else {
+              getTransactionsResult = JSON.parse(localStorage.cachedGetTransactionsResult || {});
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - cached getTransactionsResult: " + JSON.stringify(getTransactionsResult, null, 2).substring(0, 200));
+            }
+            parseEtherscanGetTransactionsResult(getTransactionsResult, chainId, etherscanData);
+            console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - etherscanData: " + JSON.stringify(etherscanData, null, 2).substring(0, 200));
+            this.sync.completed++;
+
+            this.sync.section = "Internal Transactions from Etherscan";
+            let getInternalTransactionsResult;
+            if (!useCache || !localStorage.cachedGetInternalTransactionsResult) {
+              await delay(1000);
+              const getInternalTransactionsUrl = "https://api.etherscan.io/v2/api?chainId=" + chainId + "&module=account&action=txlistinternal&address=" + this.activeAddress + "&startblock=0&endblock=99999999&page=1&offset=100&sort=desc&apikey=" + this.settings.etherscanAPIKey;
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - getInternalTransactionsUrl: " + getInternalTransactionsUrl);
+              getInternalTransactionsResult = await fetch(getInternalTransactionsUrl)
+                .then(handleErrors)
+                .then(response => response.json())
+                .catch(function(error) {
+                  console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - ERROR: " + error);
+                   return {};
+                });
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - getInternalTransactionsResult: " + JSON.stringify(getInternalTransactionsResult, null, 2).substring(0, 200));
+              if (useCache) {
+                localStorage.cachedGetInternalTransactionsResult = JSON.stringify(getInternalTransactionsResult);
+              }
+            } else {
+              getInternalTransactionsResult = JSON.parse(localStorage.cachedGetInternalTransactionsResult || {});
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - cached getInternalTransactionsResult: " + JSON.stringify(getInternalTransactionsResult, null, 2).substring(0, 200));
+            }
+            parseEtherscanGetInternalTransactionsResult(getInternalTransactionsResult, chainId, etherscanData);
+            console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - etherscanData: " + JSON.stringify(etherscanData, null, 2).substring(0, 200));
+            this.sync.completed++;
+
+            this.sync.section = "ERC-20 Transfers from Etherscan";
+            let getERC20TransfersResult;
+            if (!useCache || !localStorage.cachedGetERC20TransfersResult) {
+              await delay(1000);
+              const getERC20TransfersUrl = "https://api.etherscan.io/v2/api?chainId=" + chainId + "&module=account&action=tokentx&address=" + this.activeAddress + "&startblock=0&endblock=99999999&page=1&offset=100&sort=desc&apikey=" + this.settings.etherscanAPIKey;
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - getERC20TransfersUrl: " + getERC20TransfersUrl);
+              getERC20TransfersResult = await fetch(getERC20TransfersUrl)
+                .then(handleErrors)
+                .then(response => response.json())
+                .catch(function(error) {
+                  console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - ERROR: " + error);
+                   return {};
+                });
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - getERC20TransfersResult: " + JSON.stringify(getERC20TransfersResult, null, 2).substring(0, 200));
+              if (useCache) {
+                localStorage.cachedGetERC20TransfersResult = JSON.stringify(getERC20TransfersResult);
+              }
+            } else {
+              getERC20TransfersResult = JSON.parse(localStorage.cachedGetERC20TransfersResult || {});
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - cached getERC20TransfersResult: " + JSON.stringify(getERC20TransfersResult, null, 2).substring(0, 200));
+            }
+            parseEtherscanGetERC20TransfersResult(getERC20TransfersResult, chainId, etherscanData);
+            console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - etherscanData: " + JSON.stringify(etherscanData, null, 2).substring(0, 200));
+            this.sync.completed++;
+
+            this.sync.section = "ERC-721 Transfers from Etherscan";
+            let getERC721TransfersResult;
+            if (!useCache || !localStorage.cachedGetERC721TransfersResult) {
+              await delay(1000);
+              const getERC721TransfersUrl = "https://api.etherscan.io/v2/api?chainId=" + chainId + "&module=account&action=tokennfttx&address=" + this.activeAddress + "&startblock=0&endblock=99999999&page=1&offset=100&sort=desc&apikey=" + this.settings.etherscanAPIKey;
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - getERC721TransfersUrl: " + getERC721TransfersUrl);
+              getERC721TransfersResult = await fetch(getERC721TransfersUrl)
+                .then(handleErrors)
+                .then(response => response.json())
+                .catch(function(error) {
+                  console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - ERROR: " + error);
+                   return {};
+                });
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - getERC721TransfersResult: " + JSON.stringify(getERC721TransfersResult, null, 2).substring(0, 200));
+              if (useCache) {
+                localStorage.cachedGetERC721TransfersResult = JSON.stringify(getERC721TransfersResult);
+              }
+            } else {
+              getERC721TransfersResult = JSON.parse(localStorage.cachedGetERC721TransfersResult || {});
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - cached getERC721TransfersResult: " + JSON.stringify(getERC721TransfersResult, null, 2).substring(0, 200));
+            }
+            parseEtherscanGetERC721TransfersResult(getERC721TransfersResult, chainId, etherscanData);
+            console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - etherscanData: " + JSON.stringify(etherscanData, null, 2).substring(0, 200));
+            this.sync.completed++;
+
+            this.sync.section = "ERC-1155 Transfers from Etherscan";
+            let getERC1155TransfersResult;
+            if (!useCache || !localStorage.cachedGetERC1155TransfersResult) {
+              await delay(1000);
+              const getERC1155TransfersUrl = "https://api.etherscan.io/v2/api?chainId=" + chainId + "&module=account&action=token1155tx&address=" + this.activeAddress + "&startblock=0&endblock=99999999&page=1&offset=100&sort=desc&apikey=" + this.settings.etherscanAPIKey;
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - getERC1155TransfersUrl: " + getERC1155TransfersUrl);
+              getERC1155TransfersResult = await fetch(getERC1155TransfersUrl)
+                .then(handleErrors)
+                .then(response => response.json())
+                .catch(function(error) {
+                  console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - ERROR: " + error);
+                   return {};
+                });
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - getERC1155TransfersResult: " + JSON.stringify(getERC1155TransfersResult, null, 2).substring(0, 200));
+              if (useCache) {
+                localStorage.cachedGetERC1155TransfersResult = JSON.stringify(getERC1155TransfersResult);
+              }
+            } else {
+              getERC1155TransfersResult = JSON.parse(localStorage.cachedGetERC1155TransfersResult || {});
+              console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - cached getERC1155TransfersResult: " + JSON.stringify(getERC1155TransfersResult, null, 2).substring(0, 200));
+            }
+            parseEtherscanGetERC1155TransfersResult(getERC1155TransfersResult, chainId, etherscanData);
+            // console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - etherscanData: " + JSON.stringify(etherscanData, null, 2).substring(0, 200));
+            this.sync.completed++;
+
+            Vue.set(this.etherscanData, address, etherscanData);
+            console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - this.etherscanData: " + JSON.stringify(this.etherscanData, null, 2).substring(0, 200));
+
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            await db.cache.put({ objectName: "etherscanData", object: this.etherscanData }).then (function() {
+              }).catch(function(error) {
+                console.log(moment().format("HH:mm:ss") + " downloadFromReservoir - ERROR: " + e.message);
+              });
+            db.close();
+
+            for (const [chainId, chainData] of Object.entries(etherscanData)) {
+              for (const [txHash, txData] of Object.entries(chainData)) {
+                for (const event of txData.erc20) {
+                  this.addOrUpdateAddress({
+                    address: event.contractAddress,
+                    type: "erc20",
+                    name: event.tokenSymbol,
+                    description: event.tokenName,
+                    decimals: event.tokenDecimal,
+                    source: "etherscan",
+                  });
+                }
+                for (const event of txData.erc721) {
+                  this.addOrUpdateAddress({
+                    address: event.contractAddress,
+                    type: "erc721",
+                    name: event.tokenName,
+                    description: event.tokenName,
+                    source: "etherscan",
+                  });
+                }
+                for (const event of txData.erc1155) {
+                  this.addOrUpdateAddress({
+                    address: event.contractAddress,
+                    type: "erc1155",
+                    name: event.tokenName,
+                    description: event.tokenName,
+                    source: "etherscan",
+                  });
+                }
+              }
+            }
+            this.saveSettings();
+            // console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - this.settings: " + JSON.stringify(this.settings, null, 2).substring(0, 200000));
+
+            // await delay(1000);
+            // const getBalanceUrl = "https://api.etherscan.io/v2/api?chainId=1&module=account&action=balance&address=" + this.activeAddress + "&apikey=" + this.settings.etherscanAPIKey;
+            // console.log("getBalanceUrl: " + getBalanceUrl);
+            // const getBalanceResult = await fetch(getBalanceUrl)
+            //   .then(handleErrors)
+            //   .then(response => response.json())
+            //   .catch(function(error) {
+            //      console.log("ERROR - downloadFromEtherscan: " + error);
+            //      // Want to work around API data unavailablity - state.sync.error = true;
+            //      return {};
+            //   });
+            // console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - getBalanceResult: " + JSON.stringify(getBalanceResult, null, 2));
+            // if (getBalanceResult.result) {
+            //   const balance = ethers.BigNumber.from(getBalanceResult.result).toString();
+            //   console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - balance: " + balance);
+            // }
+
+            // await delay(1000);
+            // const getBlockNumberUrl = "https://api.etherscan.io/v2/api?chainId=1&module=proxy&action=eth_blockNumber&apikey=" + this.settings.etherscanAPIKey;
+            // console.log("getBlockNumberUrl: " + getBlockNumberUrl);
+            // const getBlockNumberResult = await fetch(getBlockNumberUrl)
+            //   .then(handleErrors)
+            //   .then(response => response.json())
+            //   .catch(function(error) {
+            //      console.log("ERROR - downloadFromEtherscan: " + error);
+            //      // Want to work around API data unavailablity - state.sync.error = true;
+            //      return {};
+            //   });
+            // console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - getBlockNumberResult: " + JSON.stringify(getBlockNumberResult, null, 2));
+            // if (getBlockNumberResult.result) {
+            //   const blockNumber = Number(getBlockNumberResult.result);
+            //   console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - blockNumber: " + blockNumber);
+            // }
+
+            // console.log(moment().format("HH:mm:ss") + " downloadFromEtherscan - delayed");
+          },
+
+          async downloadFromReservoir(address) {
+            console.log(moment().format("HH:mm:ss") + " downloadFromReservoir - address: " + address);
+            this.sync.section = "NFTs from Reservoir";
+            const reservoirData = {};
+            let continuation = null;
+            do {
+              let url = "https://api.reservoir.tools/users/" + address + "/tokens/v10?limit=200&includeTopBid=true&includeAttributes=true&includeLastSale=true";
+              url = url + (continuation != null ? "&continuation=" + continuation : "");
+              console.log(moment().format("HH:mm:ss") + " downloadFromReservoir - url: " + url);
+              const data = await fetch(url)
+                .then(handleErrors)
+                .then(response => response.json())
+                .catch(function(error) {
+                  console.log(moment().format("HH:mm:ss") + " downloadFromReservoir - ERROR: " + error);
+                  return {};
+                });
+              continuation = data.continuation;
+              console.log(moment().format("HH:mm:ss") + " downloadFromReservoir - data: " + JSON.stringify(data, null, 2).substring(0, 200));
+              parseReservoirData(data, reservoirData);
+              console.log(moment().format("HH:mm:ss") + " downloadFromReservoir - reservoirData: " + JSON.stringify(reservoirData, null, 2).substring(0, 20000));
+              if (continuation != null) {
+                await delay(1000);
+              }
+            } while (continuation != null);
+            Vue.set(this.reservoirData, address, reservoirData);
+            console.log(moment().format("HH:mm:ss") + " downloadFromReservoir - this.reservoirData: " + JSON.stringify(this.reservoirData, null, 2).substring(0, 200));
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            await db.cache.put({ objectName: "reservoirData", object: this.reservoirData }).then (function() {
+              }).catch(function(error) {
+                console.log(moment().format("HH:mm:ss") + " downloadFromReservoir - ERROR: " + e.message);
+              });
+            db.close();
+
+            for (const [chainId, chainData] of Object.entries(reservoirData)) {
+              for (const [contract, contractData] of Object.entries(chainData)) {
+                this.addOrUpdateAddress({
+                  address: contract,
+                  type: contractData.type,
+                  name: contractData.name,
+                  description: contractData.name,
+                  slug: contractData.slug,
+                  source: "reservoir",
+                });
+              }
+            }
+            this.sync.completed++;
+            this.saveSettings();
+          },
+
+          addOrUpdateAddress(item) {
+            // console.log(moment().format("HH:mm:ss") + " addOrUpdateAddress - item: " + JSON.stringify(item));
+            if (!(item.address in this.settings.addresses)) {
+              Vue.set(this.settings.addresses, item.address, {
+                type: item.type,
+                name: item.name,
+                description: item.description,
+                slug: item.slug || null,
+                decimals: item.decimals || null,
+                source: item.source,
+              });
+            } else {
+              if (item.source == "reservoir" && !this.settings.addresses[item.address].slug) {
+                Vue.set(this.settings.addresses[item.address], 'name', item.name);
+                Vue.set(this.settings.addresses[item.address], 'description', item.description);
+                Vue.set(this.settings.addresses[item.address], 'slug', item.slug);
+                Vue.set(this.settings.addresses[item.address], 'source', item.source);
+              }
+            }
+          },
+
+          async downloadFromCryptoCompare() {
+            console.log(moment().format("HH:mm:ss") + " downloadFromCryptoCompare");
+
+          },
+
+          async retrieveBalances() {
+            console.log(moment().format("HH:mm:ss") + " retrieveBalances");
+            if (!window.ethereum) {
+              this.connected = false;
+            } else {
+              try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                this.connected = window.ethereum.isConnected();
+              } catch (e) {
+                console.log("window.ethereum.request error: " + e.message);
+                this.connected = false;
+              }
+            }
+            if (!this.connected) {
+              alert("Please use the Opera or any other other web3 browser with NFC tag reading capabilities, and refresh!");
+            } else {
+              const provider = new ethers.providers.Web3Provider(window.ethereum);
+              for (const [slot, slotData] of Object.entries(this.slots)) {
+                // console.log("slot: " + slot + " => " + JSON.stringify(slotData));
+                const balance = await provider.getBalance(slotData.address);
+                Vue.set(this.slots[slot], 'balance', balance.toString());
+              }
+              // console.log("this.slots: " + JSON.stringify(this.slots, null, 2));
+            }
+          },
+
+          async syncItOld(devMode) {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const signer = provider.getSigner();
+            this.coinbase = await signer.getAddress();
+            localStorage.approvalToolCoinbase = this.coinbase;
+            const network = await provider.getNetwork();
+            localStorage.approvalToolChainId = network.chainId;
+            const block = await provider.getBlock();
+            const latestBlockNumber = block && block.number || null;
+            console.log(moment().format("HH:mm:ss") + " syncItOld - latestBlockNumber: " + latestBlockNumber + ", chainId: " + this.chainId);
+
+            if (!devMode) {
+              await this.syncEvents(provider, latestBlockNumber);
+            }
+            if (!devMode) {
+              await this.syncBlockTimestamps(provider);
+            }
+            if (!devMode) {
+              await this.syncAccounts(provider, devMode);
+            }
+            if (!devMode) {
+              await this.processData(provider);
+            }
+            this.sync.section = null;
+            this.sync.halt = false;
+          },
+
+          async syncEvents(provider, latestBlockNumber) {
+            // ERC-20 Approval (index_topic_1 address owner, index_topic_2 address spender, uint256 value)
+            // 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
+            // ERC-721 Approval (index_topic_1 address owner, index_topic_2 address approved, index_topic_3 uint256 tokenId)
+            // 0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
+            // ERC-721 ApprovalForAll (index_topic_1 address owner, index_topic_2 address operator, bool approved)
+            // 0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31
+            // ERC-1155 ApprovalForAll (index_topic_1 address account, index_topic_2 address operator, bool approved)
+            // 0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31
+            console.log(moment().format("HH:mm:ss") + " syncEvents BEGIN");
+            this.sync.completed = 0;
+            this.sync.total = 0;
+            this.sync.section = 'Approval Events';
+            const accountsAs32Bytes = this.accountsToSearch.map(e => '0x000000000000000000000000' + e.substring(2, 42).toLowerCase());
+            const approvalLogs = await provider.getLogs({
+              address: null,
+              fromBlock: 0,
+              toBlock: latestBlockNumber,
+              topics: [[
+                  '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925',
+                  '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31'
+                ],
+                accountsAs32Bytes,
+                null
+              ],
+            });
+            this.sync.completed = approvalLogs.length;
+            const events = this.events;
+            if (!(this.chainId in events)) {
+              events[this.chainId] = {};
+            }
+            for (const log of approvalLogs) {
+              const topic0 = log.topics[0];
+              const eventName = topic0 == '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31' ? 'ApprovalForAll' : 'Approval';
+              let owner = null;
+              let spender = null;
+              let value = null;
+              if (log.topics.length == 3) {
+                owner = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
+                spender = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
+                value = ethers.BigNumber.from(log.data).toString();
+              } else if (log.topics.length == 4) {
+                owner = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
+                spender = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
+                value = ethers.BigNumber.from(log.topics[3]).toString();
+              } else {
+                console.log("topic length <> 4: " + log.topics.length + " " + JSON.stringify(log));
+              }
+              if (owner) {
+                if (!(log.blockNumber in events[this.chainId])) {
+                  events[this.chainId][log.blockNumber] = {};
+                }
+                if (!(log.logIndex in events[this.chainId][log.blockNumber])) {
+                  events[this.chainId][log.blockNumber][log.logIndex] = {
+                    txIndex: log.transactionIndex,
+                    txHash: log.transactionHash,
+                    contract: log.address,
+                    eventName,
+                    owner,
+                    spender,
+                    value,
+                    latestBlockNumber,
+                  };
+                }
+              }
+            }
+            localStorage.approvalEvents = JSON.stringify(events);
+            Vue.set(this, 'events', events);
+            // console.log(moment().format("HH:mm:ss") + " syncEvents - events: " + JSON.stringify(events, null, 2));
+            console.log(moment().format("HH:mm:ss") + " syncEvents END");
+          },
+
+          async syncBlockTimestamps(provider) {
+            console.log(moment().format("HH:mm:ss") + " syncBlockTimestamps BEGIN");
+            const blockTimestamps = this.blockTimestamps;
+            if (!(this.chainId in blockTimestamps)) {
+              blockTimestamps[this.chainId] = {};
+            }
+            const events = this.events[this.chainId] || {};
+            const newBlockNumbersMap = {};
+            for (const blockNumber of Object.keys(events)) {
+              if (!(blockNumber in blockTimestamps[this.chainId]) && !(blockNumber in newBlockNumbersMap)) {
+                newBlockNumbersMap[blockNumber] = true;
+              }
+            }
+            const newBlockNumbers = Object.keys(newBlockNumbersMap);
+            this.sync.completed = 0;
+            this.sync.total = newBlockNumbers.length;
+            this.sync.section = 'Block Timestamps';
+            for (let i = 0; i < newBlockNumbers.length && !this.sync.halt; i++) {
+              const block = await provider.getBlock(parseInt(newBlockNumbers[i]));
+              blockTimestamps[this.chainId][newBlockNumbers[i]] = parseInt(block.timestamp);
+              this.sync.completed++;
+            }
+            if (!this.sync.halt) {
+              localStorage.approvalBlockTimestamps = JSON.stringify(blockTimestamps);
+              Vue.set(this, 'blockTimestamps', blockTimestamps);
+            }
+            console.log(moment().format("HH:mm:ss") + " syncBlockTimestamps END");
+          },
+
+          async syncAccounts(provider, devMode) {
+            console.log(moment().format("HH:mm:ss") + " syncAccounts BEGIN");
+            const accounts = devMode ? {} : this.accounts;
+            if (!(this.chainId in accounts)) {
+              accounts[this.chainId] = {};
+            }
+            const newAccountsMap = {};
+            const events = this.events[this.chainId] || {};
+            for (const blockNumber of Object.keys(events).sort((a, b) => { return a - b })) {
+              const blockNumberData = events[blockNumber];
+              for (const logIndex of Object.keys(blockNumberData).sort((a, b) => { return a - b })) {
+                const eventData = events[blockNumber][logIndex];
+                if (!(eventData.owner in accounts[this.chainId]) && !(eventData.owner in newAccountsMap)) {
+                  newAccountsMap[eventData.owner] = { source: "owner" };
+                }
+                if (!(eventData.owner in accounts[this.chainId]) && !(eventData.contract in newAccountsMap)) {
+                  newAccountsMap[eventData.contract] = { source: "contract" };
+                }
+                if (!(eventData.owner in accounts[this.chainId]) && !(eventData.spender in newAccountsMap)) {
+                  newAccountsMap[eventData.spender] = { source: "spender" };
+                }
+              }
+            }
+            const ensReverseRecordsContract = new ethers.Contract(ENSREVERSERECORDSADDRESS, ENSREVERSERECORDSABI, provider);
+            this.sync.completed = 0;
+            this.sync.total = Object.keys(newAccountsMap).length;
+            this.sync.section = 'Accounts';
+            const erc165Abi = [ "function supportsInterface(bytes4 interfaceID) external view returns (bool)" ];
+
+            for (const [account, accountData] of Object.entries(newAccountsMap)) {
+              if ((account in CUSTOMNAMES)) {
+                accountData.type = CUSTOMNAMES[account][0];
+                accountData.symbol = CUSTOMNAMES[account][1];
+                accountData.name = CUSTOMNAMES[account][2];
+                accountData.decimals = CUSTOMNAMES[account].length >= 4 ? CUSTOMNAMES[account][3] : undefined;
+              } else {
+                let accountType = null;
+                let symbol = undefined;
+                let name = undefined;
+                let decimals = undefined;
+                let totalSupply = undefined;
+                const code = await provider.getCode(account);
+                if (code.length == 2) {
+                  accountType = "eoa";
+                } else {
+                  const erc165Contract = new ethers.Contract(account, erc165Abi, provider);
+                  if (!accountType) {
+                    try {
+                      const result = await erc165Contract.supportsInterface(ERC721_INTERFACE);
+                      if (result) {
+                        accountType = "erc721";
+                      }
+                    } catch (e1) {
+                    }
+                  }
+                  if (!accountType) {
+                    try {
+                      const result = await erc165Contract.supportsInterface(ERC1155_INTERFACE);
+                      if (result) {
+                        accountType = "erc1155";
+                      }
+                    } catch (e1) {
+                    }
+                  }
+                  const erc20Contract = new ethers.Contract(account, ERC20ABI, provider);
+                  try {
+                    symbol = await erc20Contract.symbol();
+                  } catch (e1) {
+                  }
+                  try {
+                    name = await erc20Contract.name();
+                  } catch (e1) {
+                  }
+                  try {
+                    decimals = await erc20Contract.decimals();
+                  } catch (e1) {
+                  }
+                  try {
+                    totalSupply = await erc20Contract.totalSupply();
+                  } catch (e1) {
+                  }
+                }
+                console.log(moment().format("HH:mm:ss") + " syncAccounts " + account + " => code.length: " + code.length + ", accountType: " + accountType + ", symbol: " + symbol + ", name: " + name + ", decimals: " + decimals + ", totalSupply: " + totalSupply);
+                if (!accountType && decimals && totalSupply) {
+                  accountType = "erc20";
+                  accountData.decimals = parseInt(decimals);
+                  accountData.totalSupply = totalSupply.toString();
+                }
+                accountData.type = accountType || "unknown";
+                accountData.symbol = symbol;
+                accountData.name = name;
+              }
+              accounts[this.chainId][account] = accountData;
+              this.sync.completed++;
+              if (this.sync.halt) {
+                break;
+              }
+            }
+            // ETH Mainnet ENS
+            if (this.chainId == 1) {
+              for (const [account, accountData] of Object.entries(accounts[this.chainId])) {
+                const type = accountData.customType || accountData.type;
+                console.log(account + " " + type + " " + accountData.customType);
+                if (!(["erc20", "erc721", "erc1155", "ftexchange", "nftexchange"].includes(type)) && !(account in CUSTOMNAMES) && !this.sync.halt) {
+                  const allnames = await ensReverseRecordsContract.getNames([account]);
+                  if (allnames.length >= 0 && allnames[0].length > 0) {
+                    accounts[this.chainId][account].name = allnames[0];
+                  }
+                }
+              }
+            }
+            // console.log(moment().format("HH:mm:ss") + " syncAccounts - accounts[" + this.chainId + "]:" + JSON.stringify(accounts[this.chainId] || {}, null, 2));
+            if (!this.sync.halt) {
+              localStorage.approvalAccounts = JSON.stringify(accounts);
+              Vue.set(this, 'accounts', accounts);
+            }
+            console.log(moment().format("HH:mm:ss") + " syncAccounts END");
+          },
+
+          async processData(provider) {
+            console.log(moment().format("HH:mm:ss") + " processData BEGIN");
+            const accounts = this.accounts;
+            const events = this.events[this.chainId] || {};
+            for (const blockNumber of Object.keys(events).sort((a, b) => { return a - b })) {
+              const blockNumberData = events[blockNumber];
+              for (const logIndex of Object.keys(blockNumberData).sort((a, b) => { return a - b })) {
+                const eventData = events[blockNumber][logIndex];
+                const contract = eventData.contract;
+                const account = accounts[this.chainId] && accounts[this.chainId][contract] || null;
+                // console.log(event.blockNumber + "." + event.txIndex + "." + event.logIndex + " " + JSON.stringify(event) + " " + JSON.stringify(account));
+                if (account) {
+                  const type = account.customType || account.type;
+                  if (type == "erc20") {
+                    if (!('approvals' in account)) {
+                      account.approvals = {};
+                    }
+                    if (!(eventData.owner in account.approvals)) {
+                      account.approvals[eventData.owner] = {};
+                    }
+                    account.approvals[eventData.owner][eventData.spender] = eventData.value;
+                  } else if (type == "erc721") {
+                    if (eventData.eventName == "Approval") {
+                      if (!('approvals' in account)) {
+                        account.approvals = {};
+                      }
+                      if (!(eventData.owner in account.approvals)) {
+                        account.approvals[eventData.owner] = {};
+                      }
+                      account.approvals[eventData.owner][eventData.value] = eventData.spender;
+                    } else if (eventData.eventName == "ApprovalForAll") {
+                      if (!('approvalsForAll' in account)) {
+                        account.approvalsForAll = {};
+                      }
+                      if (!(eventData.owner in account.approvalsForAll)) {
+                        account.approvalsForAll[eventData.owner] = {};
+                      }
+                      account.approvalsForAll[eventData.owner][eventData.spender] = eventData.value;
+                    }
+                  } else if (type == "erc1155") {
+                    if (!('approvalsForAll' in account)) {
+                      account.approvalsForAll = {};
+                    }
+                    if (!(eventData.owner in account.approvalsForAll)) {
+                      account.approvalsForAll[eventData.owner] = {};
+                    }
+                    account.approvalsForAll[eventData.owner][eventData.spender] = eventData.value;
+                  }
+                  Vue.set(this.accounts[this.chainId], contract, account);
+                } else {
+                  console.log(moment().format("HH:mm:ss") + " processData - account: " + contract + " not found");
+                }
+              }
+            }
+            // Get current ERC-20 allowances as these amounts are reduced by `transferFrom(...)` calls
+            this.sync.total = 0;
+            for (const [account, accountData] of Object.entries(accounts[this.chainId])) {
+              const type = accountData.customType || accountData.type;
+              if (type == "erc20") {
+                for (const owner of this.accountsToSearch) {
+                  const approvals = 'approvals' in accountData && accountData.approvals && accountData.approvals[owner] || {};
+                  for (const [spender, approved] of Object.entries(approvals)) {
+                    this.sync.total++;
+                  }
+                }
+              }
+            }
+            this.sync.completed = 0;
+            this.sync.section = 'Latest ERC-20 Allowances';
+            for (const [account, accountData] of Object.entries(accounts[this.chainId])) {
+              const type = accountData.customType || accountData.type;
+              if (type == "erc20" && !this.sync.halt) {
+                for (const owner of this.accountsToSearch) {
+                  const approvals = 'approvals' in accountData && accountData.approvals && accountData.approvals[owner] || {};
+                  for (const [spender, approved] of Object.entries(approvals)) {
+                    const erc20Contract = new ethers.Contract(account, ERC20ABI, provider);
+                    const newValue = await erc20Contract.allowance(owner, spender);
+                    accountData.approvals[owner][spender] = newValue.toString();
+                    Vue.set(this.accounts[this.chainId], account, accountData);
+                    this.sync.completed++;
+                  }
+                }
+              }
+            }
+            if (!this.sync.halt) {
+              localStorage.approvalAccounts = JSON.stringify(accounts);
+              Vue.set(this, 'accounts', accounts);
+            }
+            this.forceRefresh++; // UI refresh workaround
+            console.log(moment().format("HH:mm:ss") + " processData END");
+          },
+
+          customTypeUpdated(address, type) {
+            Vue.set(this.accounts[this.chainId][address], 'customType', type);
+            localStorage.approvalAccounts = JSON.stringify(this.accounts);
+          },
+          customNameUpdated(address, name) {
+            Vue.set(this.accounts[this.chainId][address], 'customName', name);
+            localStorage.approvalAccounts = JSON.stringify(this.accounts);
+          },
+          customDecimalsUpdated(address, decimals) {
+            Vue.set(this.accounts[this.chainId][address], 'customDecimals', decimals);
+            localStorage.approvalAccounts = JSON.stringify(this.accounts);
+          },
+
+          saveSettings() {
+            // console.log(moment().format("HH:mm:ss") + " saveSettings: " + JSON.stringify(this.settings, null, 2));
+            localStorage.burnerProToolSettings = JSON.stringify(this.settings);
+          },
+          async processNewBlock(blockNumber) {
+            console.log(moment().format("HH:mm:ss") + " processNewBlock[" + this.chainId + "] #" + this.commify0(blockNumber) + ", latest #" + this.commify0(this.blockNumber) + " @ " + moment.unix(this.timestamp).format("YYYY-MM-DD HH:mm:ss") + " " + moment.unix(this.timestamp).fromNow());
+          },
+          async halt() {
+            this.sync.halt = true;
+            console.log(moment().format("HH:mm:ss") + " halt()");
+          },
+          commify0(n) {
+            if (n != null) {
+              return Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            }
+            return null;
+          },
+          formatTokens(token, tokens, precision = 9) {
+            if (token == "eth") {
+              try {
+                if (precision == 0) {
+                  return tokens ? ethers.utils.formatEther(tokens).replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",") : null;
+                } else {
+                  return tokens ? parseFloat(ethers.utils.formatEther(tokens)).toFixed(precision) : null;
+                }
+              } catch (err) {
+              }
+              return tokens.toFixed(precision);
+            } else {
+              if (token in this.settings.addresses) {
+                const decimals = this.settings.addresses[token].decimals || 18;
+                try {
+                  if (precision == 0) {
+                    return tokens ? ethers.utils.formatUnits(tokens, decimals).replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",") : null;
+                  } else {
+                    return tokens ? parseFloat(ethers.utils.formatUnits(tokens, decimals)).toFixed(precision) : null;
+                  }
+                } catch (err) {
+                }
+                return tokens.toFixed(precision);
+              }
+            }
+            return tokens;
+          },
+          formatETH(e, precision = 9) {
+            try {
+              if (precision == 0) {
+                return e ? ethers.utils.formatEther(e) : null;
+              } else {
+                return e ? parseFloat(ethers.utils.formatEther(e)).toFixed(precision) : null;
+              }
+            } catch (err) {
+            }
+            return e.toFixed(precision);
+          },
+          formatDecimals(e, decimals = 18) {
+            return e ? ethers.utils.formatUnits(e, decimals) : null;
+          },
+          formatTimestamp(ts) {
+            if (ts != null) {
+              // if (this.settings.reportingDateTime == 1) {
+              //   return moment.unix(ts).utc().format("YYYY-MM-DD HH:mm:ss");
+              // } else {
+                return moment.unix(ts).format("YYYY-MM-DD HH:mm:ss");
+              // }
+            }
+            return null;
+          },
+          formatTimeDiff(unixtime) {
+            if (!unixtime) {
+              return "";
+            } else {
+              return moment.unix(unixtime).fromNow();
+            }
+          },
+          nameOrShortAddress(address, length = 0) {
+            let result = null;
+            if (address == "eth") {
+              return "ETH";
+            }
+            if (address in this.settings.addresses) {
+              result = this.settings.addresses[address].name;
+            }
+            if (!result) {
+              if (address in CUSTOMNAMES) {
+                result = CUSTOMNAMES[address][1];
+              } else if (address) {
+                // if (address.match(/0x[a-f0-9]{40}/g)) {
+                  result = address.substring(0, 6) + '...' + address.slice(-4);
+                // } else {
+                //   result = address;
+                // }
+              }
+            }
+            return result;
+          },
+          addressDescription(address) {
+            const accounts = this.accounts[this.chainId] || {};
+            if (address in accounts) {
+              result = "address=" + address;
+              for (let key of ['type', 'customType', 'symbol', 'name', 'customName', 'decimals', 'customDecimals', 'source']) {
+                if (key in accounts[address] && accounts[address][key]) {
+                  result = result + "; " + key + "=" + accounts[address][key];
+                }
+              }
+            } else {
+              result = address;
+            }
+            return result;
+          },
+          copyToClipboard(str) {
+            navigator.clipboard.writeText(str);
+          },
+          async connectToWeb3() {
+            if (!window.ethereum) {
+              this.connected = false;
+            } else {
+              try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                this.connected = window.ethereum.isConnected();
+              } catch (e) {
+                console.log("window.ethereum.request error: " + e.message);
+                this.connected = false;
+              }
+            }
+            if (!this.connected) {
+              alert("Please use the https://metamask.io addon with Firefox, Chromium, Opera or Chrome, or any other other web3 browser, for web3 data retrieval. And refresh!");
+            } else {
+              const t = this;
+              function handleChainChanged(_chainId) {
+                t.chainId = _chainId;
+                console.log(moment().format("HH:mm:ss") + " connectToWeb3 - handleChainChanged - this.chainId: " + t.chainId);
+                alert('Ethereum chain has changed - reloading this page.')
+                window.location.reload();
+              }
+              window.ethereum.on('chainChanged', handleChainChanged);
+              const provider = new ethers.providers.Web3Provider(window.ethereum);
+              async function handleAccountsChanged(accounts) {
+                const signer = provider.getSigner();
+                t.coinbase = await signer.getAddress();
+                console.log(moment().format("HH:mm:ss") + " connectToWeb3 - handleAccountsChanged: " + t.coinbase);
+              }
+              window.ethereum.on('accountsChanged', handleAccountsChanged);
+              async function handleNewBlock(blockNumber) {
+                if (!t.blockNumber || blockNumber > t.blockNumber) {
+                  const block = await provider.getBlock("latest");
+                  t.blockNumber = block.number;
+                  t.timestamp = block.timestamp;
+                  await t.processNewBlock(blockNumber);
+                }
+              }
+              provider.on("block", handleNewBlock);
+              const signer = provider.getSigner();
+              this.coinbase = await signer.getAddress();
+              const network = await provider.getNetwork();
+              this.chainId = network.chainId;
+              console.log(moment().format("HH:mm:ss") + " connectToWeb3[" + this.chainId + "]");
+            }
+          },
+        },
+
+        // --- MOUNTED ---
+        mounted() {
+          // (async() => {
+          //   await this.connectToWeb3();
+          // })();
+          // if ('approvalToolChainId' in localStorage) {
+          //   this.chainId = localStorage.approvalToolChainId;
+          // }
+          // if ('burnerProToolCards' in localStorage) {
+          //   this.cards = JSON.parse(localStorage.burnerProToolCards);
+          //   console.log(moment().format("HH:mm:ss") + " mounted - this.cards: " + JSON.stringify(this.cards, null, 2));
+          // }
+          // if ('approvalToolCoinbase' in localStorage) {
+          //   this.coinbase = localStorage.approvalToolCoinbase;
+          // }
+          if ('burnerProToolSettings' in localStorage) {
+            const tempSettings = JSON.parse(localStorage.burnerProToolSettings);
+            if ('version' in tempSettings && tempSettings.version == this.settings.version) {
+              this.settings = tempSettings;
+              if (this.settings.cardsTable.currentPage > 1) {
+                this.settings.cardsTable.currentPage = 1;
+              }
+              // console.log(moment().format("HH:mm:ss") + " mounted - this.settings: " + JSON.stringify(this.settings, null, 2).substring(0, 200));
+
+              (async() => {
+                const db = new Dexie(this.db.name);
+                db.version(this.db.version).stores(this.db.schemaDefinition);
+                const reservoirDataItems = await db.cache.where("objectName").equals("reservoirData").toArray();
+                if (reservoirDataItems.length == 1) {
+                  this.reservoirData = reservoirDataItems[0].object;
+                  // console.log(moment().format("HH:mm:ss") + " mounted - this.reservoirData: " + JSON.stringify(this.reservoirData, null, 2).substring(0, 200));
+                }
+                const etherscanDataItems = await db.cache.where("objectName").equals("etherscanData").toArray();
+                if (etherscanDataItems.length == 1) {
+                  this.etherscanData = etherscanDataItems[0].object;
+                  // console.log(moment().format("HH:mm:ss") + " mounted - this.etherscanData: " + JSON.stringify(this.etherscanData, null, 2).substring(0, 200));
+                }
+                db.close();
+              })();
+          //     if (this.settings.eventsTable.currentPage > 1) {
+          //       this.settings.eventsTable.currentPage = 1;
+          //     }
+          //     if (this.settings.accountsTable.currentPage > 1) {
+          //       this.settings.accountsTable.currentPage = 1;
+          //     }
+          //     // Restore other settings for the same version
+          //     if ('approvalEvents' in localStorage) {
+          //       this.events = JSON.parse(localStorage.approvalEvents);
+          //     }
+          //     if ('approvalAccounts' in localStorage) {
+          //       this.accounts = JSON.parse(localStorage.approvalAccounts);
+          //     }
+          //     if ('approvalBlockTimestamps' in localStorage) {
+          //       this.blockTimestamps = JSON.parse(localStorage.approvalBlockTimestamps);
+          //     }
+            }
+          }
+        },
+      })
+    </script>
+  </body>
+</html>

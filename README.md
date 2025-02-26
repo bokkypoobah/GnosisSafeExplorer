@@ -1,2 +1,3 @@
-# GnosisSafeExplorer
-Gnosis Safe Explorer (WIP)
+# Gnosis Safe Explorer (WIP)
+
+Checking out Gnosis Safe
