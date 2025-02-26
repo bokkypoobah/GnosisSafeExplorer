@@ -141,7 +141,7 @@
           </div>
 
           <b-card no-body class="m-1 p-1 border-0" bg-variant="light">
-            <b-form-group label="" label-cols="3" label-align="right" class="m-0 mt-2" :description="!connected ? 'Click [Connect] the first time you use this tool' : ''">
+            <b-form-group label="" label-cols="3" label-align="right" class="m-0 mt-2" :description="!connected ? 'Click [Connect] to connect to Ethereum mainnet' : ''">
               <b-button size="sm" @click="retrieveEvents();" variant="primary">
                 Retrieve Events
               </b-button>
@@ -905,6 +905,33 @@
 
           async retrieveEvents() {
             console.log(moment().format("HH:mm:ss") + " retrieveEvents");
+
+            const factoryAddress = ADDRESSES["1.1.1"] && ADDRESSES["1.1.1"]["1"] && ADDRESSES["1.1.1"]["1"]["proxy_factory"] || null;
+            console.log(moment().format("HH:mm:ss") + " retrieveEvents - factoryAddress: " + JSON.stringify(factoryAddress));
+
+            const factoryABI = ABIS["1.1.1"] && ABIS["1.1.1"]["proxy_factory"] || null;
+            console.log(moment().format("HH:mm:ss") + " retrieveEvents - factoryABI: " + JSON.stringify(factoryABI));
+
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const block = await provider.getBlock();
+            const latestBlockNumber = block && block.number || null;
+            console.log(moment().format("HH:mm:ss") + " retrieveEvents - latestBlockNumber: " + latestBlockNumber);
+
+            const factoryLogs = await provider.getLogs({
+              address: factoryAddress,
+              // fromBlock: 0,
+              fromBlock: latestBlockNumber - 100000,
+              toBlock: latestBlockNumber,
+              topics: [[
+                  '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80',
+                  // '0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31'
+                ],
+                // null, // accountsAs32Bytes,
+                // null
+              ],
+            });
+            console.log(moment().format("HH:mm:ss") + " retrieveEvents - factoryLogs: " + JSON.stringify(factoryLogs));
+
           },
 
 
