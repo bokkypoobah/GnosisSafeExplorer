@@ -2,10 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>BurnerProTool</title>
+    <title>GnosisSafeExplorer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-    <meta name="description" content="BurnerProTool (c) Bok Consulting Pty Ltd 2025" />
+    <meta name="description" content="GnosisSafeExplorer (c) Bok Consulting Pty Ltd 2025" />
     <meta name="author" content="BokkyPooBah" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:site" content="@BokkyPooBah" />
@@ -43,9 +43,9 @@
     <div id="app">
       <b-container fluid class="m-0 p-0">
         <b-navbar toggleable="sm" variant="light" class="mx-1 my-0 p-0">
-          <b-navbar-brand to="https://bokkypoobah.github.io/BurnerProTool/" variant="primary">
+          <b-navbar-brand to="https://bokkypoobah.github.io/GnosisSafeExplorer/" variant="primary">
             <b-avatar rounded variant="light" size="3.0rem" src="images/ZombieBaby_004_transparentbg_zoomed.png" v-b-popover.hover.bottom="'gm'" class="ml-0"></b-avatar>
-            <font size="-1" v-b-popover.hover.bottom="'gm gm gm'">BurnerProTool</font>
+            <font size="-1" v-b-popover.hover.bottom="'gm gm gm'">GnosisSafeExplorer</font>
           </b-navbar-brand>
           <b-navbar-nav class="ml-auto">
             <!-- <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings();" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'Scan'">Scan</b-nav-item> -->
@@ -368,7 +368,7 @@
 
         <b-card no-body class="p-0 mt-0 border-0" style="min-height: 600px;">
           <!-- :MENU -->
-          <div class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
+          <div v-if="false" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
             <div class="mt-0 pr-0">
               <b-form-select :disabled="sync.section != null" size="sm" v-model="settings.selectedCard" :options="cardsOptions" @change="saveSettings" style="max-width: 30.0rem;"></b-form-select>
             </div>
@@ -842,8 +842,10 @@
           <!-- :INFO -->
           <b-card v-if="settings.mode == 'info' || (settings.mode == 'card' && Object.keys(settings.cards).length == 0)" no-body class="m-1 p-1 border-0" bg-variant="light">
             <b-card-body class="mt-1 p-1">
-              <h6>Welcome to BurnerProTool (WIP)</h6>
-              For managing your <b-link href="https://burner.pro" target="_blank">burner.pro</b-link> NFC card Ethereum wallets.
+              <h6>Welcome to GnosisSafeExplorer (WIP)</h6>
+
+
+              <!-- For managing your <b-link href="https://burner.pro" target="_blank">burner.pro</b-link> NFC card Ethereum wallets.
               <br />
               <br />
               <b-iconstack font-scale="1">
@@ -856,7 +858,6 @@
                 <b-icon stacked icon="file" variant="primary" scale="1.2"></b-icon>
               </b-iconstack> Card
               <br />
-              <!-- <b-icon-files shift-v="+1" font-scale="1.0" variant="primary"></b-icon-files> View cards -->
               <b-iconstack font-scale="1">
                 <b-icon stacked :icon="settings.mode == 'cards' ? 'lock-fill' : 'lock'" shift-h="-1" shift-v="-1" variant="primary" scale="0.6"></b-icon>
                 <b-icon stacked icon="files" variant="primary" scale="1.0"></b-icon>
@@ -887,8 +888,8 @@
                 <li>
                   Add your Etherscan and CryptoCompare API keys in <b-icon :icon="settings.mode == 'config' ? 'gear-fill' : 'gear'" font-scale="1.0" variant="primary"></b-icon> Config
                 </li>
-              </ul>
-              We are not affiliated with burner.pro .
+              </ul> -->
+              We are not affiliated with Gnosis .
               <br />
               <font size="-1">Enjoy!</font>
               <br />
@@ -1038,7 +1039,7 @@
             </div>
             <div v-if="settings.mode != 'info' && !(settings.mode == 'card' && Object.keys(settings.cards).length == 0)" class="mt-0 pl-1 pr-1">
               <font size="-1">
-                gm, and enjoy! <i>BurnerProTool</i> &copy; Bok Consulting Pty Ltd 2025. The MIT Licence
+                gm, and enjoy! <i>GnosisSafeExplorer</i> &copy; Bok Consulting Pty Ltd 2025. The MIT Licence
               </font>
             </div>
           </div>
@@ -1325,7 +1326,7 @@
           ],
 
           db: {
-            name: "burnerprotooldata088a",
+            name: "gnosissafeexplorer088a",
             version: 1,
             schemaDefinition: {
               cache: '&objectName',
@@ -2021,7 +2022,7 @@
               .then(async value1 => {
                 if (value1) {
                   event.preventDefault();
-                  delete localStorage.burnerProToolSettings;
+                  delete localStorage.GnosisSafeExplorerSettings;
                   const db = new Dexie(this.db.name);
                   db.version(this.db.version).stores(this.db.schemaDefinition);
                   const status = await db.cache.clear();
@@ -3148,7 +3149,7 @@
 
           saveSettings() {
             // console.log(moment().format("HH:mm:ss") + " saveSettings: " + JSON.stringify(this.settings, null, 2));
-            localStorage.burnerProToolSettings = JSON.stringify(this.settings);
+            localStorage.GnosisSafeExplorerSettings = JSON.stringify(this.settings);
           },
           async processNewBlock(blockNumber) {
             console.log(moment().format("HH:mm:ss") + " processNewBlock[" + this.chainId + "] #" + this.commify0(blockNumber) + ", latest #" + this.commify0(this.blockNumber) + " @ " + moment.unix(this.timestamp).format("YYYY-MM-DD HH:mm:ss") + " " + moment.unix(this.timestamp).fromNow());
@@ -3322,8 +3323,8 @@
           // if ('approvalToolCoinbase' in localStorage) {
           //   this.coinbase = localStorage.approvalToolCoinbase;
           // }
-          if ('burnerProToolSettings' in localStorage) {
-            const tempSettings = JSON.parse(localStorage.burnerProToolSettings);
+          if ('GnosisSafeExplorerSettings' in localStorage) {
+            const tempSettings = JSON.parse(localStorage.GnosisSafeExplorerSettings);
             if ('version' in tempSettings && tempSettings.version == this.settings.version) {
               this.settings = tempSettings;
               if (this.settings.cardsTable.currentPage > 1) {
