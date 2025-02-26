@@ -142,8 +142,8 @@
 
           <b-card no-body class="m-1 p-1 border-0" bg-variant="light">
             <b-form-group label="" label-cols="3" label-align="right" class="m-0 mt-2" :description="!connected ? 'Click [Connect] to connect to Ethereum mainnet' : ''">
-              <b-button size="sm" @click="retrieveEvents();" variant="primary">
-                Retrieve Events
+              <b-button size="sm" @click="retrieveSafeFactoryEvents();" variant="primary">
+                Retrieve Safe Factory Events
               </b-button>
             </b-form-group>
           </b-card>
@@ -904,32 +904,12 @@
         // --- METHODS ---
         methods: {
 
-          async retrieveEvents() {
-            console.log(moment().format("HH:mm:ss") + " retrieveEvents");
-
-            const db = new Dexie(this.db.name);
-            db.version(this.db.version).stores(this.db.schemaDefinition);
-
-            const factoryAddress = ADDRESSES["1.1.1"] && ADDRESSES["1.1.1"]["1"] && ADDRESSES["1.1.1"]["1"]["proxy_factory"] || null;
-            console.log(moment().format("HH:mm:ss") + " retrieveEvents - factoryAddress: " + JSON.stringify(factoryAddress));
-
-            const factoryABI = ABIS["1.1.1"] && ABIS["1.1.1"]["proxy_factory"] || null;
-            console.log(moment().format("HH:mm:ss") + " retrieveEvents - factoryABI: " + JSON.stringify(factoryABI));
-
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const network = await provider.getNetwork();
-            const chainId = network.chainId;
-            const block = await provider.getBlock();
-            const latestBlockNumber = block && block.number || null;
-            console.log(moment().format("HH:mm:ss") + " retrieveEvents - latestBlockNumber: " + latestBlockNumber);
-
+          async retrieveSafeFactoryEvents() {
             async function processLogs(fromBlock, toBlock, logs) {
-              // console.log(moment().format("HH:mm:ss") + " retrieveEvents - processLogs: " + fromBlock + ", toBlock: " + toBlock + ", logs: " + JSON.stringify(logs));
-              console.log(moment().format("HH:mm:ss") + " retrieveEvents - processLogs: " + fromBlock + ", toBlock: " + toBlock);
+              console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - processLogs: " + fromBlock + ", toBlock: " + toBlock);
               const records = [];
               for (const log of logs) {
                 if (!log.removed) {
-                  // console.log(moment().format("HH:mm:ss") + " retrieveEvents - log: " + JSON.stringify(log));
                   const safeAddress = ethers.utils.getAddress('0x' + log.data.substring(26, 66));
                   records.push({
                     chainId,
@@ -943,38 +923,50 @@
                 }
               }
               if (records.length) {
-                // console.log(moment().format("HH:mm:ss") + " retrieveEvents - records: " + JSON.stringify(records));
                 await db.safes.bulkAdd(records).then(function(lastKey) {
-                  console.log("retrieveEvents.bulkAdd lastKey: " + JSON.stringify(lastKey));
+                  console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - bulkAdd lastKey: " + JSON.stringify(lastKey));
                 }).catch(Dexie.BulkError, function(e) {
-                  console.log("retrieveEvents.bulkAdd e: " + JSON.stringify(e.failures, null, 2));
+                  console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
                 });
               }
             }
 
             async function getLogsFromRange(fromBlock, toBlock) {
-              console.log(moment().format("HH:mm:ss") + " retrieveEvents - getLogsFromRange: " + fromBlock + ", toBlock: " + toBlock);
+              console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - getLogsFromRange: " + fromBlock + ", toBlock: " + toBlock);
               try {
                 const logs = await provider.getLogs({
                   address: factoryAddress,
                   fromBlock,
                   toBlock,
                   topics: [[
-                      '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80',
+                      '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80', // event ProxyCreation(Proxy proxy);
                     ],
                   ],
                 });
                 await processLogs(fromBlock, toBlock, logs);
-                // console.log(moment().format("HH:mm:ss") + " retrieveEvents - factoryLogs: " + JSON.stringify(factoryLogs));
               } catch (e) {
                 const mid = parseInt((fromBlock + toBlock) / 2);
                 await getLogsFromRange(fromBlock, mid);
                 await getLogsFromRange(parseInt(mid) + 1, toBlock);
               }
             }
-            // getLogsFromRange(latestBlockNumber - 100000, latestBlockNumber);
-            getLogsFromRange(0, latestBlockNumber);
 
+            const factoryAddress = ADDRESSES["1.1.1"] && ADDRESSES["1.1.1"]["1"] && ADDRESSES["1.1.1"]["1"]["proxy_factory"] || null;
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - factoryAddress: " + JSON.stringify(factoryAddress));
+            const factoryABI = ABIS["1.1.1"] && ABIS["1.1.1"]["proxy_factory"] || null;
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const network = await provider.getNetwork();
+            const chainId = network.chainId;
+            const block = await provider.getBlock();
+            const latestBlockNumber = block && block.number || null;
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - latestBlockNumber: " + latestBlockNumber);
+            const latest = await db.safes.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - latest: " + JSON.stringify(latest));
+            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - startBlock: " + startBlock);
+            getLogsFromRange(startBlock, latestBlockNumber);
           },
 
 
