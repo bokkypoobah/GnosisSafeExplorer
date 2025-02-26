@@ -79,7 +79,7 @@
           <!-- :MENU -->
           <div class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
             <div class="mt-0 pr-1" style="max-width: 24.0rem;">
-              <b-form-input type="text" size="sm" v-model.trim="settings.safesTable.filter" @change="saveSettings" debounce="600" v-b-popover.hover.bottom="'Filter by safe address'" placeholder="🔍 0xabcd"></b-form-input>
+              <b-form-input type="text" size="sm" v-model.trim="settings.safesTable.filter" @change="saveSettings(); loadCurrentData();" debounce="600" v-b-popover.hover.bottom="'Filter by safe address'" placeholder="🔍 0xabcd"></b-form-input>
             </div>
             <div class="mt-0 flex-grow-1">
             </div>
@@ -97,7 +97,7 @@
               <b-form-select size="sm" v-model="settings.safesTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
             </div>
             <div class="mt-0 pl-1">
-              <font size="-2" v-b-popover.hover.bottom="'# Safes'">{{ filteredSortedSafes.length + '/' + allSafes.length }}</font>
+              <font size="-2" v-b-popover.hover.bottom="'# Safes'">{{ allSafes.length }}</font>
             </div>
             <div class="mt-0 pl-1">
               <b-pagination size="sm" v-model="settings.safesTable.currentPage" @input="saveSettings" :total-rows="allSafes.length" :per-page="settings.safesTable.pageSize" style="height: 0;"></b-pagination>
@@ -108,7 +108,7 @@
           </div>
 
           <b-card no-body class="m-1 p-0 border-0" bg-variant="light">
-            <b-table small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve Safes v1.1.1. Filtering is currently slow" head-variant="light" class="mx-0 my-0">
+            <b-table small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve all deployed Safes v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
               <template #cell(index)="data">
                 <font size="-1" class="text-muted">
                   {{ parseInt(data.index) + ((settings.safesTable.currentPage - 1) * settings.safesTable.pageSize) + 1 }}
@@ -302,7 +302,7 @@
           filteredSortedSafes() {
             // console.log(moment().format("HH:mm:ss") + " filteredSortedSafes - filter: " + this.settings.safesTable.filter);
             const results = [];
-            const filter = this.settings.safesTable.filter != null && this.settings.safesTable.filter.length > 0 ? this.settings.safesTable.filter : null;
+            // const filter = this.settings.safesTable.filter != null && this.settings.safesTable.filter.length > 0 ? this.settings.safesTable.filter : null;
             // let regex = null;
             // if (this.settings.safesTable.filter != null && this.settings.safesTable.filter.length > 0) {
             //   try {
@@ -313,21 +313,21 @@
             //   }
             // }
             for (const safe of this.allSafes) {
-              let include = true;
+              // let include = true;
               // if (regex) {
               //   if (!(regex.test(this.indexToAddress[safe.safeAddressIndex].toLowerCase()))) {
               //     include = false;
               //   }
               // }
-              if (filter) {
-                const safeAddress = this.indexToAddress[safe.safeAddressIndex];
-                if (safeAddress.indexOf(filter) < 0) {
-                  include = false;
-                }
-              }
-              if (include) {
+              // if (filter) {
+              //   const safeAddress = this.indexToAddress[safe.safeAddressIndex];
+              //   if (safeAddress.indexOf(filter) < 0) {
+              //     include = false;
+              //   }
+              // }
+              // if (include) {
                 results.push(safe);
-              }
+              // }
             }
             if (this.settings.safesTable.sortOption == 'blocknumberasc') {
               results.sort((a, b) => {
@@ -371,8 +371,8 @@
           },
 
           async loadCurrentData() {
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData");
-            const DB_PROCESSING_BATCH_SIZE = 100000;
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - this.settings.safesTable.filter: " + this.settings.safesTable.filter);
+            const DB_PROCESSING_BATCH_SIZE = 50000;
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
             for (const name of ['indexToAddress', 'indexToTxHash']) {
@@ -395,10 +395,12 @@
             let done = false;
             const safes = {};
             do {
-              let data = await db.safes.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
-              // Testing 0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4 ByBit
-              // Testing eth:0x9fC3dc011b461664c835F2527fffb1169b3C213e EF: Defi Multisig
-              // let data = await db.safes.where('safe').startsWithIgnoreCase('0x9fC3').offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+              let data;
+              if (this.settings.safesTable.filter && this.settings.safesTable.filter.length > 2) {
+                data = await db.safes.where('safe').startsWithIgnoreCase(this.settings.safesTable.filter).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+              } else {
+                data = await db.safes.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+              }
               console.log(moment().format("HH:mm:ss") + " loadCurrentData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
               for (const item of data) {
                 if (!(item.chainId in safes)) {
@@ -476,7 +478,7 @@
               }
               if (records.length) {
                 await db.safes.bulkAdd(records).then(function(lastKey) {
-                  console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - bulkAdd lastKey: " + JSON.stringify(lastKey));
+                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - bulkAdd lastKey: " + JSON.stringify(lastKey));
                 }).catch(Dexie.BulkError, function(e) {
                   console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
                 });
@@ -592,6 +594,7 @@
             await this.loadCurrentData();
             this.sync.section = null;
           },
+
           async resetData() {
             this.$bvModal.msgBoxConfirm('Reset all data?', {
                 title: 'Please Confirm',

@@ -24,9 +24,13 @@ Web3 dapp: https://bokkypoobah.github.io/GnosisSafeExplorer/ (WIP)
 
 ### Sample Screens
 
-288,568 v1.1.1, v1.3.0 and v1.4.1 Gnosis Safes have been deployed at this time.
+288,675 v1.1.1, v1.3.0 and v1.4.1 Gnosis Safes have been deployed at this time.
 
 <kbd><img src="images/SampleScreen01.png" width="800" /></kbd>
+
+Search filter
+
+<kbd><img src="images/SampleScreen02.png" width="800" /></kbd>
 
 
 <br />
