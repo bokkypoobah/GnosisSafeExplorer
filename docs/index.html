@@ -90,6 +90,15 @@
             <div class="mt-0 pl-1">
               <b-form-select size="sm" v-model="settings.safesTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
             </div>
+            <div class="mt-0 pl-1">
+              <font size="-2" v-b-popover.hover.bottom="'# Safes'">{{ filteredSortedSafes.length + '/' + allSafes.length }}</font>
+            </div>
+            <div class="mt-0 pl-1">
+              <b-pagination size="sm" v-model="settings.safesTable.currentPage" @input="saveSettings" :total-rows="allSafes.length" :per-page="settings.safesTable.pageSize" style="height: 0;"></b-pagination>
+            </div>
+            <div class="mt-0 pl-1">
+              <b-form-select size="sm" v-model="settings.safesTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+            </div>
           </div>
 
           <b-card no-body class="m-1 p-1 border-0" bg-variant="light">
@@ -194,7 +203,7 @@
             safesTable: {
               filter: null,
               currentPage: 1,
-              pageSize: 10,
+              pageSize: 25,
               sortOption: 'blocknumberdsc',
             },
             version: 0,
@@ -225,6 +234,9 @@
             { value: 25, text: '25' },
             { value: 50, text: '50' },
             { value: 100, text: '100' },
+            { value: 250, text: '250' },
+            { value: 500, text: '500' },
+            { value: 1000, text: '1,000' },
           ],
 
           cardsFields: [
