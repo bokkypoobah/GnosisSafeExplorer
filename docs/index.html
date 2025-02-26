@@ -72,7 +72,7 @@
         <!-- :MODALSAFE -->
         <b-modal id="modal-safe" hide-footer size="lg" body-class="m-0 p-1 pt-2" body-bg-variant="light">
           <template #modal-title>
-            Safe
+            Safe {{ modalSafe.safe || '' }}
           </template>
           <!-- <b-form-group label="Graffiti:" label-cols="3" label-align="right" description="Up to 32 characters, alphanumeric plus '-', '_' and '.' permitted">
             <b-form-input type="text" size="sm" v-model.trim="modalGraffiti.graffiti" placeholder="graffiti"></b-form-input>
@@ -250,7 +250,14 @@
           },
 
           modalSafe: {
-
+            chainId: null,
+            safeAddressIndex: null,
+            safe: null,
+            blockNumber: null,
+            logIndex: null,
+            txHashIndex: null,
+            factoryAddressIndex: null,
+            factory: null,
           },
 
           sync: {
@@ -376,11 +383,14 @@
           async safesRowSelected(item) {
             if (item && item.length > 0) {
               console.log(moment().format("HH:mm:ss") + " safesRowSelected - item: " + JSON.stringify(item, null, 2));
-            //   this.modalToken.chainId = item[0].chainId;
-            //   this.modalToken.token = item[0].token;
-            //   this.modalToken.type = item[0].type;
-            //   this.modalToken.balance = item[0].balance;
-            //   this.modalToken.flows = item[0].flows;
+              this.modalSafe.chainId = item[0].chainId;
+              this.modalSafe.safeAddressIndex = item[0].safeAddressIndex;
+              this.modalSafe.safe = this.indexToAddress[item[0].safeAddressIndex];
+              this.modalSafe.blockNumber = item[0].blockNumber;
+              this.modalSafe.logIndex = item[0].logIndex;
+              this.modalSafe.txHashIndex = item[0].txHashIndex;
+              this.modalSafe.factoryAddressIndex = item[0].factoryAddressIndex;
+              this.modalSafe.factory = this.indexToAddress[item[0].factoryAddressIndex];
               this.$bvModal.show('modal-safe');
               this.$refs.safesTable.clearSelected();
               this.retrieveSafeEvents();
