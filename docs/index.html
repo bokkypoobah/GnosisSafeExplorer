@@ -912,6 +912,7 @@
         methods: {
           async loadCurrentData() {
             console.log(moment().format("HH:mm:ss") + " loadCurrentData");
+            const DB_PROCESSING_BATCH_SIZE = 10000;
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
             for (const name of ['indexToAddress', 'indexToTxHash']) {
@@ -930,9 +931,6 @@
               txHashToIndex[address] = index;
             }
             Vue.set(this, 'txHashToIndex', txHashToIndex);
-
-            const DB_PROCESSING_BATCH_SIZE = 5000;
-
             let rows = 0;
             let done = false;
             const safes = {};
@@ -940,9 +938,11 @@
               let data = await db.safes.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
               console.log(moment().format("HH:mm:ss") + " loadCurrentData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
               for (const item of data) {
-                // console.log(moment().format("HH:mm:ss") + " loadCurrentData - item: " + JSON.stringify(item));
-                if (!(item.safeAddressIndex in safes)) {
-                  safes[item.safeAddressIndex] = {
+                if (!(item.chainId in safes)) {
+                  safes[item.chainId] = {};
+                }
+                if (!(item.safeAddressIndex in safes[item.chainId])) {
+                  safes[item.chainId][item.safeAddressIndex] = {
                     blockNumber: item.blockNumber,
                     logIndex: item.logIndex,
                     txHashIndex: item.txHashIndex,
@@ -965,19 +965,16 @@
               for (const log of logs) {
                 if (!log.removed) {
                   const safeAddress = ethers.utils.getAddress('0x' + log.data.substring(26, 66));
-
                   if (!(safeAddress in addressToIndex)) {
                     addressToIndex[safeAddress] = indexToAddress.length;
                     indexToAddress.push(safeAddress);
                   }
                   const safeAddressIndex = addressToIndex[safeAddress];
-
                   if (!(log.transactionHash in txHashToIndex)) {
                     txHashToIndex[log.transactionHash] = indexToTxHash.length;
                     indexToTxHash.push(log.transactionHash);
                   }
                   const txHashIndex = txHashToIndex[log.transactionHash];
-
                   records.push({
                     chainId,
                     blockNumber: parseInt(log.blockNumber),
@@ -993,7 +990,6 @@
                 }
               }
               if (records.length) {
-                // console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - records: " + JSON.stringify(records, null, 2));
                 await db.safes.bulkAdd(records).then(function(lastKey) {
                   console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - bulkAdd lastKey: " + JSON.stringify(lastKey));
                 }).catch(Dexie.BulkError, function(e) {
@@ -1009,9 +1005,8 @@
                   address: factoryAddress,
                   fromBlock,
                   toBlock,
-                  topics: [[
-                      '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80', // event ProxyCreation(Proxy proxy);
-                    ],
+                  topics: [
+                    '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80', // event ProxyCreation(Proxy proxy);
                   ],
                 });
                 await processLogs(fromBlock, toBlock, logs);
