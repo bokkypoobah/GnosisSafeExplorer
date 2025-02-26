@@ -146,6 +146,11 @@
                 Retrieve Safe Factory Events
               </b-button>
             </b-form-group>
+            <font size="-2">
+              <pre>
+{{ filteredSortedSafes }}
+              </pre>
+            </font>
           </b-card>
 
           <!-- :INFO -->
@@ -227,132 +232,20 @@
           forceRefresh: 0,
 
           settings: {
-            mode: 'card', // 'card', 'cards', 'addresses', 'info', 'config'
-            tabIndex: 0,
-            cards: {},
-            addresses: {},
-            selectedCard: null,
-            etherscanAPIKey: null,
-            cryptoCompareAPIKey: null,
-            cardsTable: {
+            // mode: 'card', // 'card', 'cards', 'addresses', 'info', 'config'
+            // tabIndex: 0,
+            // cards: {},
+            // addresses: {},
+            // selectedCard: null,
+            // etherscanAPIKey: null,
+            // cryptoCompareAPIKey: null,
+            safesTable: {
               filter: null,
               currentPage: 1,
               pageSize: 10,
-              sortOption: 'nameasc',
+              sortOption: 'blocknumberdsc',
             },
-            addressesTable: {
-              filter: null,
-              addressType: null,
-              currentPage: 1,
-              pageSize: 10,
-              sortOption: 'nameasc',
-            },
-            tokensTable: {
-              filter: null,
-              currentPage: 1,
-              pageSize: 10,
-              sortOption: 'nameasc',
-            },
-            nftsTable: {
-              filter: null,
-              currentPage: 1,
-              pageSize: 10,
-              sortOption: 'nameasc',
-            },
-            txsTable: {
-              filter: null,
-              currentPage: 1,
-              pageSize: 10,
-              sortOption: 'nameasc',
-            },
-            version: 9,
-          },
-
-          modalCard: {
-            cardId: null,
-          },
-
-          modalGraffiti: {
-            graffiti: null,
-            prompt: null,
-          },
-
-          modalToken: {
-            chainId: null,
-            token: null,
-            balance: null,
-            flows: [],
-          },
-
-          modalNFT: {
-            tabIndex: 0,
-            item: null,
-            to: "0xA2113f1E9A66c3B0A75BB466bbBfeEeC987ac92e", // TODO: null,
-            tokens: "1", // TODO: null, ERC-1155
-            nonce: null,
-            gasLimit: "100000", // TODO: null,
-            maxFeePerGas: null,
-            maxPriorityFeePerGas: null,
-            password: null,
-
-            // item: {
-            //   "chainId": "1",
-            //   "contract": "0x286e531f363768fed5e18b468f5b76a9ffc33af5",
-            //   "type": "erc1155",
-            //   "collectionName": "Nyan Balloon",
-            //   "collectionSlug": "nyanballoon",
-            //   "tokenId": "7",
-            //   "count": "2",
-            //   "name": "Super Nyan Balloon",
-            //   "description": "Nyan Balloon is a character I personally created back in October 2011 that was originally meant to serve as a backstory to a certain space cat. Ultimately, I felt this idea should be unique to the person that imagines it.\n\nThis piece has been digitally remastered for 2023 and I hope it's enjoyed by everyone who collects it ✨🎈\n\nYou may view the original video here:  \nhttps://www.youtube.com/watch?v=In1IKpcviIc",
-            //   "image": "https://img.reservoir.tools/images/v2/mainnet/hc%2BnPcLmWxs%2FDW99DlBQ42k40ZoyYV5jCIms5qHjwvveWhEWY3fo8di0LLSegFQWLPFTwYz17NduegJDMeuu72jwUKQDrPWLt07x7AsMssldAVJ%2FIQez3uQ%2B0Y1VbeXvAW%2FGLpURm5X97%2BnFBHktSVzkes%2BV1aoviVLzEda0IhV7CEqhi2paPvLnuppSjoW15U%2BpI8K0jfeJAE8H%2BrPT5g%3D%3D.gif?width=512",
-            //   "media": null,
-            //   "acquiredAt": 1736802335,
-            //   "lastSale": {
-            //     "timestamp": 1736802335,
-            //     "currency": "ETH",
-            //     "amount": 0.01,
-            //     "amountUSD": 32.64071
-            //   },
-            //   "price": {
-            //     "source": "okx.com",
-            //     "expiry": 1737374243,
-            //     "currency": "ETH",
-            //     "amount": 0.01,
-            //     "amountUSD": 32.64071
-            //   },
-            //   "topBid": {
-            //     "source": "opensea.io",
-            //     "currency": "WETH",
-            //     "amount": 0.0058,
-            //     "amountUSD": 18.93607,
-            //     "netAmount": 0.00566,
-            //     "netAmountUSD": 18.46267
-            //   },
-            // },
-          },
-
-          modalAddress: {
-            address: "0x8E872af87B462F2B3b6f42b76B2f1a5f4D240F5E", // TODO: null,
-            newAddressError: null,
-            newAddressMessage: null, // null - no validation, false - error, true ok
-          },
-          modalNewAddress: {
-            address: null,
-            alt: null,
-            type: null,
-            name: null,
-            description: null,
-            slug: null,
-            decimals: null,
-
-            canTransferFrom: false,
-            canTransferTo: false,
-            canTransfer: false,
-            junk: false,
-
-            addressOk: null,
-            addressError: null,
+            version: 0,
           },
 
           sync: {
@@ -363,11 +256,8 @@
             // halt: false,
           },
 
-          reservoirData: {},
           etherscanData: {},
 
-          events: {},
-          accounts: {},
           blockTimestamps: {},
 
           sortOptions: [
@@ -383,55 +273,6 @@
             { value: 25, text: '25' },
             { value: 50, text: '50' },
             { value: 100, text: '100' },
-          ],
-
-          cardStatusOptions: [
-            { value: null, text: '(unknown)' },
-            { value: 'noninitialised', text: 'Not Initialised' },
-            { value: 'exported', text: 'Exported' },
-            { value: 'imported', text: 'Imported' },
-            { value: 'importedandexported', text: 'Imported, then Exported' },
-            { value: 'notimportedorexported', text: 'Not Imported and Not Exported' },
-          ],
-
-          addressTypeFilterOptions: [
-            { value: null, text: '(all)' },
-            { value: 'nfccard', text: 'NFC Card' },
-            { value: 'eoa', text: 'EOA' },
-            { value: 'erc20', text: 'ERC-20' },
-            { value: 'erc721', text: 'ERC-721' },
-            { value: 'erc1155', text: 'ERC-1155' },
-            { value: 'ftexchange', text: 'ERC-20 Exchange' },
-            { value: 'nftexchange', text: 'NFT Exchange' },
-            { value: 'ens', text: 'ENS Contract' },
-            { value: 'contract', text: 'Contract' },
-          ],
-
-          addressTypeOptions: [
-            { value: null, text: '(select)' },
-            { value: 'nfccard', text: 'NFC Card' },
-            { value: 'eoa', text: 'EOA' },
-            { value: 'ens', text: 'ENS Name' },
-            { value: 'erc20', text: 'ERC-20' },
-            { value: 'erc721', text: 'ERC-721' },
-            { value: 'erc1155', text: 'ERC-1155' },
-            { value: 'ftexchange', text: 'ERC-20 Exchange' },
-            { value: 'nftexchange', text: 'NFT Exchange' },
-            { value: 'ens', text: 'ENS Contract' },
-            { value: 'contract', text: 'Contract' },
-          ],
-
-          actionOptions: [
-            { value: null, text: 'Select action' },
-            { value: 'transfereth', text: 'Transfer ETH' },
-            { value: 'transfererc20', text: 'Transfer ERC-20', disabled: true },
-            { value: 'transfernft', text: 'Transfer NFT', disabled: true },
-          ],
-
-          valueTypeOptions: [
-            { value: 'ether', text: 'eth' },
-            { value: 'gwei', text: 'gwei' },
-            { value: 'wei', text: 'wei' },
           ],
 
           cardsFields: [
@@ -480,6 +321,104 @@
 
         // --- COMPUTED ---
         computed: {
+
+          allSafes() {
+            console.log(moment().format("HH:mm:ss") + " allSafes");
+            const results = [];
+            for (const [chainId, chainData] of Object.entries(this.safes)) {
+              for (const [safeAddressIndex, safeData] of Object.entries(chainData)) {
+                results.push({ chainId, safeAddressIndex, ...safeData });
+              }
+            }
+            return results;
+          },
+
+          filteredSortedSafes() {
+            console.log(moment().format("HH:mm:ss") + " filteredSortedSafes");
+            const results = [];
+            for (const safe of this.allSafes) {
+              results.push(safe);
+            }
+            if (this.settings.safesTable.sortOption == 'blocknumberasc') {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return a.logIndex - b.logIndex;
+                } else {
+                  return a.blockNumber - b.blockNumber;
+                }
+              });
+            } else if (this.settings.safesTable.sortOption == 'blocknumberdsc') {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return b.logIndex - a.logIndex;
+                } else {
+                  return b.blockNumber - a.blockNumber;
+                }
+              });
+            }
+
+          //   let regex = null;
+          //   if (this.settings.addressesTable.filter != null && this.settings.addressesTable.filter.length > 0) {
+          //     try {
+          //       regex = new RegExp(this.settings.addressesTable.filter, 'i');
+          //     } catch (e) {
+          //       console.log(moment().format("HH:mm:ss") + " filteredSortedAddresses - regex error: " + e.message);
+          //       regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
+          //     }
+          //   }
+          //   const nfcCardAddresses = {};
+          //   for (const [cardId, cardData] of Object.entries(this.settings.cards)) {
+          //     for (const [slot, slotData] of Object.entries(cardData.slots)) {
+          //       if (!(slotData.address in nfcCardAddresses)) {
+          //         nfcCardAddresses[slotData.address] = cardData.name + ' - #' + slot;
+          //       }
+          //     }
+          //   }
+          //   for (const [address, addressData] of Object.entries(this.settings.addresses)) {
+          //     let include = true;
+          //     if (regex && !regex.test(address) && !regex.test(addressData.name)) {
+          //       include = false;
+          //     }
+          //     let type = addressData.type;
+          //     if (address in nfcCardAddresses) {
+          //       type = "nfccard";
+          //     }
+          //     if (this.settings.addressesTable.addressType && this.settings.addressesTable.addressType != type) {
+          //       include = false;
+          //     }
+          //     if (include) {
+          //       results.push( { address, ...addressData, type } );
+          //     }
+          //   }
+          //   if (this.settings.addressesTable.sortOption == 'addressasc') {
+          //     results.sort((a, b) => {
+          //       return ('' + a.address).localeCompare(b.address);
+          //     });
+          //   } else if (this.settings.addressesTable.sortOption == 'addressdsc') {
+          //     results.sort((a, b) => {
+          //       return ('' + b.address).localeCompare(a.address);
+          //     });
+          //   } else if (this.settings.addressesTable.sortOption == 'nameasc') {
+          //     results.sort((a, b) => {
+          //       const nameA = a.name || a.address;
+          //       const nameB = b.name || b.address;
+          //       return ('' + nameA).localeCompare(nameB);
+          //     });
+          //   } else if (this.settings.addressesTable.sortOption == 'namedsc') {
+          //     results.sort((a, b) => {
+          //       const nameA = a.name || a.address;
+          //       const nameB = b.name || b.address;
+          //       return ('' + nameB).localeCompare(nameA);
+          //     });
+          //   }
+            return results;
+          },
+          // pagedFilteredSortedSafes() {
+          //   const results = this.filteredSortedAddresses.slice((this.settings.addressesTable.currentPage - 1) * this.settings.addressesTable.pageSize, this.settings.addressesTable.currentPage * this.settings.addressesTable.pageSize);
+          //   // console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedAddresses - results: " + JSON.stringify(results, null, 2));
+          //   return results;
+          // },
+
 
           activeAddress() {
             // console.log(moment().format("HH:mm:ss") + " activeAddress");
