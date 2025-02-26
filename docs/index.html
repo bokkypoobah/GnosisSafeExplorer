@@ -77,15 +77,24 @@
         <b-card no-body class="p-0 mt-0 border-0" style="min-height: 600px;">
           <!-- :MENU -->
           <div class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
-            Blah
+            <div class="mt-0 pr-1" style="max-width: 24.0rem;">
+              <b-form-input type="text" size="sm" v-model.trim="settings.safesTable.filter" @change="saveSettings" debounce="600" v-b-popover.hover.bottom="'Filter by safe address'" placeholder="🔍 0xabcd"></b-form-input>
+            </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
+            <div v-if="!sync.section" class="mt-0 pr-1">
+              <b-button size="sm" @click="retrieveSafeFactoryEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
+            </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
           </div>
 
           <b-card no-body class="m-1 p-1 border-0" bg-variant="light">
-            <b-form-group label="" label-cols="3" label-align="right" class="m-0 mt-2" :description="!connected ? 'Click [Connect] to connect to Ethereum mainnet' : ''">
+            <!-- <b-form-group label="" label-cols="3" label-align="right" class="m-0 mt-2" :description="!connected ? 'Click [Connect] to connect to Ethereum mainnet' : ''">
               <b-button size="sm" @click="retrieveSafeFactoryEvents();" variant="primary">
                 Retrieve Safe Factory Events
               </b-button>
-            </b-form-group>
+            </b-form-group> -->
             <font size="-2">
               <pre>
 {{ pagedFilteredSortedSafes }}
@@ -918,8 +927,6 @@
                 addressToIndex[address] = index;
               }
             }
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - addressToIndex 1: " + JSON.stringify(addressToIndex));
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - indexToAddress 1: " + JSON.stringify(indexToAddress));
             let indexToTxHash = [];
             let txHashToIndex = {};
             const indexToTxHashDataItems = await db.cache.where("objectName").equals("indexToTxHash").toArray();
@@ -929,29 +936,10 @@
                 txHashToIndex[txHash] = index;
               }
             }
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - txHashToIndex: " + JSON.stringify(txHashToIndex));
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - indexToTxHash: " + JSON.stringify(indexToTxHash));
-            // const newAddressIndexes = [];
-            // for (const address of [ADDRESS0, CRYPTOPUNKSV1ADDRESS, CRYPTOPUNKSV2ADDRESS, WRAPPEDCRYPTOPUNKSV1ADDRESS, WRAPPEDCRYPTOPUNKSV2ADDRESS, this.coinbase]) {
-            //   if (!(address in addressToIndex)) {
-            //     addressToIndex[address] = indexToAddress.length;
-            //     newAddressIndexes.push(indexToAddress.length);
-            //     indexToAddress.push(address);
-            //   }
-            // }
-            // for (const address of Object.keys(CUSTOMNAMES)) {
-            //   if (!(address in addressToIndex)) {
-            //     addressToIndex[address] = indexToAddress.length;
-            //     newAddressIndexes.push(indexToAddress.length);
-            //     indexToAddress.push(address);
-            //   }
-            // }
             if (!(factoryAddress in addressToIndex)) {
               addressToIndex[factoryAddress] = indexToAddress.length;
               indexToAddress.push(factoryAddress);
             }
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - addressToIndex 2: " + JSON.stringify(addressToIndex));
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - indexToAddress 2: " + JSON.stringify(indexToAddress));
 
             const latest = await db.safes.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - latest: " + JSON.stringify(latest));
@@ -960,8 +948,6 @@
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - startBlock: " + startBlock);
             await getLogsFromRange(startBlock, latestBlockNumber);
 
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - addressToIndex 3: " + JSON.stringify(addressToIndex));
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - indexToAddress 3: " + JSON.stringify(indexToAddress));
             Vue.set(this, "addressToIndex", addressToIndex);
             Vue.set(this, "indexToAddress", indexToAddress);
             await db.cache.put({ objectName: "indexToAddress", object: indexToAddress }).then (function() {
