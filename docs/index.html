@@ -464,6 +464,7 @@
             name: "gnosissafeexplorer088a",
             version: 1,
             schemaDefinition: {
+              safes: '[chainId+blockNumber+logIndex],safe,factory',
               cache: '&objectName',
             },
             updated: null,
@@ -906,6 +907,9 @@
           async retrieveEvents() {
             console.log(moment().format("HH:mm:ss") + " retrieveEvents");
 
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+
             const factoryAddress = ADDRESSES["1.1.1"] && ADDRESSES["1.1.1"]["1"] && ADDRESSES["1.1.1"]["1"]["proxy_factory"] || null;
             console.log(moment().format("HH:mm:ss") + " retrieveEvents - factoryAddress: " + JSON.stringify(factoryAddress));
 
@@ -913,24 +917,38 @@
             console.log(moment().format("HH:mm:ss") + " retrieveEvents - factoryABI: " + JSON.stringify(factoryABI));
 
             const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const network = await provider.getNetwork();
+            const chainId = network.chainId;
             const block = await provider.getBlock();
             const latestBlockNumber = block && block.number || null;
             console.log(moment().format("HH:mm:ss") + " retrieveEvents - latestBlockNumber: " + latestBlockNumber);
 
             async function processLogs(fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " retrieveEvents - processLogs: " + fromBlock + ", toBlock: " + toBlock + ", logs: " + JSON.stringify(logs));
+              // console.log(moment().format("HH:mm:ss") + " retrieveEvents - processLogs: " + fromBlock + ", toBlock: " + toBlock + ", logs: " + JSON.stringify(logs));
+              console.log(moment().format("HH:mm:ss") + " retrieveEvents - processLogs: " + fromBlock + ", toBlock: " + toBlock);
               const records = [];
               for (const log of logs) {
                 if (!log.removed) {
-                  console.log(moment().format("HH:mm:ss") + " retrieveEvents - log: " + JSON.stringify(log));
-                  // const contract = log.address;
-                  console.log("  data: " + log.data);
-                  // 0x0000000000000000000000007d3c233b153261562c65aaf3bfb327a3eaa479f8
-                  //           1         2         3         4         5         6
-                  // 0123456789012345678901234567890123456789012345678901234567890123456789
+                  // console.log(moment().format("HH:mm:ss") + " retrieveEvents - log: " + JSON.stringify(log));
                   const safeAddress = ethers.utils.getAddress('0x' + log.data.substring(26, 66));
-                  console.log("  data: " + log.data.substring(26, 66) + " => " + safeAddress);
+                  records.push({
+                    chainId,
+                    blockNumber: parseInt(log.blockNumber),
+                    logIndex: parseInt(log.logIndex),
+                    txIndex: parseInt(log.transactionIndex),
+                    txHash: log.transactionHash,
+                    safe: safeAddress,
+                    factory: log.address,
+                  });
                 }
+              }
+              if (records.length) {
+                // console.log(moment().format("HH:mm:ss") + " retrieveEvents - records: " + JSON.stringify(records));
+                await db.safes.bulkAdd(records).then(function(lastKey) {
+                  console.log("retrieveEvents.bulkAdd lastKey: " + JSON.stringify(lastKey));
+                }).catch(Dexie.BulkError, function(e) {
+                  console.log("retrieveEvents.bulkAdd e: " + JSON.stringify(e.failures, null, 2));
+                });
               }
             }
 
@@ -954,7 +972,8 @@
                 await getLogsFromRange(parseInt(mid) + 1, toBlock);
               }
             }
-            getLogsFromRange(latestBlockNumber - 100000, latestBlockNumber);
+            // getLogsFromRange(latestBlockNumber - 100000, latestBlockNumber);
+            getLogsFromRange(0, latestBlockNumber);
 
           },
 
