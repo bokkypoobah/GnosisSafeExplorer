@@ -87,6 +87,9 @@
             </div>
             <div class="mt-0 flex-grow-1">
             </div>
+            <div class="mt-0 pl-1">
+              <b-form-select size="sm" v-model="settings.safesTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+            </div>
           </div>
 
           <b-card no-body class="m-1 p-1 border-0" bg-variant="light">
@@ -205,15 +208,15 @@
             // halt: false,
           },
 
-          etherscanData: {},
+          // etherscanData: {},
 
-          blockTimestamps: {},
+          // blockTimestamps: {},
 
-          sortOptions: [
-            { value: 'addressasc', text: '▲ Addr' },
-            { value: 'addressdsc', text: '▼ Addr' },
-            { value: 'nameasc', text: '▲ Name' },
-            { value: 'namedsc', text: '▼ Name' },
+          safesSortOptions: [
+            // { value: 'addressasc', text: '▲ Addr' },
+            // { value: 'addressdsc', text: '▼ Addr' },
+            { value: 'blocknumberasc', text: '▲ BlockNumber, ▲ LogIndex' },
+            { value: 'blocknumberdsc', text: '▼ BlockNumber, ▼ LogIndex' },
           ],
           pageSizes: [
             { value: 2, text: '2' },
