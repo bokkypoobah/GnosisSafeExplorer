@@ -284,7 +284,7 @@
             // halt: false,
           },
 
-          // blockTimestamps: {},
+          timestamps: {},
 
           safesSortOptions: [
             // { value: 'addressasc', text: '▲ Addr' },
@@ -446,7 +446,7 @@
             console.log(moment().format("HH:mm:ss") + " processSafeEvents141 - factoryVersion: " + factoryVersion + ", safeVersion:" + safeVersion);
 
             const safeABI = safeVersion && ABIS[safeVersion] && ABIS[safeVersion].gnosis_safe || ABIS["1.3.0"].gnosis_safe;
-            console.log(moment().format("HH:mm:ss") + " processSafeEvents141 - safeABI: " + JSON.stringify(safeABI));
+            // console.log(moment().format("HH:mm:ss") + " processSafeEvents141 - safeABI: " + JSON.stringify(safeABI));
             const safeInterface = new ethers.utils.Interface(safeABI);
             for (const log of logs) {
               if (!log.removed) {
@@ -535,8 +535,20 @@
             }
           },
 
-          async processSafeTxData(provider, factoryVersion, safeVersion) {
-            console.log(moment().format("HH:mm:ss") + " processSafeTxData - factoryVersion: " + factoryVersion + ", safeVersion:" + safeVersion);
+          async processSafeTxData(provider, chainId, factoryVersion, safeVersion) {
+            console.log(moment().format("HH:mm:ss") + " processSafeTxData - chainId: " + chainId + ", factoryVersion: " + factoryVersion + ", safeVersion:" + safeVersion);
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            let timestamps = {}; // TODO: Add chainId as first key
+            const timestampsDataItems = await db.cache.where("objectName").equals("timestamps").toArray();
+            if (timestampsDataItems.length == 1) {
+              timestamps = timestampsDataItems[0].object;
+            }
+            if (!(chainId in timestamps)) {
+              timestamps[chainId] = {};
+            }
+            console.log(moment().format("HH:mm:ss") + " processSafeTxData - timestamps 1: " + JSON.stringify(timestamps, null, 2));
+
             const txHashes = {};
             for (const [blockNumber, blockData] of Object.entries(this.modalSafe.events)) {
               for (const [txHash, txData] of Object.entries(blockData)) {
@@ -553,13 +565,22 @@
             for (const [txHash, blockNumber] of Object.entries(txHashes)) {
               console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHash: " + txHash + ", blockNumber: " + blockNumber);
               const block = await provider.getBlock(parseInt(blockNumber));
-              const timestamp = block.timestamp;
-              console.log(moment().format("HH:mm:ss") + " processSafeTxData - timestamp: " + timestamp);
-              const tx = await provider.getTransaction(txHash);
-              console.log(moment().format("HH:mm:ss") + " processSafeTxData - tx: " + JSON.stringify(tx));
-              const txReceipt = await provider.getTransactionReceipt(txHash);
-              console.log(moment().format("HH:mm:ss") + " processSafeTxData - txReceipt: " + JSON.stringify(txReceipt));
+              if (!(blockNumber in timestamps[chainId])) {
+                const timestamp = block.timestamp;
+                console.log(moment().format("HH:mm:ss") + " processSafeTxData - blockNumber: " + blockNumber + ", timestamp: " + timestamp + " " + moment.unix(timestamp).format("YYYY-MM-DD HH:mm:ss"));
+                timestamps[chainId][blockNumber] = timestamp;
+              }
+              // const tx = await provider.getTransaction(txHash);
+              // console.log(moment().format("HH:mm:ss") + " processSafeTxData - tx: " + JSON.stringify(tx));
+              // const txReceipt = await provider.getTransactionReceipt(txHash);
+              // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txReceipt: " + JSON.stringify(txReceipt));
             }
+            // Save txs and txReceipts by safe address
+            console.log(moment().format("HH:mm:ss") + " processSafeTxData - timestamps 2: " + JSON.stringify(timestamps, null, 2));
+            await db.cache.put({ objectName: "timestamps", object: timestamps }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
           },
 
           // Safe
@@ -574,6 +595,9 @@
             let factoryABI = ABIS[factoryVersion] && ABIS[factoryVersion].gnosis_safe || null;
             // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - factoryABI: " + JSON.stringify(factoryABI));
             const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const network = await provider.getNetwork();
+            const chainId = network.chainId;
+            localStorage.gnosisSafeExplorerChainId = chainId;
             const block = await provider.getBlock();
             const latestBlockNumber = block && block.number || null;
             // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latestBlockNumber: " + latestBlockNumber);
@@ -600,7 +624,7 @@
               });
               // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - logs: " + JSON.stringify(logs));
               await this.processSafeEvents141(logs, factoryVersion, safeVersion);
-              await this.processSafeTxData(provider, factoryVersion, safeVersion);
+              await this.processSafeTxData(provider, chainId, factoryVersion, safeVersion);
             // }
           },
 
@@ -609,7 +633,7 @@
             const DB_PROCESSING_BATCH_SIZE = 50000;
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
-            for (const name of ['indexToAddress', 'indexToTxHash']) {
+            for (const name of ['indexToAddress', 'indexToTxHash', 'timestamps']) {
               const dataItems = await db.cache.where("objectName").equals(name).toArray();
               if (dataItems.length == 1) {
                 Vue.set(this, name, dataItems[0].object);
@@ -755,6 +779,7 @@
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const network = await provider.getNetwork();
             const chainId = network.chainId;
+            localStorage.gnosisSafeExplorerChainId = chainId;
             const block = await provider.getBlock();
             const latestBlockNumber = block && block.number || null;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - latestBlockNumber: " + latestBlockNumber);
@@ -1047,11 +1072,12 @@
           // (async() => {
           //   await this.connectToWeb3();
           // })();
-          // if ('approvalToolChainId' in localStorage) {
-          //   this.chainId = localStorage.approvalToolChainId;
-          // }
-          // if ('approvalToolCoinbase' in localStorage) {
-          //   this.coinbase = localStorage.approvalToolCoinbase;
+          if ('gnosisSafeExplorerChainId' in localStorage) {
+            this.chainId = localStorage.gnosisSafeExplorerChainId;
+            console.log(moment().format("HH:mm:ss") + " mounted - this.chainId: " + this.chainId);
+          }
+          // if ('gnosisSafeExplorerCoinbase' in localStorage) {
+          //   this.coinbase = localStorage.gnosisSafeExplorerCoinbase;
           // }
           if ('gnosisSafeExplorerSettings' in localStorage) {
             const tempSettings = JSON.parse(localStorage.gnosisSafeExplorerSettings);
