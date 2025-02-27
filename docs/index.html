@@ -420,6 +420,10 @@
 
           async processSafeEvents141(logs, factoryVersion, safeVersion) {
             console.log(moment().format("HH:mm:ss") + " processSafeEvents - factoryVersion: " + factoryVersion + ", safeVersion:" + safeVersion);
+
+            const safeABI = ABIS[safeVersion] && ABIS[safeVersion].gnosis_safe || null;
+            console.log(moment().format("HH:mm:ss") + " processSafeEvents - safeABI: " + JSON.stringify(safeABI));
+            const safeInterface = new ethers.utils.Interface(safeABI);
             for (const log of logs) {
               if (!log.removed) {
                 console.log(moment().format("HH:mm:ss") + " processSafeEvents - log: " + JSON.stringify(log, null, 2));
@@ -445,6 +449,13 @@
                 // event ExecutionFailure(bytes32 indexed txHash, uint256 payment);
                 // event ChangedThreshold(uint256 threshold);
 
+                const logData = safeInterface.parseLog(log);
+                // const [operator, from, to, ids, values] = logData.args;
+                console.log(moment().format("HH:mm:ss") + " processSafeEvents - logData: " + JSON.stringify(logData, null, 2));
+
+                const eventName = logData.eventFragment.name;
+                const parameterNames = logData.eventFragment.inputs.map(({ name, type }) => ({ name, type }));
+                const parameters = logData.args;
 
                 if (!(log.blockNumber in this.modalSafe.events)) {
                   Vue.set(this.modalSafe.events, log.blockNumber, {});
@@ -458,6 +469,9 @@
                     transactionHash: log.transactionHash,
                     data: log.data,
                     topics: log.topics,
+                    eventName,
+                    parameterNames,
+                    parameters,
                   });
                 }
               }
