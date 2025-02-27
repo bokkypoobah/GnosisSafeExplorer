@@ -1,5 +1,40 @@
 ## Safe 1.4.1 @ [0x41675C099F32341bf84BFc5382aF534df5C7461a](https://etherscan.io/address/0x41675C099F32341bf84BFc5382aF534df5C7461a#code)
 
+### Events
+
+```solidity
+// Safe.sol 1/16
+// 0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8
+event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
+event ApproveHash(bytes32 indexed approvedHash, address indexed owner);
+event SignMsg(bytes32 indexed msgHash);
+event ExecutionFailure(bytes32 indexed txHash, uint256 payment);
+// 0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e
+event ExecutionSuccess(bytes32 indexed txHash, uint256 payment);
+
+// FallbackManager.sol 3/16
+event ChangedFallbackHandler(address indexed handler);
+
+// GuardManager.sol 4/16
+event ChangedGuard(address indexed guard);
+
+// ModuleManager.sol 5/16
+event EnabledModule(address indexed module);
+event DisabledModule(address indexed module);
+event ExecutionFromModuleSuccess(address indexed module);
+event ExecutionFromModuleFailure(address indexed module);
+
+// OwnerManager.sol 6/16
+// 0x9465fa0c962cc76958e6373a993326400c1c94f8be2fe3a952adfa7f60b2ea26
+event AddedOwner(address indexed owner);
+// 0xf8d49fc529812e9a7c5c50e69c20f0dccc0db8fa95c98bc58cc9a4f1c1299eaf
+event RemovedOwner(address indexed owner);
+event ChangedThreshold(uint256 threshold);
+
+// NativeCurrencyPaymentFallback.sol 8/16
+// 0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d
+event SafeReceived(address indexed sender, uint256 value);
+```
 
 ### Safe.sol 1/16
 
