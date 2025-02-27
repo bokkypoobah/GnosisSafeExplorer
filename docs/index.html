@@ -263,7 +263,8 @@
             txHashIndex: null,
             factoryAddressIndex: null,
             factory: null,
-            events: [],
+            info: {},
+            events: {},
           },
 
           sync: {
@@ -417,16 +418,34 @@
             }
           },
 
-          async processSafeEvents(logs, version) {
-            console.log(moment().format("HH:mm:ss") + " processSafeEvents - version: " + version);
+          async processSafeEvents141(logs, factoryVersion, safeVersion) {
+            console.log(moment().format("HH:mm:ss") + " processSafeEvents - factoryVersion: " + factoryVersion + ", safeVersion:" + safeVersion);
             for (const log of logs) {
               if (!log.removed) {
                 console.log(moment().format("HH:mm:ss") + " processSafeEvents - log: " + JSON.stringify(log, null, 2));
-                this.modalSafe.events.push(log);
+                if (!(log.blockNumber in this.modalSafe.events)) {
+                  Vue.set(this.modalSafe.events, log.blockNumber, {});
+                }
+                if (!(log.logIndex in this.modalSafe.events[log.blockNumber])) {
+                  Vue.set(this.modalSafe.events[log.blockNumber], log.transactionHash, {});
+                }
+                if (!(log.logIndex in this.modalSafe.events[log.blockNumber][log.transactionHash])) {
+                  Vue.set(this.modalSafe.events[log.blockNumber][log.transactionHash], log.logIndex, {
+                    address: log.address,
+                    transactionHash: log.transactionHash,
+                    data: log.data,
+                    topics: log.topics,
+                  });
+                }
               }
             }
           },
 
+          // Safe
+          // 1.1.1 0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F
+          // 1.3.0 0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552
+          // 1.4.1 0x41675C099F32341bf84BFc5382aF534df5C7461a
+          // TODO 1.2.0 0x6851D6fDFAfD08c0295C392436245E5bc78B0185
           async retrieveSafeEvents() {
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - this.modalSafe: " + JSON.stringify(this.modalSafe, null, 2));
             const factoryVersion = this.factories[this.modalSafe.factory] || null;
@@ -437,14 +456,30 @@
             const block = await provider.getBlock();
             const latestBlockNumber = block && block.number || null;
             // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latestBlockNumber: " + latestBlockNumber);
-            const logs = await provider.getLogs({
-              address: this.modalSafe.safe,
-              fromBlock: 0,
-              toBlock: latestBlockNumber,
-              topics: null,
-            });
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - logs: " + JSON.stringify(logs));
-            await this.processSafeEvents(logs, factoryVersion);
+
+            const possibleSafeAbi = [ "function VERSION() external view returns (string)" ];
+            const possibleSafeContract = new ethers.Contract(this.modalSafe.safe, possibleSafeAbi, provider);
+            let safeVersion = null;
+            try {
+              safeVersion = await possibleSafeContract.VERSION();
+              console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeVersion: " + safeVersion);
+            } catch (e) {
+              console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - error: " + e.message);
+            }
+            Vue.set(this.modalSafe.info, 'factoryVersion', factoryVersion);
+            Vue.set(this.modalSafe.info, 'safeVersion', safeVersion);
+
+            // TODO: 1.1.1 and 1.3.0
+            if (safeVersion == "1.4.1") {
+              const logs = await provider.getLogs({
+                address: this.modalSafe.safe,
+                fromBlock: 0,
+                toBlock: latestBlockNumber,
+                topics: null,
+              });
+              // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - logs: " + JSON.stringify(logs));
+              await this.processSafeEvents141(logs, factoryVersion, safeVersion);
+            }
           },
 
           async loadCurrentData() {
