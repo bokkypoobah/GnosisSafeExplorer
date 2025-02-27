@@ -73,6 +73,13 @@
           <template #modal-title>
             Safe {{ modalSafe.safe || '' }}
           </template>
+          <b-form-group label="Factory Version:" label-cols="3" label-align="right" class="m-0">
+            <b-form-input type="text" readonly size="sm" :value="modalSafe.info.factoryVersion" class="w-25"></b-form-input>
+          </b-form-group>
+          <b-form-group label="Safe Version:" label-cols="3" label-align="right" class="m-0">
+            <b-form-input type="text" readonly size="sm" :value="modalSafe.info.safeVersion" class="w-25"></b-form-input>
+          </b-form-group>
+
           <font size="-2">
             <pre>
 {{ modalSafeEvents }}
