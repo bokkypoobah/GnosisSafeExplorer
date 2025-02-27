@@ -1,6 +1,6 @@
 # Gnosis Safe Explorer (WIP)
 
-Checking out Gnosis Safe, starting with Safe 1.1.1, the original code for the hacked `Bybit: Cold Wallet 1` at [0x1db92e2eebc8e0c075a02bea49a2935bcd2dfcf4](https://etherscan.io/address/0x1db92e2eebc8e0c075a02bea49a2935bcd2dfcf4)
+Checking out Gnosis Safe, starting with Safe 1.1.1, the original code for the hacked `Bybit: Cold Wallet 1` at [0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4](https://etherscan.io/address/0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4)
 
 From https://docs.safe.global/advanced/smart-account-supported-networks:
 
@@ -13,7 +13,12 @@ From https://docs.safe.global/advanced/smart-account-supported-networks:
 
 <br />
 
-Safe Contracts, initially for testing Safe 1.4.1, using `EF: DeFi Multisig` at [0x9fC3dc011b461664c835F2527fffb1169b3C213e](https://etherscan.io/address/0x9fC3dc011b461664c835F2527fffb1169b3C213e) :
+Testing Safe 1.3.0 using the hacked `Bybit: Cold Wallet 1` at [0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4](https://etherscan.io/address/0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4) :
+
+* [contracts/Safe_1_3_0.md](contracts/Safe_1_3_0.md) at [0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552](https://etherscan.io/address/0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552#code)
+
+
+Testing Safe 1.4.1 using `EF: DeFi Multisig` at [0x9fC3dc011b461664c835F2527fffb1169b3C213e](https://etherscan.io/address/0x9fC3dc011b461664c835F2527fffb1169b3C213e) :
 
 * [contracts/Safe_1_4_1.md](contracts/Safe_1_4_1.md) at [0x41675C099F32341bf84BFc5382aF534df5C7461a](https://etherscan.io/address/0x41675C099F32341bf84BFc5382aF534df5C7461a#code)
 

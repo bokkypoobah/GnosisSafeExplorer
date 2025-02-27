@@ -421,7 +421,7 @@
           async processSafeEvents141(logs, factoryVersion, safeVersion) {
             console.log(moment().format("HH:mm:ss") + " processSafeEvents - factoryVersion: " + factoryVersion + ", safeVersion:" + safeVersion);
 
-            const safeABI = ABIS[safeVersion] && ABIS[safeVersion].gnosis_safe || null;
+            const safeABI = safeVersion && ABIS[safeVersion] && ABIS[safeVersion].gnosis_safe || ABIS["1.3.0"].gnosis_safe;
             console.log(moment().format("HH:mm:ss") + " processSafeEvents - safeABI: " + JSON.stringify(safeABI));
             const safeInterface = new ethers.utils.Interface(safeABI);
             for (const log of logs) {
@@ -540,7 +540,7 @@
             Vue.set(this.modalSafe.info, 'safeVersion', safeVersion);
 
             // TODO: 1.1.1 and 1.3.0
-            if (safeVersion == "1.4.1") {
+            // if (safeVersion == "1.4.1") {
               const logs = await provider.getLogs({
                 address: this.modalSafe.safe,
                 fromBlock: 0,
@@ -549,7 +549,7 @@
               });
               // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - logs: " + JSON.stringify(logs));
               await this.processSafeEvents141(logs, factoryVersion, safeVersion);
-            }
+            // }
           },
 
           async loadCurrentData() {
