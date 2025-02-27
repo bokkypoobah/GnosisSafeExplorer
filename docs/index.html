@@ -79,11 +79,54 @@
           <b-form-group label="Safe Version:" label-cols="3" label-align="right" class="m-0">
             <b-form-input type="text" readonly size="sm" :value="modalSafe.info.safeVersion" class="w-25"></b-form-input>
           </b-form-group>
+          <!-- :MENU -->
+          <div class="d-flex flex-wrap m-0 mt-1 p-0 px-1 pt-1 bg-white">
+            <!-- <div class="mt-0 pr-1" style="max-width: 24.0rem;">
+              <b-form-input type="text" size="sm" v-model.trim="settings.safeEventsTable.filter" @change="saveSettings(); loadCurrentData();" debounce="600" v-b-popover.hover.bottom="'Filter by safe address'" placeholder="🔍 0xabcd"></b-form-input>
+            </div> -->
+            <div class="mt-0 flex-grow-1">
+            </div>
+            <!-- <div v-if="!sync.section" class="mt-0 pr-1">
+              <b-button size="sm" @click="retrieveSafeFactoryEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
+            </div> -->
+            <!-- <b-progress v-if="sync.section != null" height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 24.0rem;">
+              <b-progress-bar :value="sync.completed">
+                {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
+              </b-progress-bar>
+            </b-progress> -->
+            <!-- <div class="mt-0 flex-grow-1">
+            </div> -->
+            <div class="mt-0 pl-1">
+              <b-form-select size="sm" v-model="settings.safeEventsTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+            </div>
+            <div class="mt-0 pl-1">
+              <font size="-2" v-b-popover.hover.bottom="'# Safes'">{{ allSafes.length }}</font>
+            </div>
+            <div class="mt-0 pl-1">
+              <b-pagination size="sm" v-model="settings.safeEventsTable.currentPage" @input="saveSettings" :total-rows="allSafes.length" :per-page="settings.safeEventsTable.pageSize" style="height: 0;"></b-pagination>
+            </div>
+            <div class="mt-0 pl-1">
+              <b-form-select size="sm" v-model="settings.safeEventsTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+            </div>
+          </div>
+          <!-- <b-table ref="safeEventsTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve all deployed Safes v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0"> -->
+          <b-table ref="safeEventsTable" small fixed striped responsive hover :fields="safeEventsFields" :items="modalSafeEvents" show-empty empty-html="Click Sync above to retrieve all deployed Safes v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 mt-1">
+            <template #cell(index)="data">
+              <font size="-1" class="text-muted">
+                {{ parseInt(data.index) + ((settings.safesTable.currentPage - 1) * settings.safesTable.pageSize) + 1 }}
+              </font>
+            </template>
+            <template #cell(info)="data">
+              <font size="-2">
+                <pre>
+{{ data.item }}
+                </pre>
+              </font>
+            </template>
+          </b-table>
 
           <font size="-2">
             <pre>
-{{ modalSafeEvents }}
-
 {{ modalSafe }}
             </pre>
           </font>
@@ -119,11 +162,13 @@
             <div v-if="!sync.section" class="mt-0 pr-1">
               <b-button size="sm" @click="retrieveSafeFactoryEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
             </div>
-            <b-progress v-if="sync.section != null" height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 24.0rem;">
-              <b-progress-bar :value="sync.completed">
-                {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
-              </b-progress-bar>
-            </b-progress>
+            <div class="mt-0 pr-1">
+              <b-progress v-if="sync.section != null" height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 24.0rem;">
+                <b-progress-bar :value="sync.completed">
+                  {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
+                </b-progress-bar>
+              </b-progress>
+            </div>
             <div class="mt-0 flex-grow-1">
             </div>
             <div class="mt-0 pl-1">
@@ -267,7 +312,13 @@
               pageSize: 15,
               sortOption: 'blocknumberdsc',
             },
-            version: 0,
+            safeEventsTable: {
+              filter: null,
+              currentPage: 1,
+              pageSize: 15,
+              sortOption: 'blocknumberdsc',
+            },
+            version: 1,
           },
 
           modalSafe: {
@@ -310,6 +361,15 @@
             { value: 250, text: '250' },
             { value: 500, text: '500' },
             { value: 1000, text: '1,000' },
+          ],
+
+          safeEventsFields: [
+            { key: 'index', label: '#', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
+            { key: 'info', label: 'Info', sortable: false, thStyle: 'width: 90%;', tdClass: 'text-truncate' },
+            // { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
+            // { key: 'safe', label: 'Safe', sortable: false, thStyle: 'width: 35%;', tdClass: 'text-truncate' },
+            // { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 35%;', tdClass: 'text-truncate' },
+            // { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
           ],
 
           safesFields: [
