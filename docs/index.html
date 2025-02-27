@@ -110,7 +110,7 @@
             </div>
           </div>
           <!-- <b-table ref="safeEventsTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve all deployed Safes v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0"> -->
-          <b-table ref="safeEventsTable" small fixed striped responsive hover :fields="safeEventsFields" :items="modalSafeEvents" show-empty empty-html="Click Sync above to retrieve all deployed Safes v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 mt-1">
+          <b-table ref="safeEventsTable" small fixed striped responsive hover :fields="safeEventsFields" :items="modalSafeEvents" show-empty empty-html="Retrieving..." head-variant="light" class="mx-0 mt-1">
             <template #cell(index)="data">
               <font size="-1" class="text-muted">
                 {{ parseInt(data.index) + ((settings.safesTable.currentPage - 1) * settings.safesTable.pageSize) + 1 }}
@@ -127,7 +127,7 @@
 
           <font size="-2">
             <pre>
-{{ modalSafe }}
+txData: {{ txData }}
             </pre>
           </font>
           <!-- <b-form-group label="Graffiti:" label-cols="3" label-align="right" description="Up to 32 characters, alphanumeric plus '-', '_' and '.' permitted">
@@ -343,6 +343,7 @@
           },
 
           timestamps: {},
+          txData: {}, // Transactions only for the current safe address
 
           safesSortOptions: [
             // { value: 'addressasc', text: '▲ Addr' },
@@ -606,7 +607,7 @@
             console.log(moment().format("HH:mm:ss") + " processSafeTxData - chainId: " + chainId + ", factoryVersion: " + factoryVersion + ", safeVersion:" + safeVersion);
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
-            let timestamps = {}; // TODO: Add chainId as first key
+            let timestamps = {};
             const timestampsDataItems = await db.cache.where("objectName").equals("timestamps").toArray();
             if (timestampsDataItems.length == 1) {
               timestamps = timestampsDataItems[0].object;
@@ -615,6 +616,15 @@
               timestamps[chainId] = {};
             }
             console.log(moment().format("HH:mm:ss") + " processSafeTxData - timestamps 1: " + JSON.stringify(timestamps, null, 2));
+            let txData = {};
+            const txDataItems = await db.cache.where("objectName").equals("txData_" + this.modalSafe.safe).toArray();
+            if (txDataItems.length == 1) {
+              txData = txDataItems[0].object;
+            }
+            if (!(chainId in txData)) {
+              txData[chainId] = {};
+            }
+            console.log(moment().format("HH:mm:ss") + " processSafeTxData - txData 1: " + JSON.stringify(txData, null, 2));
 
             const txHashes = {};
             for (const [blockNumber, blockData] of Object.entries(this.modalSafe.events)) {
@@ -622,32 +632,72 @@
                 if (!(txHash in txHashes)) {
                   txHashes[txHash] = blockNumber;
                 }
-                for (const [logIndex, logData] of Object.entries(txData)) {
-                  console.log(moment().format("HH:mm:ss") + " processSafeTxData - data: " + blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData));
+                // for (const [logIndex, logData] of Object.entries(txData)) {
+                  // console.log(moment().format("HH:mm:ss") + " processSafeTxData - data: " + blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData));
                   // results.push({ blockNumber, txHash, logIndex, ...logData });
-                }
+                // }
               }
             }
             console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHashes: " + JSON.stringify(txHashes));
             for (const [txHash, blockNumber] of Object.entries(txHashes)) {
               console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHash: " + txHash + ", blockNumber: " + blockNumber);
-              const block = await provider.getBlock(parseInt(blockNumber));
               if (!(blockNumber in timestamps[chainId])) {
+                const block = await provider.getBlock(parseInt(blockNumber));
                 const timestamp = block.timestamp;
-                console.log(moment().format("HH:mm:ss") + " processSafeTxData - blockNumber: " + blockNumber + ", timestamp: " + timestamp + " " + moment.unix(timestamp).format("YYYY-MM-DD HH:mm:ss"));
+                // console.log(moment().format("HH:mm:ss") + " processSafeTxData - blockNumber: " + blockNumber + ", timestamp: " + timestamp + " " + moment.unix(timestamp).format("YYYY-MM-DD HH:mm:ss"));
                 timestamps[chainId][blockNumber] = timestamp;
               }
-              // const tx = await provider.getTransaction(txHash);
-              // console.log(moment().format("HH:mm:ss") + " processSafeTxData - tx: " + JSON.stringify(tx));
-              // const txReceipt = await provider.getTransactionReceipt(txHash);
-              // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txReceipt: " + JSON.stringify(txReceipt));
+              if (!(txHash in txData[chainId])) {
+                txData[chainId][txHash] = {
+                  tx: null,
+                  txReceipt: null,
+                };
+              }
+              if (!txData[chainId][txHash].tx) {
+                const tx = await provider.getTransaction(txHash);
+                // console.log(moment().format("HH:mm:ss") + " processSafeTxData - tx: " + JSON.stringify(tx));
+                txData[chainId][txHash].tx = {
+                  blockNumber: tx.blockNumber,
+                  type: tx.type,
+                  txIndex: tx.transactionIndex,
+                  from: tx.from,
+                  nonce: parseInt(tx.nonce),
+                  to: tx.to,
+                  data: tx.data,
+                  gasPrice: ethers.BigNumber.from(tx.gasPrice).toString(),
+                  maxPriorityFeePerGas: ethers.BigNumber.from(tx.maxPriorityFeePerGas).toString(),
+                  gasLimit: parseInt(tx.gasLimit),
+                }
+              }
+              if (!txData[chainId][txHash].txReceipt) {
+                const txReceipt = await provider.getTransactionReceipt(txHash);
+                // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txReceipt: " + JSON.stringify(txReceipt));
+                txData[chainId][txHash].txReceipt = {
+                  type: parseInt(txReceipt.type),
+                  txIndex: txReceipt.transactionIndex,
+                  from: txReceipt.from,
+                  to: txReceipt.to,
+                  contractAddress: txReceipt.contractAddress,
+                  gasUsed: parseInt(txReceipt.gasUsed),
+                  cumulativeGasUsed: parseInt(txReceipt.cumulativeGasUsed),
+                  effectiveGasPrice: parseInt(txReceipt.effectiveGasPrice),
+                  status: parseInt(txReceipt.status),
+                  logs: txReceipt.logs,
+                }
+              }
+
             }
-            // Save txs and txReceipts by safe address
             console.log(moment().format("HH:mm:ss") + " processSafeTxData - timestamps 2: " + JSON.stringify(timestamps, null, 2));
             await db.cache.put({ objectName: "timestamps", object: timestamps }).then (function() {
             }).catch(function(error) {
               console.log("error: " + error);
             });
+            console.log(moment().format("HH:mm:ss") + " processSafeTxData - txData 1: " + JSON.stringify(txData, null, 2));
+            await db.cache.put({ objectName: "txData_" + this.modalSafe.safe, object: txData }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+            Vue.set(this, "txData", txData);
           },
 
           // Safe
