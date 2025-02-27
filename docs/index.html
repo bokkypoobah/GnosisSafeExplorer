@@ -534,7 +534,7 @@
               safeVersion = await possibleSafeContract.VERSION();
               console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeVersion: " + safeVersion);
             } catch (e) {
-              console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - error: " + e.message);
+              console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeVersion - error: " + e.message);
             }
             Vue.set(this.modalSafe.info, 'factoryVersion', factoryVersion);
             Vue.set(this.modalSafe.info, 'safeVersion', safeVersion);
