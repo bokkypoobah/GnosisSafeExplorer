@@ -24,13 +24,17 @@ Web3 dapp: https://bokkypoobah.github.io/GnosisSafeExplorer/ (WIP)
 
 ### Sample Screens
 
-288,675 v1.1.1, v1.3.0 and v1.4.1 Gnosis Safes have been deployed at this time.
+Syncing
 
 <kbd><img src="images/SampleScreen01.png" width="800" /></kbd>
 
-Search filter
+288,680 v1.1.1, v1.3.0 and v1.4.1 Gnosis Safes have been deployed at this time. Syncing takes ~ 3 minutes
 
 <kbd><img src="images/SampleScreen02.png" width="800" /></kbd>
+
+Search by Safe address
+
+<kbd><img src="images/SampleScreen03.png" width="800" /></kbd>
 
 
 <br />

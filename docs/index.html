@@ -317,6 +317,20 @@
         // --- COMPUTED ---
         computed: {
 
+          factories() {
+            const result = {};
+            for (const [version, versionData] of Object.entries(ADDRESSES)) {
+              for (const [chainId, chainData] of Object.entries(versionData)) {
+                for (const [contractName, address] of Object.entries(chainData)) {
+                  if (contractName == "proxy_factory" || contractName == "safe_proxy_factory") {
+                    result[address] = version;
+                  }
+                }
+              }
+            }
+            return result;
+          },
+
           allSafes() {
             // console.log(moment().format("HH:mm:ss") + " allSafes");
             const results = [];
@@ -590,19 +604,11 @@
               addressToIndex[factoryAddress] = indexToAddress.length;
               indexToAddress.push(factoryAddress);
             }
-            const factoryAddresses = {};
-            for (const [version, versionData] of Object.entries(ADDRESSES)) {
-              for (const [chainId, chainData] of Object.entries(versionData)) {
-                for (const [contractName, address] of Object.entries(chainData)) {
-                  if (contractName == "proxy_factory" || contractName == "safe_proxy_factory") {
-                    console.log(version + "/" + chainId + "/" + contractName + " => " + JSON.stringify(address));
-                    factoryAddresses[address] = "Safe Factory v" + version;
-                    if (!(address in addressToIndex)) {
-                      addressToIndex[address] = indexToAddress.length;
-                      indexToAddress.push(address);
-                    }
-                  }
-                }
+            const factoryAddresses = this.factories;
+            for (const factoryAddress in factoryAddresses) {
+              if (!(factoryAddress in addressToIndex)) {
+                addressToIndex[factoryAddress] = indexToAddress.length;
+                indexToAddress.push(factoryAddress);
               }
             }
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - factoryAddresses: " + JSON.stringify(factoryAddresses));
