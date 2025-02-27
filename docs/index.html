@@ -97,6 +97,14 @@
             <div class="mt-0 pr-1" style="max-width: 24.0rem;">
               <b-form-input type="text" size="sm" v-model.trim="settings.safesTable.filter" @change="saveSettings(); loadCurrentData();" debounce="600" v-b-popover.hover.bottom="'Filter by safe address'" placeholder="🔍 0xabcd"></b-form-input>
             </div>
+            <div class="mt-0 pr-1">
+              <b-dropdown size="sm" right text="" variant="link" class="m-0 p-0">
+                <b-dropdown-text>Sample Safes</b-dropdown-text>
+                <b-dropdown-divider></b-dropdown-divider>
+                <b-dropdown-item @click="settings.safesTable.filter = '0x9fC3dc011b461664c835F2527fffb1169b3C213e'; saveSettings(); loadCurrentData()">EF: DeFi Multisig - Safe v1.4.1</b-dropdown-item>
+                <b-dropdown-item @click="settings.safesTable.filter = '0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4'; saveSettings(); loadCurrentData()">Hacked Bybit: Cold Wallet 1 - Originally Safe 1.3.0; now Non-Safe Contract</b-dropdown-item>
+              </b-dropdown>
+            </div>
             <div class="mt-0 flex-grow-1">
             </div>
             <div v-if="!sync.section" class="mt-0 pr-1">
