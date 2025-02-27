@@ -449,13 +449,36 @@
                 // event ExecutionFailure(bytes32 indexed txHash, uint256 payment);
                 // event ChangedThreshold(uint256 threshold);
 
-                const logData = safeInterface.parseLog(log);
-                // const [operator, from, to, ids, values] = logData.args;
-                console.log(moment().format("HH:mm:ss") + " processSafeEvents - logData: " + JSON.stringify(logData, null, 2));
-
-                const eventName = logData.eventFragment.name;
-                const parameterNames = logData.eventFragment.inputs.map(({ name, type }) => ({ name, type }));
-                const parameters = logData.args;
+                const event = {};
+                try {
+                  const logData = safeInterface.parseLog(log);
+                  // console.log(moment().format("HH:mm:ss") + " processSafeEvents - logData: " + JSON.stringify(logData, null, 2));
+                  event.name = logData.eventFragment.name;
+                  if (event.name == "SafeSetup") {
+                    // event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
+                    const [initiator, owners, threshold, initializer, fallbackHandler] = logData.args;
+                    event.initiator = initiator;
+                    event.owners = owners;
+                    event.threshold = parseInt(threshold);
+                    event.initializer = initializer;
+                    event.fallbackHandler = fallbackHandler;
+                  } else if (event.name == "SafeReceived") {
+                    // event SafeReceived(address indexed sender, uint256 value);
+                    const [sender, value] = logData.args;
+                    event.sender = sender;
+                    event.value = ethers.BigNumber.from(value).toString();
+                  } else if (event.name == "ExecutionSuccess") {
+                    // event ExecutionSuccess(bytes32 indexed txHash, uint256 payment);
+                    const [txHash, payment] = logData.args;
+                    event.txHash = txHash;
+                    event.payment = ethers.BigNumber.from(payment).toString();
+                  } else {
+                    event.parameterNames = logData.eventFragment.inputs.map(({ name, type }) => ({ name, type }));
+                    event.parameters = logData.args;
+                  }
+                } catch (e) {
+                  event.name = "Unknown signature: " + log.topics[0];
+                }
 
                 if (!(log.blockNumber in this.modalSafe.events)) {
                   Vue.set(this.modalSafe.events, log.blockNumber, {});
@@ -467,11 +490,11 @@
                   Vue.set(this.modalSafe.events[log.blockNumber][log.transactionHash], log.logIndex, {
                     address: log.address,
                     transactionHash: log.transactionHash,
+                    ...event,
                     data: log.data,
                     topics: log.topics,
-                    eventName,
-                    parameterNames,
-                    parameters,
+                    // parameterNames,
+                    // parameters,
                   });
                 }
               }

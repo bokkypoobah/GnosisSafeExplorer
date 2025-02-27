@@ -43,7 +43,8 @@ Search by Safe address
 
 Clicking on the row to view the Safe details
 
-<kbd><img src="images/SampleScreen04.png" width="800" /></kbd>
+<kbd><img src="images/SampleScreen04.png?a" width="800" /></kbd>
+<kbd><img src="images/SampleScreen05.png" width="800" /></kbd>
 
 
 <br />
