@@ -419,6 +419,10 @@
 
           async retrieveSafeEvents() {
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - this.modalSafe: " + JSON.stringify(this.modalSafe, null, 2));
+            const factoryVersion = this.factories[this.modalSafe.factory] || null;
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - factoryVersion: " + factoryVersion);
+            let factoryABI = ABIS[factoryVersion] && ABIS[factoryVersion].gnosis_safe || null;
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - factoryABI: " + JSON.stringify(factoryABI));
           },
 
           async loadCurrentData() {
