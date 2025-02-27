@@ -552,6 +552,9 @@
             console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHashes: " + JSON.stringify(txHashes));
             for (const [txHash, blockNumber] of Object.entries(txHashes)) {
               console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHash: " + txHash + ", blockNumber: " + blockNumber);
+              const block = await provider.getBlock(parseInt(blockNumber));
+              const timestamp = block.timestamp;
+              console.log(moment().format("HH:mm:ss") + " processSafeTxData - timestamp: " + timestamp);
               const tx = await provider.getTransaction(txHash);
               console.log(moment().format("HH:mm:ss") + " processSafeTxData - tx: " + JSON.stringify(tx));
               const txReceipt = await provider.getTransactionReceipt(txHash);
