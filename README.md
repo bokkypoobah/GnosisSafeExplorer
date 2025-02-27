@@ -11,6 +11,10 @@ From https://docs.safe.global/advanced/smart-account-supported-networks:
 * multi_send.sol at [0x8D29bE29923b68abfDD21e541b9374737B49cdAD](https://etherscan.io/address/0x8D29bE29923b68abfDD21e541b9374737B49cdAD)
 * [proxy_factory.sol](contracts/ProxyFactory_1_1_1_0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B.sol) at [0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B](https://etherscan.io/address/0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B)
 
+<br />
+Safe Contracts, initially for testing Safe 1.4.1, using `EF: DeFi Multisig` at [0x9fC3dc011b461664c835F2527fffb1169b3C213e](https://etherscan.io/address/0x9fC3dc011b461664c835F2527fffb1169b3C213e):
+
+* [contracts/Safe_1_4_1.md](contracts/Safe_1_4_1) at [0x41675C099F32341bf84BFc5382aF534df5C7461a](https://etherscan.io/address/0x41675C099F32341bf84BFc5382aF534df5C7461a#code)
 
 <br />
 
