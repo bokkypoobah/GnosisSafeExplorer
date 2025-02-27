@@ -36,6 +36,10 @@ Search by Safe address
 
 <kbd><img src="images/SampleScreen03.png" width="800" /></kbd>
 
+Clicking on the row to view the Safe details
+
+<kbd><img src="images/SampleScreen04.png" width="800" /></kbd>
+
 
 <br />
 
