@@ -169,7 +169,7 @@
           </div>
 
           <b-card no-body class="m-1 p-0 border-0" bg-variant="light">
-            <b-table ref="safesTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve all deployed Safes v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
+            <b-table ref="safesTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
               <template #cell(index)="data">
                 <font size="-1" class="text-muted">
                   {{ parseInt(data.index) + ((settings.safesTable.currentPage - 1) * settings.safesTable.pageSize) + 1 }}
@@ -371,7 +371,7 @@
           ],
 
           db: {
-            name: "gnosissafeexplorer088d",
+            name: "gnosissafeexplorer088e",
             version: 1,
             schemaDefinition: {
               safes: '[chainId+blockNumber+logIndex],safe,factory',
@@ -867,7 +867,7 @@
                     // console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - log: " + JSON.stringify(log));
                     let safeAddress = null;
                     let implementationAddress = null;
-                    if (log.address == "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B") {
+                    if (log.address == "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B" || log.address == "0x12302fE9c02ff50939BaAaaf415fc226C078613C") {
                       // 1.1.1 event ProxyCreation(Proxy proxy)
                       safeAddress = ethers.utils.getAddress('0x' + log.data.substring(26, 66));
                       implementationAddress = "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F";
@@ -923,6 +923,7 @@
               console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - getLogsFromRange: " + fromBlock + ", toBlock: " + toBlock);
               try {
                 const logs = await provider.getLogs({
+                  // address: "0x12302fE9c02ff50939BaAaaf415fc226C078613C", // 1.0.0
                   // address: "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B", // 1.1.1
                   // address: "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2", // 1.3.0
                   // address: "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67", // 1.4.1
