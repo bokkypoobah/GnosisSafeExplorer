@@ -79,6 +79,27 @@
           <b-form-group label="Safe Version:" label-cols="3" label-align="right" class="m-0">
             <b-form-input type="text" readonly size="sm" :value="modalSafe.info.safeVersion" class="w-25"></b-form-input>
           </b-form-group>
+          <b-form-group label="Owners:" label-cols="3" label-align="right" class="m-0">
+            <!-- {{ modalSafe.info.owners }} -->
+            <div v-for="(owner, index) of (modalSafe.info.owners || [])" v-bind:key="index" class="mt-1">
+              <!-- <b-row>
+                <b-col>
+                  {{ index }}
+                </b-col>
+                <b-col cols="11"> -->
+                  <b-link :href="'https://etherscan.io/address/' + owner" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                    {{ owner }}
+                  </b-link>
+                <!-- </b-col>
+              </b-row> -->
+            </div>
+          </b-form-group>
+          <b-form-group label="Threshold:" label-cols="3" label-align="right" class="m-0">
+            <b-form-input type="text" readonly size="sm" :value="modalSafe.info.threshold" class="w-25"></b-form-input>
+          </b-form-group>
+          <b-form-group label="Nonce:" label-cols="3" label-align="right" class="m-0">
+            <b-form-input type="text" readonly size="sm" :value="modalSafe.info.nonce" class="w-25"></b-form-input>
+          </b-form-group>
           <!-- :MENU -->
           <div class="d-flex flex-wrap m-0 mt-1 p-0 px-1 pt-1 bg-white">
             <!-- <div class="mt-0 pr-1" style="max-width: 24.0rem;">
