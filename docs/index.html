@@ -404,14 +404,14 @@
                     collator[txHash] = {
                       blockNumber,
                       txIndex: logData.txIndex,
+                      tx: this.txData[this.chainId] && this.txData[this.chainId][txHash] && this.txData[this.chainId][txHash].tx || null,
+                      txReceipt: this.txData[this.chainId] && this.txData[this.chainId][txHash] && this.txData[this.chainId][txHash].txReceipt || null,
                       events: {},
                     };
                   }
                   if (!(logIndex in collator[txHash].events)) {
                     collator[txHash].events[logIndex] = {
                       ...logData,
-                      tx: this.txData[this.chainId] && this.txData[this.chainId][txHash] && this.txData[this.chainId][txHash].tx || null,
-                      txReceipt: this.txData[this.chainId] && this.txData[this.chainId][txHash] && this.txData[this.chainId][txHash].txReceipt || null,
                     };
                   }
                 }
