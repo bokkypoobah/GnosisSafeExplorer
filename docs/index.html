@@ -138,6 +138,20 @@
               </font>
             </template>
             <template #cell(info)="data">
+              <b-link :href="'https://etherscan.io/tx/' + data.item.txHash" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                {{ timestamps[chainId] && timestamps[chainId][data.item.blockNumber] && formatTimestamp(timestamps[chainId][data.item.blockNumber]) || (data.item.blockNumber + ':' + data.item.txIndex) }}
+              </b-link>
+              <br />
+              From:
+              <b-link v-if="data.item.tx && data.item.tx.from" :href="'https://etherscan.io/address/' + data.item.tx.from" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                {{ data.item.tx.from }}
+              </b-link>
+              <br />
+              To:
+              <b-link v-if="data.item.tx && data.item.tx.to" :href="'https://etherscan.io/address/' + data.item.tx.to" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                {{ data.item.tx.to }}
+              </b-link>
+              <hr />
               <font size="-2">
                 <pre>
 {{ data.item }}
