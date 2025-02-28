@@ -87,8 +87,8 @@
                   {{ index }}
                 </b-col>
                 <b-col cols="11"> -->
-                  <b-link :href="'https://etherscan.io/address/' + owner" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
-                    {{ owner }}
+                  <b-link :href="'https://etherscan.io/address/' + lookupAddress(owner)" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                    {{ lookupName(owner) }}
                   </b-link>
                 <!-- </b-col>
               </b-row> -->
