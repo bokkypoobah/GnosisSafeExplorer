@@ -415,7 +415,7 @@ txData: {{ txData }}
             for (const [blockNumber, blockData] of Object.entries(this.modalSafe.events)) {
               for (const [txHash, txData] of Object.entries(blockData)) {
                 for (const [logIndex, logData] of Object.entries(txData)) {
-                  console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData));
+                  // console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData));
                   results.push({ blockNumber, txHash, logIndex, ...logData });
                 }
               }
@@ -427,7 +427,7 @@ txData: {{ txData }}
           },
           pagedFilteredSortedModalSafeTxs() {
             const results = this.filteredSortedModalSafeTxs.slice((this.settings.safeTxsTable.currentPage - 1) * this.settings.safeTxsTable.pageSize, this.settings.safeTxsTable.currentPage * this.settings.safeTxsTable.pageSize);
-            console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedModalSafeTxs - results: " + JSON.stringify(results, null, 2));
+            console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedModalSafeTxs - results: " + JSON.stringify(results, null, 2).substring(0, 1000));
             return results;
           },
 
@@ -526,7 +526,7 @@ txData: {{ txData }}
             const safeInterface = new ethers.utils.Interface(safeABI);
             for (const log of logs) {
               if (!log.removed) {
-                console.log(moment().format("HH:mm:ss") + " processSafeEvents141 - log: " + JSON.stringify(log, null, 2));
+                // console.log(moment().format("HH:mm:ss") + " processSafeEvents141 - log: " + JSON.stringify(log, null, 2));
                 // 0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8
                 // event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
                 // event ApproveHash(bytes32 indexed approvedHash, address indexed owner);
@@ -710,7 +710,7 @@ txData: {{ txData }}
           // 1.4.1 0x41675C099F32341bf84BFc5382aF534df5C7461a
           // TODO 1.2.0 0x6851D6fDFAfD08c0295C392436245E5bc78B0185
           async retrieveSafeEvents() {
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - this.modalSafe: " + JSON.stringify(this.modalSafe, null, 2));
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - this.modalSafe: " + JSON.stringify(this.modalSafe).substring(0, 1000));
             const factoryVersion = this.factories[this.modalSafe.factory] || null;
             // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - factoryVersion: " + factoryVersion);
             let factoryABI = ABIS[factoryVersion] && ABIS[factoryVersion].gnosis_safe || null;
