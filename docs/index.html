@@ -20,7 +20,7 @@
     <script src="js/ethers-5.7.umd.min.js" type="application/javascript"></script>
     <script src="js/moment.min.js"></script>
     <script src="js/dexie.js"></script>
-    <script src="addresses.js"></script>
+    <script src="safeAddresses.js"></script>
     <script src="globals.js"></script>
     <script src="chains.js"></script>
     <script src="customNames.js"></script>
@@ -421,7 +421,7 @@
 
           factories() {
             const result = {};
-            for (const [version, versionData] of Object.entries(ADDRESSES)) {
+            for (const [version, versionData] of Object.entries(SAFE_ADDRESSES)) {
               for (const [chainId, chainData] of Object.entries(versionData)) {
                 for (const [contractName, address] of Object.entries(chainData)) {
                   if (contractName == "proxy_factory" || contractName == "safe_proxy_factory") {
@@ -435,7 +435,7 @@
 
           safeContractNames() {
             const results = {};
-            for (const [version, versionData] of Object.entries(ADDRESSES)) {
+            for (const [version, versionData] of Object.entries(SAFE_ADDRESSES)) {
               for (const [chainId, chainData] of Object.entries(versionData)) {
                 for (const [contractName, address] of Object.entries(chainData)) {
                   // console.log(version + "/" + chainId + "/" + contractName + " => " + address);
@@ -1011,7 +1011,7 @@
             this.sync.section = "Syncing";
             this.sync.total = latestBlockNumber;
             this.sync.completed = 0;
-            const factoryAddress = ADDRESSES["1.1.1"] && ADDRESSES["1.1.1"]["1"] && ADDRESSES["1.1.1"]["1"]["proxy_factory"] || null;
+            const factoryAddress = SAFE_ADDRESSES["1.1.1"] && SAFE_ADDRESSES["1.1.1"]["1"] && SAFE_ADDRESSES["1.1.1"]["1"]["proxy_factory"] || null;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - factoryAddress: " + JSON.stringify(factoryAddress));
             const factoryABI = ABIS["1.1.1"] && ABIS["1.1.1"]["proxy_factory"] || null;
 

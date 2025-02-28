@@ -1,5 +1,5 @@
 // Safe version => chainId
-const ADDRESSES = {
+const SAFE_ADDRESSES = {
   "1.0.0": {
     1 : {
       "gnosis_safe": "0xb6029EA3B2c51D09a50B53CA8012FeEB05bDa35A",
