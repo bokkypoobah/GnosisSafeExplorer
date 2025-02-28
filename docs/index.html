@@ -73,31 +73,34 @@
           <template #modal-title>
             Safe {{ modalSafe.safe || '' }}
           </template>
-          <b-form-group label="Factory Version:" label-cols="3" label-align="right" class="m-0">
+          <b-form-group label="Factory:" label-cols="4" label-align="right" class="m-0">
+            <b-link v-if="modalSafe.factory" :href="'https://etherscan.io/address/' + lookupAddress(modalSafe.factory)" target="_blank">
+              {{ lookupName(modalSafe.factory) }}
+            </b-link>
+          </b-form-group>
+          <b-form-group label="Factory Version:" label-cols="4" label-align="right" class="m-0">
             <b-form-input type="text" readonly size="sm" :value="modalSafe.info.factoryVersion" class="w-25"></b-form-input>
           </b-form-group>
-          <b-form-group label="Safe Version:" label-cols="3" label-align="right" class="m-0">
+          <b-form-group label="Safe Implementation:" label-cols="4" label-align="right" class="m-0">
+            <b-link v-if="modalSafe.info.implementation" :href="'https://etherscan.io/address/' + lookupAddress(modalSafe.info.implementation)" target="_blank" class="mt-2">
+              {{ lookupName(modalSafe.info.implementation) }}
+            </b-link>
+          </b-form-group>
+          <b-form-group label="Safe Implementation Version:" label-cols="4" label-align="right" class="m-0">
             <b-form-input type="text" readonly size="sm" :value="modalSafe.info.safeVersion" class="w-25"></b-form-input>
           </b-form-group>
-          <b-form-group label="Owners:" label-cols="3" label-align="right" class="m-0">
+          <b-form-group label="Owners:" label-cols="4" label-align="right" class="m-0">
             <!-- {{ modalSafe.info.owners }} -->
-            <div v-for="(owner, index) of (modalSafe.info.owners || [])" v-bind:key="index" class="mt-1">
-              <!-- <b-row>
-                <b-col>
-                  {{ index }}
-                </b-col>
-                <b-col cols="11"> -->
-                  <b-link :href="'https://etherscan.io/address/' + lookupAddress(owner)" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
-                    {{ lookupName(owner) }}
-                  </b-link>
-                <!-- </b-col>
-              </b-row> -->
+            <div v-for="(owner, index) of (modalSafe.info.owners || [])" v-bind:key="index" class="mt-2">
+              <b-link :href="'https://etherscan.io/address/' + lookupAddress(owner)" target="_blank">
+                {{ lookupName(owner) }}
+              </b-link>
             </div>
           </b-form-group>
-          <b-form-group label="Threshold:" label-cols="3" label-align="right" class="m-0">
+          <b-form-group label="Threshold:" label-cols="4" label-align="right" class="m-0">
             <b-form-input type="text" readonly size="sm" :value="modalSafe.info.threshold" class="w-25"></b-form-input>
           </b-form-group>
-          <b-form-group label="Nonce:" label-cols="3" label-align="right" class="m-0">
+          <b-form-group label="Nonce:" label-cols="4" label-align="right" class="m-0">
             <b-form-input type="text" readonly size="sm" :value="modalSafe.info.nonce" class="w-25"></b-form-input>
           </b-form-group>
           <!-- :MENU -->
@@ -138,17 +141,17 @@
               </font>
             </template>
             <template #cell(info)="data">
-              <b-link :href="'https://etherscan.io/tx/' + data.item.txHash" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+              <b-link :href="'https://etherscan.io/tx/' + data.item.txHash" target="_blank">
                 {{ timestamps[chainId] && timestamps[chainId][data.item.blockNumber] && formatTimestamp(timestamps[chainId][data.item.blockNumber]) || (data.item.blockNumber + ':' + data.item.txIndex) }}
               </b-link>
               <br />
               From:
-              <b-link v-if="data.item.tx && data.item.tx.from" :href="'https://etherscan.io/address/' + lookupAddress(data.item.tx.from)" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+              <b-link v-if="data.item.tx && data.item.tx.from" :href="'https://etherscan.io/address/' + lookupAddress(data.item.tx.from)" target="_blank">
                 {{ lookupName(data.item.tx.from) }}
               </b-link>
               <br />
               To:
-              <b-link v-if="data.item.tx && data.item.tx.to" :href="'https://etherscan.io/address/' + lookupAddress(data.item.tx.to)" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+              <b-link v-if="data.item.tx && data.item.tx.to" :href="'https://etherscan.io/address/' + lookupAddress(data.item.tx.to)" target="_blank">
                 {{ lookupName(data.item.tx.to) }}
               </b-link>
               <hr />
@@ -204,11 +207,6 @@
           </div>
 
           <b-card no-body class="m-1 p-0 border-0" bg-variant="light">
-            <!-- <font size="-2">
-              <pre>
-{{ safeContractNames }}
-              </pre>
-            </font> -->
             <b-table ref="safesTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
               <template #cell(index)="data">
                 <font size="-1" class="text-muted">
@@ -224,7 +222,7 @@
                 </div>
               </template>
               <template #cell(blockNumber)="data">
-                <b-link :href="'https://etherscan.io/tx/' + indexToTxHash[data.item.txHashIndex] + '#eventlog#' + data.item.logIndex" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                <b-link :href="'https://etherscan.io/tx/' + indexToTxHash[data.item.txHashIndex] + '#eventlog#' + data.item.logIndex" target="_blank">
                   {{ data.item.blockNumber }}
                 </b-link>
                 <font size="-2" class="text-muted">
@@ -232,7 +230,7 @@
                 </font>
               </template>
               <template #cell(safe)="data">
-                <b-link :href="'https://etherscan.io/address/' + lookupAddress(data.item.safeAddressIndex)" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                <b-link :href="'https://etherscan.io/address/' + lookupAddress(data.item.safeAddressIndex)" target="_blank">
                   {{ lookupName(data.item.safeAddressIndex) }}
                 </b-link>
                 <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + lookupAddress(data.item.safeAddressIndex)" v-b-popover.hover.bottom="'View in app.safe.global'" target="_blank">
@@ -240,7 +238,7 @@
                 </b-link>
               </template>
               <template #cell(factory)="data">
-                <b-link :href="'https://etherscan.io/address/' + lookupAddress(data.item.factoryAddressIndex)" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                <b-link :href="'https://etherscan.io/address/' + lookupAddress(data.item.factoryAddressIndex)" target="_blank">
                   {{ lookupName(data.item.factoryAddressIndex) }}
                 </b-link>
               </template>
@@ -439,7 +437,7 @@
               for (const [chainId, chainData] of Object.entries(versionData)) {
                 for (const [contractName, address] of Object.entries(chainData)) {
                   // console.log(version + "/" + chainId + "/" + contractName + " => " + address);
-                  results[address] = contractName + " v" + version + "/" + chainId;
+                  results[address] = contractName + " v" + version + "/" + chainId + " " + address.substring(0, 8) + '...' + address.slice(-6);
                 }
               }
             }
@@ -807,10 +805,11 @@
             // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latestBlockNumber: " + latestBlockNumber);
 
             const allSafesAbi = [
-              "function VERSION() external view returns (string)",
+              "function VERSION() public view returns (string)",
               "function getOwners() public view returns (address[] memory)",
               "function getThreshold() public view returns (uint256)",
-              "function nonce() external view returns (uint256)",
+              "function nonce() public view returns (uint256)",
+              "function getStorageAt(uint256 offset, uint256 length) public view returns (bytes memory)",
             ];
             const allSafesContract = new ethers.Contract(this.modalSafe.safe, allSafesAbi, provider);
             let safeVersion = null;
@@ -822,6 +821,17 @@
             }
             Vue.set(this.modalSafe.info, 'factoryVersion', factoryVersion);
             Vue.set(this.modalSafe.info, 'safeVersion', safeVersion);
+
+            let implementation = null;
+            try {
+              implementation = ethers.utils.getAddress('0x' + (await allSafesContract.getStorageAt(0, 1)).substring(26, 66));
+              console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - implementation: " + JSON.stringify(implementation));
+            } catch (e) {
+              console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - implementation - error: " + e.message);
+            }
+            Vue.set(this.modalSafe.info, 'implementation', implementation);
+
+
             let owners = null;
             try {
               owners = await allSafesContract.getOwners();
@@ -1225,19 +1235,19 @@
           lookupName(a) {
             if (a.toString().length < 42) {
               if (this.chainId && (a in this.safes[this.chainId])) {
-                a = "Safe " + this.indexToAddress[a];
+                a = "Safe " + this.indexToAddress[a].substring(0, 8) + '...' + this.indexToAddress[a].slice(-6);
               } else {
                 a = this.indexToAddress[a];
               }
             } else {
               if (this.chainId && (this.addressToIndex[a] in this.safes[this.chainId])) {
-                a = "Safe " + a;
+                a = "Safe " + a.substring(0, 8) + '...' + a.slice(-6);
               }
             }
             if (a in this.safeContractNames) {
               a = this.safeContractNames[a];
             } else if (a in this.modalSafeOwners) {
-              a = "Owner " + a;
+              a = "Owner " + a.substring(0, 8) + '...' + a.slice(-6);
             }
             return a;
           },
