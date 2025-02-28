@@ -26,7 +26,7 @@ Testing Safe 1.4.1 using `EF: DeFi Multisig` at [0x9fC3dc011b461664c835F2527fffb
 
 ---
 
-Web3 dapp: https://bokkypoobah.github.io/GnosisSafeExplorer/ (WIP)
+Web3 dapp: https://bokkypoobah.github.io/GnosisSafeExplorer/ connected to Ethereum Mainnet (WIP)
 
 <br />
 
