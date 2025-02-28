@@ -124,23 +124,6 @@
               </font>
             </template>
           </b-table>
-
-          <font size="-2">
-            <pre>
-txData: {{ txData }}
-            </pre>
-          </font>
-          <!-- <b-form-group label="Graffiti:" label-cols="3" label-align="right" description="Up to 32 characters, alphanumeric plus '-', '_' and '.' permitted">
-            <b-form-input type="text" size="sm" v-model.trim="modalGraffiti.graffiti" placeholder="graffiti"></b-form-input>
-          </b-form-group> -->
-          <!-- <b-form-group label="" label-cols="3" label-align="right" :description="modalGraffiti.prompt">
-            <b-button size="sm" @click="updateGraffiti();" variant="outline">
-              <b-iconstack font-scale="1">
-                <b-icon stacked icon="wifi" variant="primary" scale="0.8"></b-icon>
-                <b-icon stacked icon="file" variant="primary" scale="1.5"></b-icon>
-              </b-iconstack>
-            </b-button>
-          </b-form-group> -->
         </b-modal>
 
         <b-card no-body class="p-0 mt-0 border-0" style="min-height: 600px;">
@@ -412,13 +395,31 @@ txData: {{ txData }}
           modalSafeTxs() {
             // console.log(moment().format("HH:mm:ss") + " modalSafeTxs - this.modalSafe.events: " + JSON.stringify(this.modalSafe.events));
             const results = [];
+            const collator = {};
             for (const [blockNumber, blockData] of Object.entries(this.modalSafe.events)) {
               for (const [txHash, txData] of Object.entries(blockData)) {
                 for (const [logIndex, logData] of Object.entries(txData)) {
-                  console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData));
-                  results.push({ blockNumber, txHash, logIndex, ...logData });
+                  // console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData));
+                  if (!(txHash in collator)) {
+                    collator[txHash] = {
+                      blockNumber,
+                      txIndex: logData.txIndex,
+                      events: {},
+                    };
+                  }
+                  if (!(logIndex in collator[txHash].events)) {
+                    collator[txHash].events[logIndex] = {
+                      ...logData,
+                      tx: this.txData[this.chainId] && this.txData[this.chainId][txHash] && this.txData[this.chainId][txHash].tx || null,
+                      txReceipt: this.txData[this.chainId] && this.txData[this.chainId][txHash] && this.txData[this.chainId][txHash].txReceipt || null,
+                    };
+                  }
                 }
               }
+            }
+            console.log(moment().format("HH:mm:ss") + " modalSafeTxs - collator: " + JSON.stringify(collator, null, 2));
+            for (const [txHash, txData] of Object.entries(collator)) {
+              results.push({ txHash, ...txData });
             }
             return results;
           },
