@@ -415,7 +415,7 @@ txData: {{ txData }}
             for (const [blockNumber, blockData] of Object.entries(this.modalSafe.events)) {
               for (const [txHash, txData] of Object.entries(blockData)) {
                 for (const [logIndex, logData] of Object.entries(txData)) {
-                  // console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData));
+                  console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData));
                   results.push({ blockNumber, txHash, logIndex, ...logData });
                 }
               }
@@ -600,6 +600,7 @@ txData: {{ txData }}
                   Vue.set(this.modalSafe.events[log.blockNumber][log.transactionHash], log.logIndex, {
                     address: log.address,
                     transactionHash: log.transactionHash,
+                    txIndex: log.transactionIndex,
                     ...event,
                     data: log.data,
                     topics: log.topics,
