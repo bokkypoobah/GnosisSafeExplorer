@@ -661,14 +661,14 @@ txData: {{ txData }}
                 // console.log(moment().format("HH:mm:ss") + " processSafeTxData - tx: " + JSON.stringify(tx));
                 txData[chainId][txHash].tx = {
                   blockNumber: tx.blockNumber,
-                  type: tx.type,
+                  type: tx.type || null,
                   txIndex: tx.transactionIndex,
                   from: tx.from,
                   nonce: parseInt(tx.nonce),
                   to: tx.to,
                   data: tx.data,
                   gasPrice: ethers.BigNumber.from(tx.gasPrice).toString(),
-                  maxPriorityFeePerGas: ethers.BigNumber.from(tx.maxPriorityFeePerGas).toString(),
+                  maxPriorityFeePerGas: tx.maxPriorityFeePerGas && ethers.BigNumber.from(tx.maxPriorityFeePerGas).toString() || null,
                   gasLimit: parseInt(tx.gasLimit),
                 }
               }
@@ -683,7 +683,7 @@ txData: {{ txData }}
                   contractAddress: txReceipt.contractAddress,
                   gasUsed: parseInt(txReceipt.gasUsed),
                   cumulativeGasUsed: parseInt(txReceipt.cumulativeGasUsed),
-                  effectiveGasPrice: parseInt(txReceipt.effectiveGasPrice),
+                  effectiveGasPrice: txReceipt.effectiveGasPrice && parseInt(txReceipt.effectiveGasPrice) || null,
                   status: parseInt(txReceipt.status),
                   logs: txReceipt.logs,
                 }
