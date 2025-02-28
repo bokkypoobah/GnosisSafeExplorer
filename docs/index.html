@@ -427,7 +427,7 @@ txData: {{ txData }}
           },
           pagedFilteredSortedModalSafeTxs() {
             const results = this.filteredSortedModalSafeTxs.slice((this.settings.safeTxsTable.currentPage - 1) * this.settings.safeTxsTable.pageSize, this.settings.safeTxsTable.currentPage * this.settings.safeTxsTable.pageSize);
-            // console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedModalSafeTxs - results: " + JSON.stringify(results, null, 2));
+            console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedModalSafeTxs - results: " + JSON.stringify(results, null, 2));
             return results;
           },
 
@@ -623,7 +623,7 @@ txData: {{ txData }}
             if (!(chainId in timestamps)) {
               timestamps[chainId] = {};
             }
-            console.log(moment().format("HH:mm:ss") + " processSafeTxData - timestamps 1: " + JSON.stringify(timestamps, null, 2));
+            // console.log(moment().format("HH:mm:ss") + " processSafeTxData - timestamps 1: " + JSON.stringify(timestamps, null, 2));
             let txData = {};
             const txDataItems = await db.cache.where("objectName").equals("txData_" + this.modalSafe.safe).toArray();
             if (txDataItems.length == 1) {
@@ -632,21 +632,16 @@ txData: {{ txData }}
             if (!(chainId in txData)) {
               txData[chainId] = {};
             }
-            console.log(moment().format("HH:mm:ss") + " processSafeTxData - txData 1: " + JSON.stringify(txData, null, 2));
-
+            // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txData 1: " + JSON.stringify(txData, null, 2));
             const txHashes = {};
             for (const [blockNumber, blockData] of Object.entries(this.modalSafe.events)) {
               for (const [txHash, txData] of Object.entries(blockData)) {
                 if (!(txHash in txHashes)) {
                   txHashes[txHash] = blockNumber;
                 }
-                // for (const [logIndex, logData] of Object.entries(txData)) {
-                  // console.log(moment().format("HH:mm:ss") + " processSafeTxData - data: " + blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData));
-                  // results.push({ blockNumber, txHash, logIndex, ...logData });
-                // }
               }
             }
-            console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHashes: " + JSON.stringify(txHashes));
+            // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHashes: " + JSON.stringify(txHashes));
             for (const [txHash, blockNumber] of Object.entries(txHashes)) {
               console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHash: " + txHash + ", blockNumber: " + blockNumber);
               if (!(blockNumber in timestamps[chainId])) {
@@ -695,17 +690,18 @@ txData: {{ txData }}
               }
 
             }
-            console.log(moment().format("HH:mm:ss") + " processSafeTxData - timestamps 2: " + JSON.stringify(timestamps, null, 2));
+            // console.log(moment().format("HH:mm:ss") + " processSafeTxData - timestamps 2: " + JSON.stringify(timestamps, null, 2));
             await db.cache.put({ objectName: "timestamps", object: timestamps }).then (function() {
             }).catch(function(error) {
               console.log("error: " + error);
             });
-            console.log(moment().format("HH:mm:ss") + " processSafeTxData - txData 1: " + JSON.stringify(txData, null, 2));
+            // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txData 1: " + JSON.stringify(txData, null, 2));
             await db.cache.put({ objectName: "txData_" + this.modalSafe.safe, object: txData }).then (function() {
             }).catch(function(error) {
               console.log("error: " + error);
             });
             Vue.set(this, "txData", txData);
+            console.log(moment().format("HH:mm:ss") + " processSafeTxData - end");
           },
 
           // Safe
