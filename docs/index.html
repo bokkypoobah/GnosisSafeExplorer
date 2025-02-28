@@ -97,10 +97,10 @@
             <!-- <div class="mt-0 flex-grow-1">
             </div> -->
             <div class="mt-0 pl-1">
-              <b-form-select size="sm" v-model="settings.safeTxsTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+              <b-form-select size="sm" v-model="settings.safeTxsTable.sortOption" @change="saveSettings" :options="safeTxsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
             </div>
             <div class="mt-0 pl-1">
-              <font size="-2" v-b-popover.hover.bottom="'# Safes'">{{ allSafes.length }}</font>
+              <font size="-2" v-b-popover.hover.bottom="'# Safes'">{{ modalSafeTxs.length }}</font>
             </div>
             <div class="mt-0 pl-1">
               <b-pagination size="sm" v-model="settings.safeTxsTable.currentPage" @input="saveSettings" :total-rows="modalSafeTxs.length" :per-page="settings.safeTxsTable.pageSize" style="height: 0;"></b-pagination>
@@ -328,6 +328,12 @@
           timestamps: {},
           txData: {}, // Transactions only for the current safe address
 
+          safeTxsSortOptions: [
+            // { value: 'addressasc', text: '▲ Addr' },
+            // { value: 'addressdsc', text: '▼ Addr' },
+            { value: 'blocknumberasc', text: '▲ BlockNumber, ▲ TxIndex' },
+            { value: 'blocknumberdsc', text: '▼ BlockNumber, ▼ TxIndex' },
+          ],
           safesSortOptions: [
             // { value: 'addressasc', text: '▲ Addr' },
             // { value: 'addressdsc', text: '▼ Addr' },
@@ -424,7 +430,25 @@
             return results;
           },
           filteredSortedModalSafeTxs() {
-            return this.modalSafeTxs;
+            const results = this.modalSafeTxs;
+            if (this.settings.safeTxsTable.sortOption == 'blocknumberasc') {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return a.txIndex - b.txIndex;
+                } else {
+                  return a.blockNumber - b.blockNumber;
+                }
+              });
+            } else if (this.settings.safeTxsTable.sortOption == 'blocknumberdsc') {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return b.txIndex - a.txIndex;
+                } else {
+                  return b.blockNumber - a.blockNumber;
+                }
+              });
+            }
+            return results;
           },
           pagedFilteredSortedModalSafeTxs() {
             const results = this.filteredSortedModalSafeTxs.slice((this.settings.safeTxsTable.currentPage - 1) * this.settings.safeTxsTable.pageSize, this.settings.safeTxsTable.currentPage * this.settings.safeTxsTable.pageSize);
@@ -645,7 +669,7 @@
             }
             // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHashes: " + JSON.stringify(txHashes));
             for (const [txHash, blockNumber] of Object.entries(txHashes)) {
-              console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHash: " + txHash + ", blockNumber: " + blockNumber);
+              // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHash: " + txHash + ", blockNumber: " + blockNumber);
               if (!(blockNumber in timestamps[chainId])) {
                 const block = await provider.getBlock(parseInt(blockNumber));
                 const timestamp = block.timestamp;
