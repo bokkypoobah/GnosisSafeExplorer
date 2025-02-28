@@ -143,13 +143,13 @@
               </b-link>
               <br />
               From:
-              <b-link v-if="data.item.tx && data.item.tx.from" :href="'https://etherscan.io/address/' + data.item.tx.from" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
-                {{ data.item.tx.from }}
+              <b-link v-if="data.item.tx && data.item.tx.from" :href="'https://etherscan.io/address/' + lookupAddress(data.item.tx.from)" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                {{ lookupName(data.item.tx.from) }}
               </b-link>
               <br />
               To:
-              <b-link v-if="data.item.tx && data.item.tx.to" :href="'https://etherscan.io/address/' + data.item.tx.to" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
-                {{ data.item.tx.to }}
+              <b-link v-if="data.item.tx && data.item.tx.to" :href="'https://etherscan.io/address/' + lookupAddress(data.item.tx.to)" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                {{ lookupName(data.item.tx.to) }}
               </b-link>
               <hr />
               <font size="-2">
@@ -232,16 +232,16 @@
                 </font>
               </template>
               <template #cell(safe)="data">
-                <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item.safeAddressIndex]" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
-                  {{ indexToAddress[data.item.safeAddressIndex] }}
+                <b-link :href="'https://etherscan.io/address/' + lookupAddress(data.item.safeAddressIndex)" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                  {{ lookupName(data.item.safeAddressIndex) }}
                 </b-link>
-                <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + indexToAddress[data.item.safeAddressIndex]" v-b-popover.hover.bottom="'View in app.safe.global'" target="_blank">
+                <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + lookupAddress(data.item.safeAddressIndex)" v-b-popover.hover.bottom="'View in app.safe.global'" target="_blank">
                   <b-icon-wallet shift-v="+2" font-scale="0.9" variant="primary"></b-icon-wallet>
                 </b-link>
               </template>
               <template #cell(factory)="data">
-                <b-link :href="'https://etherscan.io/address/' + indexToAddress[data.item.factoryAddressIndex]" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
-                  {{ indexToAddress[data.item.factoryAddressIndex] && safeContractNames[indexToAddress[data.item.factoryAddressIndex]] || 'Unknown' }}
+                <b-link :href="'https://etherscan.io/address/' + lookupAddress(data.item.factoryAddressIndex)" v-b-popover.hover.bottom="'View in etherscan.io'" target="_blank">
+                  {{ lookupName(data.item.factoryAddressIndex) }}
                 </b-link>
               </template>
             </b-table>
@@ -1206,6 +1206,31 @@
               return moment.unix(unixtime).fromNow();
             }
           },
+
+          lookupAddress(a) {
+            if (a.toString().length < 42) {
+              a = this.indexToAddress[a];
+            }
+            return a;
+          },
+          lookupName(a) {
+            if (a.toString().length < 42) {
+              if (this.chainId && (a in this.safes[this.chainId])) {
+                a = "Safe " + this.indexToAddress[a];
+              } else {
+                a = this.indexToAddress[a];
+              }
+            } else {
+              if (this.chainId && (this.addressToIndex[a] in this.safes[this.chainId])) {
+                a = "Safe " + a;
+              }
+            }
+            if (a in this.safeContractNames) {
+              a = this.safeContractNames[a];
+            }
+            return a;
+          },
+
           nameOrShortAddress(address, length = 0) {
             let result = null;
             if (address == "eth") {
