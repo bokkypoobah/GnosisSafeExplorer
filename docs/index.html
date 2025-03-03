@@ -1200,6 +1200,23 @@
               "ChangedThreshold": EVENT_TYPE_CHANGEDTHRESHOLD,
               "SafeReceived": EVENT_TYPE_SAFERECEIVED,
             };
+            const EVENT_SIGS = {
+              "SafeSetup": "SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler)",
+              "ApproveHash": "ApproveHash(bytes32 indexed approvedHash, address indexed owner)",
+              "SignMsg": "SignMsg(bytes32 indexed msgHash)",
+              "ExecutionFailure": "ExecutionFailure(bytes32 txHash, uint256 payment)", // 1.3.0; 1.4.0 ExecutionFailure(bytes32 indexed txHash, uint256 payment)
+              "ExecutionSuccess": "ExecutionSuccess(bytes32 txHash, uint256 payment)", // 1.3.0; 1.4.0 ExecutionSuccess(bytes32 indexed txHash, uint256 payment)
+              "ChangedFallbackHandler": "ChangedFallbackHandler(address handler)", // 1.3.0; 1.4.0 ChangedFallbackHandler(address indexed handler)
+              "ChangedGuard": "ChangedGuard(address guard)", // 1.3.0; 1.4.0 ChangedGuard(address indexed guard)
+              "EnabledModule": "EnabledModule(address module)", // 1.3.0; 1.4.0 EnabledModule(address indexed module)
+              "DisabledModule": "DisabledModule(address module)", // 1.3.0; 1.4.0 DisabledModule(address indexed module)
+              "ExecutionFromModuleSuccess": "ExecutionFromModuleSuccess(address indexed module)",
+              "ExecutionFromModuleFailure": "ExecutionFromModuleFailure(address indexed module)",
+              "AddedOwner": "AddedOwner(address owner)", // 1.3.0; 1.4.0 AddedOwner(address indexed owner)
+              "RemovedOwner": "RemovedOwner(address owner)", // 1.3.0; 1.4.0 RemovedOwner(address indexed owner)
+              "ChangedThreshold": "event ChangedThreshold(uint256 threshold)",
+              "SafeReceived": "SafeReceived(address indexed sender, uint256 value)",
+            };
 
             // topicHash => #topics => version
             const EVENTSIGNATURE_BY_TOPICSLENGTH = {
