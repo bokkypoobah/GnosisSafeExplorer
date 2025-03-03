@@ -1253,7 +1253,7 @@
               const records = [];
               for (const log of logs) {
                 if (!log.removed) {
-                  console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - log: " + JSON.stringify(log));
+                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - log: " + JSON.stringify(log));
                   let event = null;
                   let abiVersion = null;
                   if (log.topics[0] in EVENTSIGNATURE_BY_TOPICSLENGTH) {
