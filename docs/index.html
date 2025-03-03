@@ -1167,6 +1167,7 @@
           },
 
           async retrieveSafeEvents() {
+            // topicHash => #topics => version
             const LOGTOPICS_BY_LENGTH = {
               // 1.3.0 & 1.4.1 event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
               '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8': {
@@ -1180,7 +1181,6 @@
               '0xe7f4675038f4f6034dfcbbb24c4dc08e4ebf10eb9d257d3d02c0f38d122ac6e4': {
                 2: 141,
               },
-
               // 1.3.0 event ExecutionFailure(bytes32 txHash, uint256 payment)
               // 1.4.1 event ExecutionFailure(bytes32 indexed txHash, uint256 payment)
               '0x23428b18acfb3ea64b08dc0c1d296ea9c09702c09083ca5272e64d115b687d23': {
@@ -1193,47 +1193,38 @@
                 1: 130,
                 2: 141,
               },
-
               // 1.3.0 event ChangedFallbackHandler(address handler)
               // 1.4.1 event ChangedFallbackHandler(address indexed handler)
               '0x5ac6c46c93c8d0e53714ba3b53db3e7c046da994313d7ed0d192028bc7c228b0': {
                 1: 130,
                 2: 141,
               },
-
               // 1.3.0 event ChangedGuard(address guard)
               // 1.4.1 event ChangedGuard(address indexed guard)
-              // TODO: Error
               '0x1151116914515bc0891ff9047a6cb32cf902546f83066499bcf8ba33d2353fa2': {
                 1: 130,
                 2: 141,
               },
-
               // 1.3.0 event EnabledModule(address module)
               // 1.4.1 event EnabledModule(address indexed module)
               '0xecdf3a3effea5783a3c4c2140e677577666428d44ed9d474a0b3a4c9943f8440': {
                 1: 130,
                 2: 141,
               },
-
               // 1.3.0 event DisabledModule(address module)
               // 1.4.1 event DisabledModule(address indexed module)
               '0xaab4fa2b463f581b2b32cb3b7e3b704b9ce37cc209b5fb4d77e593ace4054276': {
                 1: 130,
                 2: 141,
               },
-
               // 1.3.0 & 1.4.1 event ExecutionFromModuleSuccess(address indexed module)
               '0x6895c13664aa4f67288b25d7a21d7aaa34916e355fb9b6fae0a139a9085becb8': {
                 2: 141,
               },
-
               // 1.3.0 & 1.4.1 event ExecutionFromModuleFailure(address indexed module)
               '0xacd2c8702804128fdb0db2bb49f6d127dd0181c13fd45dbfe16de0930e2bd375': {
                 2: 141,
               },
-
-              // TODO: Out of bounds error - check earlier version
               // 1.3.0 event AddedOwner(address owner)
               // 1.4.1 event AddedOwner(address indexed owner)
               '0x9465fa0c962cc76958e6373a993326400c1c94f8be2fe3a952adfa7f60b2ea26': {
@@ -1250,7 +1241,6 @@
               '0x610f7ff2b304ae8903c3de74c60c6ab1f7d6226b3f52c5161905bb5ad4039c93': {
                 1: 141,
               },
-
               // event SafeReceived(address indexed sender, uint256 value);
               // '0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d',
               '0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d': {
@@ -1440,8 +1430,7 @@
 
                       // 1.3.0 event ChangedGuard(address guard)
                       // 1.4.1 event ChangedGuard(address indexed guard)
-                      // TODO: Error
-                      // '0x1151116914515bc0891ff9047a6cb32cf902546f83066499bcf8ba33d2353fa2',
+                      '0x1151116914515bc0891ff9047a6cb32cf902546f83066499bcf8ba33d2353fa2',
 
                       // 1.3.0 event EnabledModule(address module)
                       // 1.4.1 event EnabledModule(address indexed module)
