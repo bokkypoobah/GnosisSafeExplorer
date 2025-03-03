@@ -1342,7 +1342,7 @@
                     }
                     console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - parameters: " + JSON.stringify(parameters, null, 2));
                     event = {
-                      type: EVENT_TYPES[logData.name] || null,
+                      type: EVENT_TYPES[logData.name],
                       name: logData.name,
                       signature: logData.signature,
                       parameters,
