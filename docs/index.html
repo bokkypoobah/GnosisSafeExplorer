@@ -220,6 +220,13 @@
             <div v-if="!sync.section" class="mt-0 pr-1">
               <b-button size="sm" @click="retrieveSafeEvents()" variant="primary" v-b-popover.hover.bottom="'Dev Button'">Dev</b-button>
             </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
+            <div v-if="!sync.section" class="mt-0 pr-1">
+              <b-button size="sm" @click="resetData()" variant="primary" v-b-popover.hover.bottom="'Reset data'">Reset Data</b-button>
+            </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
             <div class="mt-0 pr-1">
               <b-progress v-if="sync.section != null" height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 24.0rem;">
                 <b-progress-bar :value="sync.completed">
@@ -1640,10 +1647,13 @@
               .then(async value1 => {
                 if (value1) {
                   event.preventDefault();
+                  delete localStorage.gnosisSafeExplorerChainId;
                   delete localStorage.gnosisSafeExplorerSettings;
                   const db = new Dexie(this.db.name);
                   db.version(this.db.version).stores(this.db.schemaDefinition);
-                  const status = await db.cache.clear();
+                  let status = await db.safeFactoryEvents.clear();
+                  status = await db.safeEvents.clear();
+                  status = await db.cache.clear();
                   db.close();
                   alert('This page will be reloaded in 5 seconds.')
                   setTimeout(function() {
