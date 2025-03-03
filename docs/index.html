@@ -1167,6 +1167,40 @@
           },
 
           async retrieveSafeEvents() {
+            const EVENT_TYPE_SAFESETUP = 0;
+            const EVENT_TYPE_APPROVEHASH = 1;
+            const EVENT_TYPE_SIGNMSG = 2;
+            const EVENT_TYPE_EXECUTIONFAILURE = 3;
+            const EVENT_TYPE_EXECUTIONSUCCESS = 4;
+            const EVENT_TYPE_CHANGEDFALLBACKHANDLER = 5;
+            const EVENT_TYPE_CHANGEDGUARD = 6;
+            const EVENT_TYPE_ENABLEDMODULE = 7;
+            const EVENT_TYPE_DISABLEDMODULE = 8;
+            const EVENT_TYPE_EXECUTIONFROMMODULESUCCESS = 9;
+            const EVENT_TYPE_EXECUTIONFROMMODULEFAILURE = 10;
+            const EVENT_TYPE_ADDEDOWNER = 11;
+            const EVENT_TYPE_REMOVEDOWNER = 12;
+            const EVENT_TYPE_CHANGEDTHRESHOLD = 13;
+            const EVENT_TYPE_SAFERECEIVED = 14;
+
+            const EVENT_TYPES = {
+              "SafeSetup": EVENT_TYPE_SAFESETUP,
+              "ApproveHash": EVENT_TYPE_APPROVEHASH,
+              "SignMsg": EVENT_TYPE_SIGNMSG,
+              "ExecutionFailure": EVENT_TYPE_EXECUTIONFAILURE,
+              "ExecutionSuccess": EVENT_TYPE_EXECUTIONSUCCESS,
+              "ChangedFallbackHandler": EVENT_TYPE_CHANGEDFALLBACKHANDLER,
+              "ChangedGuard": EVENT_TYPE_CHANGEDGUARD,
+              "EnabledModule": EVENT_TYPE_ENABLEDMODULE,
+              "DisabledModule": EVENT_TYPE_DISABLEDMODULE,
+              "ExecutionFromModuleSuccess": EVENT_TYPE_EXECUTIONFROMMODULESUCCESS,
+              "ExecutionFromModuleFailure": EVENT_TYPE_EXECUTIONFROMMODULEFAILURE,
+              "AddedOwner": EVENT_TYPE_ADDEDOWNER,
+              "RemovedOwner": EVENT_TYPE_REMOVEDOWNER,
+              "ChangedThreshold": EVENT_TYPE_CHANGEDTHRESHOLD,
+              "SafeReceived": EVENT_TYPE_SAFERECEIVED,
+            };
+
             // topicHash => #topics => version
             const EVENTSIGNATURE_BY_TOPICSLENGTH = {
               // 1.3.0 & 1.4.1 event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
@@ -1291,6 +1325,7 @@
                     }
                     console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - parameters: " + JSON.stringify(parameters, null, 2));
                     event = {
+                      type: EVENT_TYPES[logData.name] || null,
                       name: logData.name,
                       signature: logData.signature,
                       parameters,
