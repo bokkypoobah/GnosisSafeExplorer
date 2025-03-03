@@ -441,11 +441,11 @@
           ],
 
           db: {
-            name: "gnosissafeexplorer088e",
+            name: "gnosissafeexplorer088f",
             version: 1,
             schemaDefinition: {
-              safes: '[chainId+blockNumber+logIndex],safe,factory',
-              // safeEvents: '[chainId+blockNumber+logIndex],safe,factory',
+              safeFactoryEvents: '[chainId+blockNumber+logIndex],safe,factory',
+              safeEvents: '[chainId+blockNumber+logIndex],safe,eventType',
               cache: '&objectName',
             },
             updated: null,
@@ -910,7 +910,7 @@
           },
 
           async loadCurrentData() {
-            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - this.settings.safesTable.filter: " + this.settings.safesTable.filter);
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - this.settings.safesTable.filter: " + this.settings.safesTable.filter);
             const DB_PROCESSING_BATCH_SIZE = 50000;
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
@@ -936,11 +936,11 @@
             do {
               let data;
               if (this.settings.safesTable.filter && this.settings.safesTable.filter.length > 2) {
-                data = await db.safes.where('safe').startsWithIgnoreCase(this.settings.safesTable.filter).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+                data = await db.safeFactoryEvents.where('safe').startsWithIgnoreCase(this.settings.safesTable.filter).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
               } else {
-                data = await db.safes.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+                data = await db.safeFactoryEvents.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
               }
-              // console.log(moment().format("HH:mm:ss") + " loadCurrentData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+              console.log(moment().format("HH:mm:ss") + " loadCurrentData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
               for (const item of data) {
                 if (!(item.chainId in safes)) {
                   safes[item.chainId] = {};
@@ -1028,7 +1028,7 @@
                 }
               }
               if (records.length) {
-                await db.safes.bulkAdd(records).then(function(lastKey) {
+                await db.safeFactoryEvents.bulkAdd(records).then(function(lastKey) {
                   // console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - bulkAdd lastKey: " + JSON.stringify(lastKey));
                 }).catch(Dexie.BulkError, function(e) {
                   console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
@@ -1128,7 +1128,7 @@
             }
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - factoryAddresses: " + JSON.stringify(factoryAddresses));
 
-            const latest = await db.safes.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
+            const latest = await db.safeFactoryEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
             console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - latest: " + JSON.stringify(latest));
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 100000;
@@ -1219,7 +1219,7 @@
                 }
               }
               if (records.length) {
-                await db.safes.bulkAdd(records).then(function(lastKey) {
+                await db.safeFactoryEvents.bulkAdd(records).then(function(lastKey) {
                   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - bulkAdd lastKey: " + JSON.stringify(lastKey));
                 }).catch(Dexie.BulkError, function(e) {
                   console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
@@ -1356,7 +1356,7 @@
             }
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - factoryAddresses: " + JSON.stringify(factoryAddresses));
 
-            // const latest = await db.safes.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
+            // const latest = await db.safeFactoryEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
             // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latest: " + JSON.stringify(latest));
             const latest = null;
             // TODO: TEST
