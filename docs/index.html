@@ -454,12 +454,15 @@
           // addressToIndex: {},
           //   address => addressIndex
           //   Rebuilt from indexToAddress
+          // TODO: functions to getIndex('type', address) and persistIndex('type') - type 'factory', 'safe', 'owner', 'others'
+
           // indexToTxHash: [],
           //   [txHash]
           //   Stored in db.cache with key 'indexToTxHash' // TODO: Add chainId to key
           // txHashToIndex: {},
           //   txHash => txHashIndex
           //   Rebuilt from indexToTxHash
+
           // safes: {},
           //   chainId => safeAddressIndex => { blockNumber, logIndex, txHashIndex, factoryAddressIndex }
           //   Generated in loadCurrentData()
