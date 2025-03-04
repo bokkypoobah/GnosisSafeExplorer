@@ -1236,7 +1236,7 @@
               "ExecutionFromModuleFailure": "ExecutionFromModuleFailure(address indexed module)",
               "AddedOwner": "AddedOwner(address owner)", // 1.3.0; 1.4.0 AddedOwner(address indexed owner)
               "RemovedOwner": "RemovedOwner(address owner)", // 1.3.0; 1.4.0 RemovedOwner(address indexed owner)
-              "ChangedThreshold": "event ChangedThreshold(uint256 threshold)",
+              "ChangedThreshold": "ChangedThreshold(uint256 threshold)",
               "SafeReceived": "SafeReceived(address indexed sender, uint256 value)",
             };
 
@@ -1443,6 +1443,7 @@
                       txIndex: parseInt(log.transactionIndex),
                     //   txHashIndex,
                       txHash: log.transactionHash,
+                      address: log.address,
                     //   safeAddressIndex,
                       safe: log.address,
                     //   factoryAddressIndex: addressToIndex[log.address],
