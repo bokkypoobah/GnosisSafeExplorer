@@ -447,6 +447,24 @@
             { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
           ],
 
+          // --- Data Structures ---
+          // indexToAddress: [],
+          //   [address]
+          //   Stored in db.cache with key 'indexToAddress' // TODO: Add chainId to key
+          // addressToIndex: {},
+          //   address => addressIndex
+          //   Rebuilt from indexToAddress
+          // indexToTxHash: [],
+          //   [txHash]
+          //   Stored in db.cache with key 'indexToTxHash' // TODO: Add chainId to key
+          // txHashToIndex: {},
+          //   txHash => txHashIndex
+          //   Rebuilt from indexToTxHash
+          // safes: {},
+          //   chainId => safeAddressIndex => { blockNumber, logIndex, txHashIndex, factoryAddressIndex }
+          //   Generated in loadCurrentData()
+          // TODO: Store in db.cache with key `safe_{chainId}`
+          //
           db: {
             name: "gnosissafeexplorer088f",
             version: 1,
@@ -1349,7 +1367,7 @@
                     }
                     console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - parameters: " + JSON.stringify(parameters, null, 2));
                     event = {
-                      type: EVENT_TYPES[logData.name],
+                      eventType: EVENT_TYPES[logData.name],
                       name: logData.name,
                       signature: logData.signature,
                       parameters,
@@ -1409,7 +1427,7 @@
                     //   txHashIndex,
                       txHash: log.transactionHash,
                     //   safeAddressIndex,
-                    //   safe: safeAddress,
+                      safe: log.address,
                     //   factoryAddressIndex: addressToIndex[log.address],
                       ...event,
                     });
@@ -1475,11 +1493,11 @@
               }
               if (records.length) {
                 console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - records: " + JSON.stringify(records, null, 2));
-                // await db.safeFactoryEvents.bulkAdd(records).then(function(lastKey) {
-                //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - bulkAdd lastKey: " + JSON.stringify(lastKey));
-                // }).catch(Dexie.BulkError, function(e) {
-                //   console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
-                // });
+                await db.safeEvents.bulkAdd(records).then(function(lastKey) {
+                  console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - bulkAdd lastKey: " + JSON.stringify(lastKey));
+                  }).catch(Dexie.BulkError, function(e) {
+                    console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
+                  });
               }
             }
 
@@ -1606,12 +1624,12 @@
             }
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - factoryAddresses: " + JSON.stringify(factoryAddresses));
 
-            // const latest = await db.safeFactoryEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latest: " + JSON.stringify(latest));
-            const latest = null;
+            const latest = await db.safeEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latest: " + JSON.stringify(latest));
+            // const latest = null;
             // TODO: TEST
-            const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
+            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await getLogsFromRange(startBlock, latestBlockNumber);
