@@ -1131,11 +1131,9 @@
             this.sync.section = "Syncing";
             this.sync.total = latestBlockNumber;
             this.sync.completed = 0;
-            const factoryAddress = SAFE_ADDRESSES["1.1.1"] && SAFE_ADDRESSES["1.1.1"]["1"] && SAFE_ADDRESSES["1.1.1"]["1"]["proxy_factory"] || null;
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - factoryAddress: " + JSON.stringify(factoryAddress));
             const factoryABI = ABIS["1.1.1"] && ABIS["1.1.1"]["proxy_factory"] || null;
             const safeABI141 = ABIS["1.4.1"].gnosis_safe;
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - safeABI141: " + JSON.stringify(safeABI141));
+            // console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - safeABI141: " + JSON.stringify(safeABI141));
             const safeInterface141 = new ethers.utils.Interface(safeABI141);
 
             let indexToAddress = [];
@@ -1155,10 +1153,6 @@
               for (const [index, txHash] of indexToTxHash.entries()) {
                 txHashToIndex[txHash] = index;
               }
-            }
-            if (!(factoryAddress in addressToIndex)) {
-              addressToIndex[factoryAddress] = indexToAddress.length;
-              indexToAddress.push(factoryAddress);
             }
             const factoryAddresses = this.factories;
             for (const factoryAddress in factoryAddresses) {
@@ -1587,8 +1581,6 @@
             this.sync.section = "Syncing";
             this.sync.total = latestBlockNumber;
             this.sync.completed = 0;
-            const factoryAddress = SAFE_ADDRESSES["1.1.1"] && SAFE_ADDRESSES["1.1.1"]["1"] && SAFE_ADDRESSES["1.1.1"]["1"]["proxy_factory"] || null;
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - factoryAddress: " + JSON.stringify(factoryAddress));
             const factoryABI = ABIS["1.1.1"] && ABIS["1.1.1"]["proxy_factory"] || null;
             const safeABI130 = ABIS["1.3.0"].gnosis_safe;
             const safeABI141 = ABIS["1.4.1"].gnosis_safe;
@@ -1613,10 +1605,6 @@
               for (const [index, txHash] of indexToTxHash.entries()) {
                 txHashToIndex[txHash] = index;
               }
-            }
-            if (!(factoryAddress in addressToIndex)) {
-              addressToIndex[factoryAddress] = indexToAddress.length;
-              indexToAddress.push(factoryAddress);
             }
             const factoryAddresses = this.factories;
             for (const factoryAddress in factoryAddresses) {
