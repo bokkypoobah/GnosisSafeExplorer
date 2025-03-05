@@ -1416,8 +1416,8 @@
                         for (const owner of logData.args[1]) {
                           if (!(owner in ownerToIndex)) {
                             ownerToIndex[owner] = parseInt(indexToOwner.length);
+                            indexToOwner.push(owner);
                           }
-                          indexToOwner.push(owner);
                           owners.push(ownerToIndex[owner]);
                         }
                         if (!(log.address in safeToIndex)) {
@@ -1685,7 +1685,7 @@
               console.log("error: " + error);
             });
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToSafe 2: " + JSON.stringify(indexToSafe));
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeToIndex 2: " + JSON.stringify(safeToIndex, null, 2));
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeToIndex 2: " + JSON.stringify(safeToIndex));
             await db.cache.put({ objectName: "indexToSafe", object: indexToSafe }).then (function() {
             }).catch(function(error) {
               console.log("error: " + error);
@@ -1697,7 +1697,7 @@
             Vue.set(this, "indexToOwner", indexToOwner);
             Vue.set(this, "ownerToIndex", ownerToIndex);
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToOwner 2: " + JSON.stringify(indexToOwner));
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownerToIndex 2: " + JSON.stringify(ownerToIndex, null, 2));
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownerToIndex 2: " + JSON.stringify(ownerToIndex));
             await db.cache.put({ objectName: "indexToOwner", object: indexToOwner }).then (function() {
             }).catch(function(error) {
               console.log("error: " + error);
