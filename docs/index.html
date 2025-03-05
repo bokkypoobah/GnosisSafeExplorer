@@ -971,7 +971,7 @@
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
             const chainId = this.chainId;
-            for (const name of ['indexToAddress', 'indexToTxHash', 'indexToSafe', 'safeToIndex', 'indexToOwner', 'ownerToIndex', 'timestamps']) {
+            for (const name of ['indexToAddress', 'indexToTxHash', 'txHashToIndex', 'indexToSafe', 'safeToIndex', 'indexToOwner', 'ownerToIndex', 'timestamps']) {
               const dataItems = await db.cache.where("objectName").equals(name + "_" + chainId).toArray();
               if (dataItems.length == 1) {
                 Vue.set(this, name, dataItems[0].object);
@@ -983,11 +983,11 @@
               addressToIndex[address] = index;
             }
             Vue.set(this, 'addressToIndex', addressToIndex);
-            const txHashToIndex = {};
-            for (const [index, address] of this.indexToTxHash.entries()) {
-              txHashToIndex[address] = index;
-            }
-            Vue.set(this, 'txHashToIndex', txHashToIndex);
+            // const txHashToIndex = {};
+            // for (const [index, address] of this.indexToTxHash.entries()) {
+            //   txHashToIndex[address] = index;
+            // }
+            // Vue.set(this, 'txHashToIndex', txHashToIndex);
             let rows = 0;
             let done = false;
             const safes = {};
@@ -1054,10 +1054,10 @@
                     }
                     const implementationAddressIndex = addressToIndex[implementationAddress];
                     if (!(log.transactionHash in txHashToIndex)) {
-                      txHashToIndex[log.transactionHash] = indexToTxHash.length;
+                      txHashToIndex[log.transactionHash] = [indexToTxHash.length, log.blockNumber, log.txIndex];
                       indexToTxHash.push(log.transactionHash);
                     }
-                    const txHashIndex = txHashToIndex[log.transactionHash];
+                    const txHashIndex = txHashToIndex[log.transactionHash][0];
                     records.push({
                       chainId,
                       blockNumber: parseInt(log.blockNumber),
@@ -1354,7 +1354,7 @@
               const records = [];
               for (const log of logs) {
                 if (!log.removed) {
-                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - log: " + JSON.stringify(log));
+                  console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - log: " + JSON.stringify(log));
                   let event = null;
                   let abiVersion = null;
                   if (log.topics[0] in EVENTSIGNATURE_BY_TOPICSLENGTH) {
@@ -1410,6 +1410,11 @@
                       signature: logData.signature,
                       parameters,
                     };
+                    if (!(log.transactionHash in txHashToIndex)) {
+                      txHashToIndex[log.transactionHash] = [indexToTxHash.length, log.blockNumber, log.transactionIndex];
+                      indexToTxHash.push(log.transactionHash);
+                    }
+                    const txHashIndex = txHashToIndex[log.transactionHash][0];
                     if (logData.name == "SafeSetup") {
                       // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
                       const factoryVersion = logData.args[0] && t.factoriesToVersion[logData.args[0]] || null;
@@ -1420,7 +1425,7 @@
                             ownerToIndex[owner] = parseInt(indexToOwner.length);
                             indexToOwner.push(owner);
                           }
-                          owners.push(ownerToIndex[owner]);
+                          owners.push([ownerToIndex[owner], txHashIndex]);
                         }
                         if (!(log.address in safeToIndex)) {
                           // safeToIndex[log.address] = {
@@ -1439,6 +1444,7 @@
                             parseInt(logData.args[2]),
                             [],
                             null,
+                            txHashIndex,
                             // initializer: logData.args[3],
                             // fallbackHandler: logData.args[4],
                           ];
@@ -1458,25 +1464,25 @@
                         // console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - ProxyCreation not emitted by the configured factories: " + JSON.stringify(log, null, 2));
                       }
                     } else if (logData.name == "AddedOwner") {
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner: " + JSON.stringify(logData.args));
-                      if (log.address in safeToIndex) {
-                        if (!(logData.args[0] in ownerToIndex)) {
-                          ownerToIndex[logData.args[0]] = parseInt(indexToOwner.length);
-                          indexToOwner.push(logData.args[0]);
-                        }
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safeToIndex[" + log.address + "] - before owners: " + JSON.stringify(safeToIndex[log.address][2]));
-                        safeToIndex[log.address][2] = [...safeToIndex[log.address][2], ownerToIndex[logData.args[0]]];
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safeToIndex[" + log.address + "] - after owners: " + JSON.stringify(safeToIndex[log.address][2]));
-                      }
+                      // // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner: " + JSON.stringify(logData.args));
+                      // if (log.address in safeToIndex) {
+                      //   if (!(logData.args[0] in ownerToIndex)) {
+                      //     ownerToIndex[logData.args[0]] = parseInt(indexToOwner.length);
+                      //     indexToOwner.push(logData.args[0]);
+                      //   }
+                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safeToIndex[" + log.address + "] - before owners: " + JSON.stringify(safeToIndex[log.address][2]));
+                      //   safeToIndex[log.address][2] = [...safeToIndex[log.address][2], ownerToIndex[logData.args[0]]];
+                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safeToIndex[" + log.address + "] - after owners: " + JSON.stringify(safeToIndex[log.address][2]));
+                      // }
 
                     } else if (logData.name == "RemovedOwner") {
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner: " + JSON.stringify(logData.args));
-                      if (log.address in safeToIndex) {
-                        safeToIndex[log.address][4].push(ownerToIndex[logData.args[0]]);
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safeToIndex[" + log.address + "].owners before: " + JSON.stringify(safeToIndex[log.address][2]));
-                        safeToIndex[log.address][2] = safeToIndex[log.address][2].filter(e => e != ownerToIndex[logData.args[0]]);
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safeToIndex[" + log.address + "][2] after: " + JSON.stringify(safeToIndex[log.address][2]) + ", removedOwners: " + JSON.stringify(safeToIndex[log.address][4]));
-                      }
+                      // // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner: " + JSON.stringify(logData.args));
+                      // if (log.address in safeToIndex) {
+                      //   safeToIndex[log.address][4].push(ownerToIndex[logData.args[0]]);
+                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safeToIndex[" + log.address + "].owners before: " + JSON.stringify(safeToIndex[log.address][2]));
+                      //   safeToIndex[log.address][2] = safeToIndex[log.address][2].filter(e => e != ownerToIndex[logData.args[0]]);
+                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safeToIndex[" + log.address + "][2] after: " + JSON.stringify(safeToIndex[log.address][2]) + ", removedOwners: " + JSON.stringify(safeToIndex[log.address][4]));
+                      // }
                     } else if (logData.name == "ChangedThreshold") {
                       // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ChangedThreshold: " + JSON.stringify(logData.args));
                       if (log.address in safeToIndex) {
@@ -1623,9 +1629,10 @@
             const indexToTxHashDataItems = await db.cache.where("objectName").equals("indexToTxHash" + "_" + chainId).toArray();
             if (indexToTxHashDataItems.length == 1) {
               indexToTxHash = indexToTxHashDataItems[0].object;
-              for (const [index, txHash] of indexToTxHash.entries()) {
-                txHashToIndex[txHash] = index;
-              }
+            }
+            const txHashToIndexDataItems = await db.cache.where("objectName").equals("txHashToIndex" + "_" + chainId).toArray();
+            if (txHashToIndexDataItems.length == 1) {
+              txHashToIndex = txHashToIndexDataItems[0].object;
             }
 
             // const factoryAddresses = this.factoriesToVersion;
@@ -1677,12 +1684,20 @@
 
             Vue.set(this, "addressToIndex", addressToIndex);
             Vue.set(this, "indexToAddress", indexToAddress);
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addressToIndex 2: " + JSON.stringify(addressToIndex).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToAddress 2: " + JSON.stringify(indexToAddress).substring(0, 1000) + "...");
             await db.cache.put({ objectName: "indexToAddress" + "_" + chainId, object: indexToAddress }).then (function() {
             }).catch(function(error) {
               console.log("error: " + error);
             });
             Vue.set(this, "txHashToIndex", txHashToIndex);
             Vue.set(this, "indexToTxHash", indexToTxHash);
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashToIndex 2: " + JSON.stringify(txHashToIndex).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToTxHash 2: " + JSON.stringify(indexToTxHash).substring(0, 1000) + "...");
+            await db.cache.put({ objectName: "txHashToIndex" + "_" + chainId, object: txHashToIndex }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
             await db.cache.put({ objectName: "indexToTxHash" + "_" + chainId, object: indexToTxHash }).then (function() {
             }).catch(function(error) {
               console.log("error: " + error);
