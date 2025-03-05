@@ -975,7 +975,7 @@
             const chainId = this.chainId;
 
             for (const name of ['addressesIndex', 'addresses', 'txHashesIndex', 'txHashes', 'ownersIndex', 'owners', 'safesIndex', 'safes'/*, 'timestamps'*/]) {
-              const data = await this.getCachedData(name, db, chainId, name.startsWith("index") ? [] : {});
+              const data = await this.getCachedData(name, db, chainId, name.endsWith("Index") ? [] : {});
               Vue.set(this, name, data);
               console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name + ": " + JSON.stringify(data).substring(0, 1000) + "...");
             }
@@ -1403,10 +1403,10 @@
                       parameters,
                     };
                     if (!(log.transactionHash in txHashes)) {
-                      txHashes[log.transactionHash] = [txHashesIndex.length, log.blockNumber, log.transactionIndex];
-                      txHashesIndex.push(log.transactionHash);
+                      txHashes[log.transactionHash] = txHashesIndex.length;
+                      txHashesIndex.push([log.transactionHash, log.blockNumber, log.transactionIndex]);
                     }
-                    const txHashIndex = txHashes[log.transactionHash][0];
+                    const txHashIndex = txHashes[log.transactionHash];
                     if (logData.name == "SafeSetup") {
                       // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
                       const factoryVersion = logData.args[0] && t.factoriesToVersion[logData.args[0]] || null;
