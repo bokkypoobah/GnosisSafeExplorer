@@ -1336,7 +1336,7 @@
               const records = [];
               for (const log of logs) {
                 if (!log.removed) {
-                  console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - log: " + JSON.stringify(log));
+                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - log: " + JSON.stringify(log));
                   let event = null;
                   let abiVersion = null;
                   if (log.topics[0] in EVENTSIGNATURE_BY_TOPICSLENGTH) {
@@ -1345,6 +1345,7 @@
                     }
                   }
                   let logData = null;
+                  // Factory events
                   if (log.topics[0] == '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80' || log.topics[0] == '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235') {
                     if (abiVersion == 111) {
                       logData = safeFactoryInterface111.parseLog(log);
@@ -1356,6 +1357,7 @@
                       logData = safeFactoryInterface141.parseLog(log);
                       // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeFactoryInterface141: " + JSON.stringify(logData, null, 2));
                     }
+                  // Safe events
                   } else if (abiVersion == 130) {
                     logData = safeInterface130.parseLog(log);
                     // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - logData 130: " + JSON.stringify(logData, null, 2));
@@ -1391,13 +1393,15 @@
                       parameters,
                     };
                     if (logData.name == "SafeSetup") {
-                      console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup: " + JSON.stringify(logData.args));
+                      console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
                       if (logData.args[0] in t.factories) {
                         if (!(log.address in safeToIndex)) {
                           safeToIndex[log.address] = {
                             index: indexToSafe.length,
                             factory: logData.args[0],
                             owners: logData.args[1],
+                            addedOwners: [],
+                            removedOwners: [],
                             threshold: parseInt(logData.args[2]),
                             initializer: logData.args[3],
                             fallbackHandler: logData.args[4],
@@ -1405,17 +1409,33 @@
                           indexToSafe.push(log.address);
                         }
                       } else {
-                        console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup not emitted by the configured factories: " + JSON.stringify(log, null, 2));
+                        // console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup not emitted by the configured factories: " + JSON.stringify(log, null, 2));
                       }
                     } else if (logData.name == "ProxyCreation") {
-                      console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ProxyCreation: " + JSON.stringify(logData.args));
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ProxyCreation: " + JSON.stringify(logData.args));
                       if (log.address in t.factories) {
                         if (logData.args[0] in safeToIndex) {
-                          safeToIndex[logData.args[0]].proxyFactory = parseInt(t.factories[log.address]);
+                          safeToIndex[logData.args[0]].factoryVersion = parseInt(t.factories[log.address]);
                         }
                       } else {
                         console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - ProxyCreation not emitted by the configured factories: " + JSON.stringify(log, null, 2));
                       }
+                    } else if (logData.name == "AddedOwner") {
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner: " + JSON.stringify(log));
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner: " + JSON.stringify(logData.args));
+                      if (log.address in safeToIndex) {
+                        safeToIndex[log.address].addedOwners.push(logData.args[0]);
+                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safeToIndex[" + log.address + "]: " + JSON.stringify(safeToIndex[log.address]));
+                      }
+
+                    } else if (logData.name == "RemovedOwner") {
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner: " + JSON.stringify(logData.args));
+                      if (log.address in safeToIndex) {
+                        safeToIndex[log.address].removedOwners.push(logData.args[0]);
+                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safeToIndex[" + log.address + "]: " + JSON.stringify(safeToIndex[log.address]));
+                      }
+                    } else if (logData.name == "ChangedThreshold") {
+                      console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ChangedThreshold: " + JSON.stringify(logData.args));
                     }
                   }
 
@@ -1458,7 +1478,7 @@
                       // '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80',
                       // 1.3.0 event ProxyCreation(GnosisSafeProxy proxy, address singleton)
                       // 1.4.1 event ProxyCreation(SafeProxy indexed proxy, address singleton)
-                      '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235',
+                      // '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235',
 
                       // // 1.0.0 & 1.1.1 No SafeSetup
                       // // 1.3.0 & 1.4.1 event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
@@ -1495,10 +1515,10 @@
                       //
                       // // 1.3.0 event AddedOwner(address owner)
                       // // 1.4.1 event AddedOwner(address indexed owner)
-                      // '0x9465fa0c962cc76958e6373a993326400c1c94f8be2fe3a952adfa7f60b2ea26',
+                      '0x9465fa0c962cc76958e6373a993326400c1c94f8be2fe3a952adfa7f60b2ea26',
                       // // 1.3.0 event RemovedOwner(address owner)
                       // // 1.4.1 event RemovedOwner(address indexed owner)
-                      // '0xf8d49fc529812e9a7c5c50e69c20f0dccc0db8fa95c98bc58cc9a4f1c1299eaf',
+                      '0xf8d49fc529812e9a7c5c50e69c20f0dccc0db8fa95c98bc58cc9a4f1c1299eaf',
                       // // 1.3.0 & 1.4.1 event ChangedThreshold(uint256 threshold)
                       // '0x610f7ff2b304ae8903c3de74c60c6ab1f7d6226b3f52c5161905bb5ad4039c93',
                       //
