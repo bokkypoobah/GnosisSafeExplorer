@@ -357,7 +357,7 @@
           txHashToIndex: {},
           indexToTxHash: [],
 
-          // TODO: safeAddress => [index, factoryVersion, [ownerIndex,...], [removedOwnerIndex, ...], threshold[, initializerAddressIndex, fallbackHandlerAddressIndex]]
+          // TODO: safeAddress => [index, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...], proxyCreationFromFactoryVersion[, initializerAddressIndex, fallbackHandlerAddressIndex]]
           // safeAddress => [index, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...]]
           safeToIndex: {},
           indexToSafe: [],
@@ -496,7 +496,7 @@
             for (const [version, versionData] of Object.entries(SAFE_ADDRESSES)) {
               for (const [contractName, address] of Object.entries(this.chainId && versionData[this.chainId] || {})) {
                 if (contractName == "proxy_factory" || contractName == "safe_proxy_factory") {
-                  result[address] = version;
+                  result[address] = parseInt(version);
                 }
               }
             }
@@ -1385,7 +1385,7 @@
                   }
                   if (logData) {
                     // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - name: " + logData.name);
-                    console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - signature: " + logData.signature + ", abiVersion: " + abiVersion);
+                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - signature: " + logData.signature + ", abiVersion: " + abiVersion);
                     const parameters = [];
                     for (let [i, value] of logData.args.entries()) {
                       // console.log(i + " => " + value + " " + logData.eventFragment.inputs[i].name + " " + logData.eventFragment.inputs[i].type);
@@ -1409,7 +1409,7 @@
                       parameters,
                     };
                     if (logData.name == "SafeSetup") {
-                      console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
                       const factoryVersion = logData.args[0] && t.factoriesToVersion[logData.args[0]] || null;
                       if (factoryVersion) {
                         const owners = [];
@@ -1436,6 +1436,7 @@
                             owners,
                             parseInt(logData.args[2]),
                             [],
+                            null,
                             // initializer: logData.args[3],
                             // fallbackHandler: logData.args[4],
                           ];
@@ -1446,13 +1447,13 @@
                         // console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup not emitted by the configured factories: " + JSON.stringify(log, null, 2));
                       }
                     } else if (logData.name == "ProxyCreation") {
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ProxyCreation: " + JSON.stringify(logData.args));
+                      console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ProxyCreation: " + JSON.stringify(logData.args));
                       if (log.address in t.factoriesToVersion) {
                         if (logData.args[0] in safeToIndex) {
-                          safeToIndex[logData.args[0]].proxyCreationFromFactoryVersion = parseInt(t.factoriesToVersion[log.address]);
+                          safeToIndex[logData.args[0]][5] = parseInt(t.factoriesToVersion[log.address]);
                         }
                       } else {
-                        console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - ProxyCreation not emitted by the configured factories: " + JSON.stringify(log, null, 2));
+                        // console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - ProxyCreation not emitted by the configured factories: " + JSON.stringify(log, null, 2));
                       }
                     } else if (logData.name == "AddedOwner") {
                       // TODO:
@@ -1666,7 +1667,7 @@
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            const startBlock = latestBlockNumber - 100000;
+            const startBlock = latestBlockNumber - 1000000;
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
