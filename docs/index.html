@@ -234,10 +234,10 @@
               <b-form-select size="sm" v-model="settings.safesTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
             </div>
             <div class="mt-0 pl-1">
-              <font size="-2" v-b-popover.hover.bottom="'# Safes'">{{ allSafes.length }}</font>
+              <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safes'">{{ filteredSortedSafes.length + ' / ' + safes.length }}</font>
             </div>
             <div class="mt-0 pl-1">
-              <b-pagination size="sm" v-model="settings.safesTable.currentPage" @input="saveSettings" :total-rows="allSafes.length" :per-page="settings.safesTable.pageSize" style="height: 0;"></b-pagination>
+              <b-pagination size="sm" v-model="settings.safesTable.currentPage" @input="saveSettings" :total-rows="safes.length" :per-page="settings.safesTable.pageSize" style="height: 0;"></b-pagination>
             </div>
             <div class="mt-0 pl-1">
               <b-form-select size="sm" v-model="settings.safesTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
@@ -451,7 +451,7 @@
           ],
 
           db: {
-            name: "gnosissafeexplorer088h",
+            name: "gnosissafeexplorer088i",
             version: 1,
             schemaDefinition: {
               safeFactoryEvents: '[chainId+blockNumber+logIndex],safe,factory',
@@ -581,17 +581,6 @@
           //   return results;
           // },
 
-          allSafes() {
-            // // console.log(moment().format("HH:mm:ss") + " allSafes - safesIndex: " + JSON.stringify(this.safesIndex).substring(0, 1000) + "...");
-            // const results = [];
-            // for (const [index, safe] of this.safes.entries()) {
-            //   results.push(safe);
-            // }
-            // // console.log(moment().format("HH:mm:ss") + " allSafes - results: " + JSON.stringify(results).substring(0, 1000) + "...");
-            // return results;
-            return this.safes;
-          },
-
           filteredSortedSafes() {
             // console.log(moment().format("HH:mm:ss") + " filteredSortedSafes - filter: " + this.settings.safesTable.filter);
             const results = [];
@@ -605,7 +594,7 @@
                 regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
               }
             }
-            for (const safe of this.allSafes) {
+            for (const safe of this.safes) {
               let include = true;
               if (regex) {
                 if (!(regex.test(safe[0]))) {
@@ -1428,8 +1417,8 @@
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            const startBlock = latestBlockNumber - 100000;
-            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            // const startBlock = latestBlockNumber - 100000;
+            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await getLogsFromRange(startBlock, latestBlockNumber);
@@ -1443,10 +1432,10 @@
             await this.saveCacheData("safes", safes, db, chainId);
             await this.saveCacheData("safesIndex", safesIndex, db, chainId);
 
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addressesIndex 2: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addresses 2: " + JSON.stringify(addresses).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashesIndex 2: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addressesIndex 2: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashes 2: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashesIndex 2: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - owners 2: " + JSON.stringify(owners).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownersIndex 2: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safes 2: " + JSON.stringify(safes).substring(0, 1000) + "...");
