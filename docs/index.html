@@ -257,16 +257,16 @@
                   {{ parseInt(data.index) + ((settings.safesTable.currentPage - 1) * settings.safesTable.pageSize) + 1 }}
                 </font>
               </template>
-              <template #cell(chain)="data">
+              <!-- <template #cell(chain)="data">
                 <div v-if="data.item.chainId == 1">
                   ETH Mainnet
                 </div>
                 <div v-else>
                   {{ "Chain Id " + data.item.chainId }}
                 </div>
-              </template>
+              </template> -->
               <template #cell(blockNumber)="data">
-                <b-link :href="'https://etherscan.io/tx/' + txHashesIndex[data.item.txHashIndex] + '#eventlog#' + data.item.logIndex" target="_blank">
+                <b-link :href="'https://etherscan.io/tx/' + txHashesIndex[data.item.txHashIndex][0] + '#eventlog#' + data.item.logIndex" target="_blank">
                   {{ data.item.blockNumber }}
                 </b-link>
                 <font size="-2" class="text-muted">
@@ -274,16 +274,16 @@
                 </font>
               </template>
               <template #cell(safe)="data">
-                <b-link :href="'https://etherscan.io/address/' + lookupAddress(data.item.safeAddressIndex)" target="_blank">
-                  {{ lookupName(data.item.safeAddressIndex) }}
+                <b-link :href="'https://etherscan.io/address/' + data.item.safe" target="_blank">
+                  {{ data.item.safe }}
                 </b-link>
                 <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + lookupAddress(data.item.safeAddressIndex)" v-b-popover.hover.bottom="'View in app.safe.global'" target="_blank">
                   <b-icon-wallet shift-v="+2" font-scale="0.9" variant="primary"></b-icon-wallet>
                 </b-link>
               </template>
               <template #cell(factory)="data">
-                <b-link :href="'https://etherscan.io/address/' + lookupAddress(data.item.factoryAddressIndex)" target="_blank">
-                  {{ lookupName(data.item.factoryAddressIndex) }}
+                <b-link :href="'https://etherscan.io/address/' + versionToFactories[data.item.factory]" target="_blank">
+                  {{ data.item.factory }}
                 </b-link>
               </template>
             </b-table>
@@ -354,7 +354,7 @@
 
           addressesIndex: [],
           addresses: {},
-          txHashesIndex: [], // txHash => [index, blockNumber, txIndex]
+          txHashesIndex: [], // index => [txHash, blockNumber, txIndex]
           txHashes: {},
           ownersIndex: [],
           owners: {},
@@ -444,9 +444,11 @@
           safesFields: [
             { key: 'index', label: '#', sortable: false, thStyle: 'width: 7%;', tdClass: 'text-truncate' },
             { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
-            { key: 'safe', label: 'Safe', sortable: false, thStyle: 'width: 35%;', tdClass: 'text-truncate' },
-            { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 35%;', tdClass: 'text-truncate' },
-            { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
+            { key: 'safe', label: 'Safe', sortable: false, thStyle: 'width: 30%;', tdClass: 'text-truncate' },
+            { key: 'owners', label: 'Owners', sortable: false, thStyle: 'width: 30%;', tdClass: 'text-truncate' },
+            { key: 'threshold', label: 'Threshold', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
+            { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
+            // { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
           ],
 
           // --- Data Structures ---
@@ -604,18 +606,22 @@
           allSafes() {
             // console.log(moment().format("HH:mm:ss") + " allSafes - safes: " + JSON.stringify(this.safes).substring(0, 1000) + "...");
             const results = [];
-            for (const [safe, safeData] of Object.entries(this.safes)) {
-              console.log(moment().format("HH:mm:ss") + " allSafes - safe: " + safe + ", safeData: " + JSON.stringify(safeData).substring(0, 200) + "...");
-              results.push({
-                index: safeData[0],
-                safe,
-                factory: safeData[1],
-                owners: safeData[2].map(e => e[0]),
-                threshold: safeData[3],
-                txHash: safeData[6],
-                logIndex: safeData[7],
-              });
-            }
+            // for (const [safe, safeData] of Object.entries(this.safes)) {
+            //   // console.log(moment().format("HH:mm:ss") + " allSafes - safe: " + safe + ", safeData: " + JSON.stringify(safeData).substring(0, 200) + "...");
+            //   const txHashData = this.txHashesIndex[safeData[6]];
+            //   results.push({
+            //     index: safeData[0],
+            //     safe,
+            //     factory: safeData[1],
+            //     owners: safeData[2].map(e => e[0]),
+            //     threshold: safeData[3],
+            //     txHashIndex: safeData[6],
+            //     txHash: txHashData[0],
+            //     blockNumber: txHashData[1],
+            //     txIndex: txHashData[2],
+            //     logIndex: safeData[7],
+            //   });
+            // }
             console.log(moment().format("HH:mm:ss") + " allSafes - results: " + JSON.stringify(results).substring(0, 1000) + "...");
             return results;
           },
@@ -1009,7 +1015,7 @@
             // } while (!done);
             // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safes: " + JSON.stringify(safes));
             // Vue.set(this, 'safes', safes);
-            db.close();
+            // db.close();
           },
 
           async retrieveSafeFactoryEvents() {
@@ -1346,7 +1352,7 @@
               const records = [];
               for (const log of logs) {
                 if (!log.removed) {
-                  console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - log: " + JSON.stringify(log));
+                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - log: " + JSON.stringify(log));
                   let event = null;
                   let abiVersion = null;
                   if (log.topics[0] in EVENTSIGNATURE_BY_TOPICSLENGTH) {
@@ -1620,8 +1626,8 @@
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            const startBlock = latestBlockNumber - 100000;
-            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            // const startBlock = latestBlockNumber - 100000;
+            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await getLogsFromRange(startBlock, latestBlockNumber);
