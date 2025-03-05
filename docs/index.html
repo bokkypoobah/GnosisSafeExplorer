@@ -474,7 +474,7 @@
             version: 1,
             schemaDefinition: {
               safeFactoryEvents: '[chainId+blockNumber+logIndex],safe,factory',
-              safeEvents: '[chainId+blockNumber+logIndex],safe,eventType',
+              safeEvents: '[chainId+blockNumber+logIndex],safe,type',
               cache: '&objectName',
             },
             updated: null,
@@ -1386,7 +1386,7 @@
                     }
                     console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - parameters: " + JSON.stringify(parameters));
                     event = {
-                      eventType: EVENT_TYPES[logData.name],
+                      type: EVENT_TYPES[logData.name],
                       name: logData.name,
                       signature: logData.signature,
                       parameters,
