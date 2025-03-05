@@ -48,14 +48,14 @@
             <font size="-1" v-b-popover.hover.bottom="'gm gm gm'">GnosisSafeExplorer</font>
           </b-navbar-brand>
           <b-navbar-nav class="ml-auto">
-            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings();" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'Scan'">Scan</b-nav-item> -->
-            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'Actions'">Actions</b-nav-item> -->
+            <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings();" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'Safes'">Safes</b-nav-item>
+            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'Safe'">Safe</b-nav-item>
             <!-- <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings();" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'Approvals'">Approvals</b-nav-item>
             <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'Events'">Events</b-nav-item>
             <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings();" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover="'Accounts'">Accounts</b-nav-item> -->
             <!-- <b-avatar v-if="coinbase && coinbase != nameOrShortAddress(coinbase)" rounded variant="light" size="3.0rem" :src="'https://metadata.ens.domains/mainnet/avatar/' + nameOrShortAddress(coinbase, 100)" v-b-popover.hover="'Your ENS avatar if set'"></b-avatar> -->
             <!-- <b-button size="sm" variant="outline-primary" class="ml-1 mr-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.bottom="'Click to update wallet'">{{ coinbase ? nameOrShortAddress(coinbase, 16) : 'Connect' }}</b-button> -->
-            <b-button size="sm" variant="outline-primary" class="ml-1 mr-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.bottom="'Click to update wallet'">{{ coinbase ? coinbase.substring(0, 16) : 'Connect' }}</b-button>
+            <b-button size="sm" variant="outline-primary" class="ml-5 mr-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.bottom="'Click to update wallet'">{{ coinbase ? coinbase.substring(0, 16) : 'Connect' }}</b-button>
           </b-navbar-nav>
         </b-navbar>
 
@@ -197,7 +197,7 @@
 
         <b-card no-body class="p-0 mt-0 border-0" style="min-height: 600px;">
           <!-- :MENU -->
-          <div class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
+          <div v-if="settings.tabIndex == 0" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
             <div class="mt-0 pr-1" style="max-width: 24.0rem;">
               <b-form-input type="text" size="sm" v-model.trim="settings.safesTable.filter" @change="saveSettings();" debounce="600" v-b-popover.hover.bottom="'Filter by safe address'" placeholder="🔍 0xabcd"></b-form-input>
             </div>
@@ -244,7 +244,7 @@
             </div>
           </div>
 
-          <b-card no-body class="m-1 p-0 border-0" bg-variant="light">
+          <b-card v-if="settings.tabIndex == 0" no-body class="m-1 p-0 border-0" bg-variant="light">
             <b-table ref="safesTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
               <template #cell(index)="data">
                 <font size="-1" class="text-muted">
@@ -292,6 +292,57 @@
                 </b-link>
               </template>
             </b-table>
+          </b-card>
+
+          <div v-if="settings.tabIndex == 1" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
+            <div class="mt-0 pr-1" style="min-width: 24.0rem; max-width: 24.0rem;">
+              <b-form-input type="text" size="sm" v-model.trim="settings.safe" @change="saveSettings();" debounce="600" v-b-popover.hover.bottom="'Exact safe address'" placeholder="🔍 0xabcd"></b-form-input>
+            </div>
+            <!-- <div class="mt-0 pr-1">
+              <b-dropdown size="sm" right text="" variant="link" class="m-0 p-0">
+                <b-dropdown-text>Sample Safes</b-dropdown-text>
+                <b-dropdown-divider></b-dropdown-divider>
+                <b-dropdown-item @click="settings.safesTable.filter = '0x9fC3dc011b461664c835F2527fffb1169b3C213e'; saveSettings();">EF: DeFi Multisig - Safe v1.4.1</b-dropdown-item>
+                <b-dropdown-item @click="settings.safesTable.filter = '0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4'; saveSettings();">Hacked Bybit: Cold Wallet 1 - Originally Safe 1.3.0; now Non-Safe Contract</b-dropdown-item>
+              </b-dropdown>
+            </div> -->
+            <!-- <div class="mt-0 flex-grow-1">
+            </div> -->
+            <!-- <div v-if="!sync.section" class="mt-0 pr-1">
+              <b-button size="sm" @click="retrieveSafeEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
+            </div> -->
+            <!-- <div class="mt-0 flex-grow-1">
+            </div> -->
+            <!-- <div v-if="!sync.section" class="mt-0 pr-1">
+              <b-button size="sm" @click="resetData()" variant="primary" v-b-popover.hover.bottom="'Reset data'">Reset Data</b-button>
+            </div> -->
+            <!-- <div class="mt-0 flex-grow-1">
+            </div> -->
+            <!-- <div class="mt-0 pr-1">
+              <b-progress v-if="sync.section != null" height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 24.0rem;">
+                <b-progress-bar :value="sync.completed">
+                  {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
+                </b-progress-bar>
+              </b-progress>
+            </div> -->
+            <!-- <div class="mt-0 flex-grow-1">
+            </div> -->
+            <!-- <div class="mt-0 pl-1">
+              <b-form-select size="sm" v-model="settings.safesTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+            </div> -->
+            <!-- <div class="mt-0 pl-1">
+              <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safes'">{{ filteredSortedSafes.length + ' / ' + safes.length }}</font>
+            </div> -->
+            <!-- <div class="mt-0 pl-1">
+              <b-pagination size="sm" v-model="settings.safesTable.currentPage" @input="saveSettings" :total-rows="safes.length" :per-page="settings.safesTable.pageSize" style="height: 0;"></b-pagination>
+            </div> -->
+            <!-- <div class="mt-0 pl-1">
+              <b-form-select size="sm" v-model="settings.safesTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+            </div> -->
+          </div>
+
+          <b-card v-if="settings.tabIndex == 1" no-body class="m-1 p-0 border-0" bg-variant="light">
+            Safe
           </b-card>
 
           <!-- :INFO -->
@@ -367,19 +418,21 @@
           timestamp: null,
 
           settings: {
+            tabIndex: 0,
             safesTable: {
               filter: null,
               currentPage: 1,
               pageSize: 15,
               sortOption: 'blocknumberdsc',
             },
+            safe: null,
             safeTxsTable: {
               filter: null,
               currentPage: 1,
               pageSize: 15,
               sortOption: 'blocknumberdsc',
             },
-            version: 2,
+            version: 3,
           },
 
           modalSafe: {
@@ -568,19 +621,6 @@
             return results;
           },
 
-          // validSafes() {
-          //   console.log(moment().format("HH:mm:ss") + " validSafes");
-          //   const results = {};
-          //   for (const [chainId, chainData] of Object.entries(this.safes)) {
-          //     for (const [safeAddressIndex, safeData] of Object.entries(chainData)) {
-          //       console.log(moment().format("HH:mm:ss") + " validSafes - " + safeAddressIndex + " => " + JSON.stringify(safeData));
-          //       // results.push({ chainId, safeAddressIndex, ...safeData });
-          //       results[this.addresses[safeAddressIndex]] = safeAddressIndex;
-          //     }
-          //   }
-          //   return results;
-          // },
-
           filteredSortedSafes() {
             // console.log(moment().format("HH:mm:ss") + " filteredSortedSafes - filter: " + this.settings.safesTable.filter);
             const results = [];
@@ -643,17 +683,17 @@
           async safesRowSelected(item) {
             if (item && item.length > 0) {
               console.log(moment().format("HH:mm:ss") + " safesRowSelected - item: " + JSON.stringify(item, null, 2));
-              this.modalSafe.chainId = item[0].chainId;
-              this.modalSafe.safeAddressIndex = item[0].safeAddressIndex;
-              this.modalSafe.safe = this.addresses[item[0].safeAddressIndex];
-              this.modalSafe.blockNumber = item[0].blockNumber;
-              this.modalSafe.logIndex = item[0].logIndex;
-              this.modalSafe.txHashIndex = item[0].txHashIndex;
-              this.modalSafe.factoryAddressIndex = item[0].factoryAddressIndex;
-              this.modalSafe.factory = this.addresses[item[0].factoryAddressIndex];
-              this.$bvModal.show('modal-safe');
+              // this.modalSafe.chainId = item[0].chainId;
+              // this.modalSafe.safeAddressIndex = item[0].safeAddressIndex;
+              // this.modalSafe.safe = this.addresses[item[0].safeAddressIndex];
+              // this.modalSafe.blockNumber = item[0].blockNumber;
+              // this.modalSafe.logIndex = item[0].logIndex;
+              // this.modalSafe.txHashIndex = item[0].txHashIndex;
+              // this.modalSafe.factoryAddressIndex = item[0].factoryAddressIndex;
+              // this.modalSafe.factory = this.addresses[item[0].factoryAddressIndex];
+              // this.$bvModal.show('modal-safe');
               this.$refs.safesTable.clearSelected();
-              this.retrieveModalSafeEvents();
+              // this.retrieveModalSafeEvents();
             }
           },
 
