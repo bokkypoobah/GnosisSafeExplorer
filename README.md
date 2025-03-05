@@ -34,22 +34,21 @@ Web3 dapp: https://bokkypoobah.github.io/GnosisSafeExplorer/ connected to Ethere
 
 ### Sample Screens
 
-Syncing
+Syncing. There will be errors reported in the Developer Pane.
 
 <kbd><img src="images/SampleScreen01.png" width="800" /></kbd>
 
-288,680 v1.1.1, v1.3.0 and v1.4.1 Gnosis Safes have been deployed at this time. Syncing takes ~ 3 minutes
+251,111 v1.3.0 and v1.4.1 Gnosis Safes have been deployed at this time. Syncing takes ~ 7 minutes
 
 <kbd><img src="images/SampleScreen02.png" width="800" /></kbd>
 
-Search by Safe address
+Search by Safe address. The second address in the dropdown is not working at the moment.
 
 <kbd><img src="images/SampleScreen03.png" width="800" /></kbd>
 
-Clicking on the row to view the Safe details
+Search by Safe address, or fragment
 
-<kbd><img src="images/SampleScreen04.png?a" width="800" /></kbd>
-<kbd><img src="images/SampleScreen05.png" width="800" /></kbd>
+<kbd><img src="images/SampleScreen04.png" width="800" /></kbd>
 
 
 <br />

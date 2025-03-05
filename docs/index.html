@@ -214,11 +214,11 @@
             </div>
             <div class="mt-0 flex-grow-1">
             </div>
-            <div v-if="!sync.section" class="mt-0 pr-1">
+            <!-- <div v-if="!sync.section" class="mt-0 pr-1">
               <b-button size="sm" @click="retrieveSafeFactoryEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
-            </div>
+            </div> -->
             <div v-if="!sync.section" class="mt-0 pr-1">
-              <b-button size="sm" @click="retrieveSafeEvents()" variant="primary" v-b-popover.hover.bottom="'Dev Button'">Dev</b-button>
+              <b-button size="sm" @click="retrieveSafeEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
             </div>
             <div class="mt-0 flex-grow-1">
             </div>
@@ -484,7 +484,7 @@
           // TODO: Store in db.cache with key `safe_{chainId}`
           //
           db: {
-            name: "gnosissafeexplorer088g",
+            name: "gnosissafeexplorer088h",
             version: 1,
             schemaDefinition: {
               safeFactoryEvents: '[chainId+blockNumber+logIndex],safe,factory',
