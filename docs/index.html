@@ -354,17 +354,12 @@
 
           indexToAddress: [],
           addressToIndex: {},
-          indexToTxHash: [],
+          indexToTxHash: [], // txHash => [index, blockNumber, txIndex]
           txHashToIndex: {},
-
           indexToOwner: [],
           ownerToIndex: {},
-
-          // TODO: safeAddress => [index, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...], proxyCreationFromFactoryVersion[, initializerAddressIndex, fallbackHandlerAddressIndex]]
-          // safeAddress => [index, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...]]
           indexToSafe: [],
-          safeToIndex: {},
-
+          safeToIndex: {}, // safeAddress => [index, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...], proxyCreationFromFactoryVersion, txHashIndex]
 
           safes: {},
 
