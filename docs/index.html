@@ -359,7 +359,7 @@
           ownersIndex: [],
           owners: {},
           safesIndex: [],
-          safes: {}, // safeAddress => [index, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...], proxyCreationFromFactoryVersion, txHashIndex]
+          safes: {}, // safeAddress => [index, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...], proxyCreationFromFactoryVersion, txHashIndex, logIndex]
 
           connected: false,
           chainId: null,
@@ -602,13 +602,21 @@
           // },
 
           allSafes() {
-            // console.log(moment().format("HH:mm:ss") + " allSafes");
+            // console.log(moment().format("HH:mm:ss") + " allSafes - safes: " + JSON.stringify(this.safes).substring(0, 1000) + "...");
             const results = [];
-            for (const [chainId, chainData] of Object.entries(this.safes)) {
-              for (const [safeAddressIndex, safeData] of Object.entries(chainData)) {
-                results.push({ chainId, safeAddressIndex, ...safeData });
-              }
+            for (const [safe, safeData] of Object.entries(this.safes)) {
+              console.log(moment().format("HH:mm:ss") + " allSafes - safe: " + safe + ", safeData: " + JSON.stringify(safeData).substring(0, 200) + "...");
+              results.push({
+                index: safeData[0],
+                safe,
+                factory: safeData[1],
+                owners: safeData[2].map(e => e[0]),
+                threshold: safeData[3],
+                txHash: safeData[6],
+                logIndex: safeData[7],
+              });
             }
+            console.log(moment().format("HH:mm:ss") + " allSafes - results: " + JSON.stringify(results).substring(0, 1000) + "...");
             return results;
           },
 
@@ -972,35 +980,35 @@
               console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name + ": " + JSON.stringify(data).substring(0, 1000) + "...");
             }
 
-            let rows = 0;
-            let done = false;
-            const safes = {};
-            do {
-              let data;
-              if (this.settings.safesTable.filter && this.settings.safesTable.filter.length > 2) {
-                data = await db.safeFactoryEvents.where('safe').startsWithIgnoreCase(this.settings.safesTable.filter).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
-              } else {
-                data = await db.safeFactoryEvents.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
-              }
-              console.log(moment().format("HH:mm:ss") + " loadCurrentData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
-              for (const item of data) {
-                if (!(item.chainId in safes)) {
-                  safes[item.chainId] = {};
-                }
-                if (!(item.safeAddressIndex in safes[item.chainId])) {
-                  safes[item.chainId][item.safeAddressIndex] = {
-                    blockNumber: item.blockNumber,
-                    logIndex: item.logIndex,
-                    txHashIndex: item.txHashIndex,
-                    factoryAddressIndex: item.factoryAddressIndex,
-                  };
-                }
-              }
-              rows = parseInt(rows) + data.length;
-              done = data.length < DB_PROCESSING_BATCH_SIZE;
-            } while (!done);
+            // let rows = 0;
+            // let done = false;
+            // const safes = {};
+            // do {
+            //   let data;
+            //   if (this.settings.safesTable.filter && this.settings.safesTable.filter.length > 2) {
+            //     data = await db.safeFactoryEvents.where('safe').startsWithIgnoreCase(this.settings.safesTable.filter).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+            //   } else {
+            //     data = await db.safeFactoryEvents.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+            //   }
+            //   console.log(moment().format("HH:mm:ss") + " loadCurrentData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+            //   for (const item of data) {
+            //     if (!(item.chainId in safes)) {
+            //       safes[item.chainId] = {};
+            //     }
+            //     if (!(item.safeAddressIndex in safes[item.chainId])) {
+            //       safes[item.chainId][item.safeAddressIndex] = {
+            //         blockNumber: item.blockNumber,
+            //         logIndex: item.logIndex,
+            //         txHashIndex: item.txHashIndex,
+            //         factoryAddressIndex: item.factoryAddressIndex,
+            //       };
+            //     }
+            //   }
+            //   rows = parseInt(rows) + data.length;
+            //   done = data.length < DB_PROCESSING_BATCH_SIZE;
+            // } while (!done);
             // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safes: " + JSON.stringify(safes));
-            Vue.set(this, 'safes', safes);
+            // Vue.set(this, 'safes', safes);
             db.close();
           },
 
@@ -1420,6 +1428,7 @@
                             [],                          // Removed owners
                             null,                        // Factory ProxyCreation event - factory version number
                             txHashIndex,                 // txHash index
+                            log.logIndex,                 // logIndex
                             // initializer: logData.args[3],
                             // fallbackHandler: logData.args[4],
                           ];
