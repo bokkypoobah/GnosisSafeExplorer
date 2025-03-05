@@ -266,24 +266,35 @@
                 </div>
               </template> -->
               <template #cell(blockNumber)="data">
-                <b-link :href="'https://etherscan.io/tx/' + txHashesIndex[data.item.txHashIndex][0] + '#eventlog#' + data.item.logIndex" target="_blank">
-                  {{ data.item.blockNumber }}
+                <b-link :href="'https://etherscan.io/tx/' + txHashesIndex[data.item[6]][0] + '#eventlog#' + data.item[8]" target="_blank">
+                  {{ data.item[7] }}
                 </b-link>
                 <font size="-2" class="text-muted">
-                  {{ data.item.logIndex }}
+                  {{ data.item[8] }}
                 </font>
               </template>
               <template #cell(safe)="data">
-                <b-link :href="'https://etherscan.io/address/' + data.item.safe" target="_blank">
-                  {{ data.item.safe }}
+                <b-link :href="'https://etherscan.io/address/' + data.item[0]" target="_blank">
+                  {{ data.item[0].substring(0, 10) + '...' + data.item[0].slice(-8) }}
                 </b-link>
-                <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + lookupAddress(data.item.safeAddressIndex)" v-b-popover.hover.bottom="'View in app.safe.global'" target="_blank">
+                <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + data.item[0]" v-b-popover.hover.bottom="'View in app.safe.global'" target="_blank">
                   <b-icon-wallet shift-v="+2" font-scale="0.9" variant="primary"></b-icon-wallet>
                 </b-link>
+                <!-- {{ data.item[0] }} -->
+              </template>
+              <template #cell(owners)="data">
+                <span v-for="(owner, index) of data.item[2]" v-bind:key="index">
+                  <b-link :href="'https://etherscan.io/address/' + ownersIndex[owner[0]]" target="_blank">
+                    {{ ownersIndex[owner[0]].substring(0, 6) + '...' + ownersIndex[owner[0]].slice(-4) }}
+                  </b-link>
+                </span>
+              </template>
+              <template #cell(threshold)="data">
+                {{ data.item[3] }}
               </template>
               <template #cell(factory)="data">
-                <b-link :href="'https://etherscan.io/address/' + versionToFactories[data.item.factory]" target="_blank">
-                  {{ data.item.factory }}
+                <b-link :href="'https://etherscan.io/address/' + versionToFactories[data.item[1]]" target="_blank">
+                  {{ data.item[1] }}
                 </b-link>
               </template>
             </b-table>
@@ -358,8 +369,8 @@
           txHashes: {},
           ownersIndex: [],
           owners: {},
-          safesIndex: [],
-          safes: {}, // safeAddress => [index, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...], proxyCreationFromFactoryVersion, txHashIndex, logIndex]
+          safesIndex: [],  // index => [safeAddress, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...], proxyCreationFromFactoryVersion, txHashIndex, blockNumber, logIndex]
+          safes: {},
 
           connected: false,
           chainId: null,
@@ -607,8 +618,10 @@
             // console.log(moment().format("HH:mm:ss") + " allSafes - safes: " + JSON.stringify(this.safes).substring(0, 1000) + "...");
             const results = [];
             // for (const [safe, safeData] of Object.entries(this.safes)) {
-            //   // console.log(moment().format("HH:mm:ss") + " allSafes - safe: " + safe + ", safeData: " + JSON.stringify(safeData).substring(0, 200) + "...");
-            //   const txHashData = this.txHashesIndex[safeData[6]];
+            for (const [index, safe] of this.safesIndex.entries()) {
+              // console.log(moment().format("HH:mm:ss") + " allSafes - safe: " + JSON.stringify(safe).substring(0, 200) + "...");
+              results.push(safe);
+            // //   const txHashData = this.txHashesIndex[safeData[6]];
             //   results.push({
             //     index: safeData[0],
             //     safe,
@@ -616,12 +629,12 @@
             //     owners: safeData[2].map(e => e[0]),
             //     threshold: safeData[3],
             //     txHashIndex: safeData[6],
-            //     txHash: txHashData[0],
-            //     blockNumber: txHashData[1],
-            //     txIndex: txHashData[2],
+            //     // txHash: txHashData[0],
+            //     // blockNumber: txHashData[1],
+            //     // txIndex: txHashData[2],
             //     logIndex: safeData[7],
             //   });
-            // }
+            }
             console.log(moment().format("HH:mm:ss") + " allSafes - results: " + JSON.stringify(results).substring(0, 1000) + "...");
             return results;
           },
@@ -983,7 +996,7 @@
             for (const name of ['addressesIndex', 'addresses', 'txHashesIndex', 'txHashes', 'ownersIndex', 'owners', 'safesIndex', 'safes'/*, 'timestamps'*/]) {
               const data = await this.getCachedData(name, db, chainId, name.endsWith("Index") ? [] : {});
               Vue.set(this, name, data);
-              console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name + ": " + JSON.stringify(data).substring(0, 1000) + "...");
+              console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name); // + ": " + JSON.stringify(data).substring(0, 1000) + "...");
             }
 
             // let rows = 0;
@@ -1426,19 +1439,33 @@
                           ownerList.push([owners[owner], txHashIndex]);
                         }
                         if (!(log.address in safes)) {
-                          safes[log.address] = [
-                            parseInt(safesIndex.length), // Index
+                          // safes[log.address] = [
+                          //   parseInt(safesIndex.length), // Index
+                          //   factoryVersion,              // Factory version
+                          //   ownerList,                   // Owners
+                          //   parseInt(logData.args[2]),   // Threshold
+                          //   [],                          // Removed owners
+                          //   null,                        // Factory ProxyCreation event - factory version number
+                          //   txHashIndex,                 // txHash index
+                          //   log.logIndex,                 // logIndex
+                          //   // initializer: logData.args[3],
+                          //   // fallbackHandler: logData.args[4],
+                          // ];
+                          // safesIndex.push(log.address);
+                          safes[log.address] = parseInt(safesIndex.length);
+                          safesIndex.push([
+                            log.address,                 // Address
                             factoryVersion,              // Factory version
                             ownerList,                   // Owners
                             parseInt(logData.args[2]),   // Threshold
                             [],                          // Removed owners
                             null,                        // Factory ProxyCreation event - factory version number
                             txHashIndex,                 // txHash index
-                            log.logIndex,                 // logIndex
+                            log.blockNumber,             // Block number
+                            log.logIndex,                // logIndex
                             // initializer: logData.args[3],
                             // fallbackHandler: logData.args[4],
-                          ];
-                          safesIndex.push(log.address);
+                          ]);
                         }
                       } else {
                         // console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup not emitted by the configured factories: " + JSON.stringify(log, null, 2));
