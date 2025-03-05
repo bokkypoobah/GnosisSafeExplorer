@@ -357,8 +357,13 @@
           txHashToIndex: {},
           indexToTxHash: [],
 
+          safeToIndex: {},
+          indexToSafe: [],
+
+          ownerToIndex: {},
+          indexToOwner: [],
+
           safes: {},
-          safes_New: {},
 
           connected: false,
           chainId: null,
@@ -484,14 +489,23 @@
         // --- COMPUTED ---
         computed: {
 
-          factories() {
+          factoriesToVersion() {
             const result = {};
             for (const [version, versionData] of Object.entries(SAFE_ADDRESSES)) {
-              for (const [chainId, chainData] of Object.entries(versionData)) {
-                for (const [contractName, address] of Object.entries(chainData)) {
-                  if (contractName == "proxy_factory" || contractName == "safe_proxy_factory") {
-                    result[address] = version;
-                  }
+              for (const [contractName, address] of Object.entries(this.chainId && versionData[this.chainId] || {})) {
+                if (contractName == "proxy_factory" || contractName == "safe_proxy_factory") {
+                  result[address] = version;
+                }
+              }
+            }
+            return result;
+          },
+          versionToFactories() {
+            const result = {};
+            for (const [version, versionData] of Object.entries(SAFE_ADDRESSES)) {
+              for (const [contractName, address] of Object.entries(this.chainId && versionData[this.chainId] || {})) {
+                if (contractName == "proxy_factory" || contractName == "safe_proxy_factory") {
+                  result[version] = address;
                 }
               }
             }
@@ -872,7 +886,7 @@
           // TODO 1.2.0 0x6851D6fDFAfD08c0295C392436245E5bc78B0185
           async retrieveModalSafeEvents() {
             console.log(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - this.modalSafe: " + JSON.stringify(this.modalSafe).substring(0, 1000));
-            const factoryVersion = this.factories[this.modalSafe.factory] || null;
+            const factoryVersion = this.factoriesToVersion[this.modalSafe.factory] || null;
             // console.log(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - factoryVersion: " + factoryVersion);
             const provider = new ethers.providers.Web3Provider(window.ethereum);
             const network = await provider.getNetwork();
@@ -1008,7 +1022,7 @@
               const records = [];
               for (const log of logs) {
                 if (!log.removed) {
-                  if (log.address in factoryAddresses) {
+                  if (log.address in this.factoriesToVersion) {
                     // console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - log: " + JSON.stringify(log));
                     let safeAddress = null;
                     let implementationAddress = null;
@@ -1152,7 +1166,7 @@
                 txHashToIndex[txHash] = index;
               }
             }
-            const factoryAddresses = this.factories;
+            const factoryAddresses = this.factoriesToVersion;
             for (const factoryAddress in factoryAddresses) {
               if (!(factoryAddress in addressToIndex)) {
                 addressToIndex[factoryAddress] = indexToAddress.length;
@@ -1394,12 +1408,21 @@
                     };
                     if (logData.name == "SafeSetup") {
                       console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
-                      if (logData.args[0] in t.factories) {
+                      const factoryVersion = logData.args[0] && t.factoriesToVersion[logData.args[0]] || null;
+                      if (factoryVersion) {
+                        const owners = [];
+                        for (const owner of logData.args[1]) {
+                          if (!(owner in ownerToIndex)) {
+                            ownerToIndex[owner] = parseInt(indexToOwner.length);
+                          }
+                          indexToOwner.push(owner);
+                          owners.push(ownerToIndex[owner]);
+                        }
                         if (!(log.address in safeToIndex)) {
                           safeToIndex[log.address] = {
-                            index: indexToSafe.length,
-                            factory: logData.args[0],
-                            owners: logData.args[1],
+                            index: parseInt(indexToSafe.length),
+                            factoryVersion,
+                            owners,
                             removedOwners: [],
                             threshold: parseInt(logData.args[2]),
                             initializer: logData.args[3],
@@ -1412,31 +1435,33 @@
                       }
                     } else if (logData.name == "ProxyCreation") {
                       // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ProxyCreation: " + JSON.stringify(logData.args));
-                      if (log.address in t.factories) {
+                      if (log.address in t.factoriesToVersion) {
                         if (logData.args[0] in safeToIndex) {
-                          safeToIndex[logData.args[0]].factoryVersion = parseInt(t.factories[log.address]);
+                          safeToIndex[logData.args[0]].proxyCreationFromFactoryVersion = parseInt(t.factoriesToVersion[log.address]);
                         }
                       } else {
                         console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - ProxyCreation not emitted by the configured factories: " + JSON.stringify(log, null, 2));
                       }
                     } else if (logData.name == "AddedOwner") {
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner: " + JSON.stringify(log));
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner: " + JSON.stringify(logData.args));
-                      if (log.address in safeToIndex) {
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safeToIndex[" + log.address + "] - owners before: " + JSON.stringify(safeToIndex[log.address].owners));
-                        safeToIndex[log.address].owners = [...safeToIndex[log.address].owners, logData.args[0]];
-                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safeToIndex[" + log.address + "] - owners: " + JSON.stringify(safeToIndex[log.address].owners));
-                      }
+                      // TODO:
+                      // // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner: " + JSON.stringify(log));
+                      // // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner: " + JSON.stringify(logData.args));
+                      // if (log.address in safeToIndex) {
+                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safeToIndex[" + log.address + "] - owners before: " + JSON.stringify(safeToIndex[log.address].owners));
+                      //   safeToIndex[log.address].owners = [...safeToIndex[log.address].owners, ownerToIndex[logData.args[0]]];
+                      //   console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safeToIndex[" + log.address + "] - owners: " + JSON.stringify(safeToIndex[log.address].owners));
+                      // }
 
                     } else if (logData.name == "RemovedOwner") {
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner: " + JSON.stringify(logData.args));
-                      if (log.address in safeToIndex) {
-                        safeToIndex[log.address].removedOwners.push(logData.args[0]);
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safeToIndex[" + log.address + "].owners before: " + JSON.stringify(safeToIndex[log.address].owners));
-                        safeToIndex[log.address].owners = safeToIndex[log.address].owners.filter(e => e != logData.args[0]);
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safeToIndex[" + log.address + "].owners after: " + JSON.stringify(safeToIndex[log.address].owners));
-                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safeToIndex[" + log.address + "] - owners: " + JSON.stringify(safeToIndex[log.address].owners));
-                      }
+                      // TODO:
+                      // // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner: " + JSON.stringify(logData.args));
+                      // if (log.address in safeToIndex) {
+                      //   safeToIndex[log.address].removedOwners.push(ownerToIndex[logData.args[0]]);
+                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safeToIndex[" + log.address + "].owners before: " + JSON.stringify(safeToIndex[log.address].owners));
+                      //   safeToIndex[log.address].owners = safeToIndex[log.address].owners.filter(e => e != ownerToIndex[logData.args[0]]);
+                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safeToIndex[" + log.address + "].owners after: " + JSON.stringify(safeToIndex[log.address].owners));
+                      //   console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safeToIndex[" + log.address + "] - owners: " + JSON.stringify(safeToIndex[log.address].owners));
+                      // }
                     } else if (logData.name == "ChangedThreshold") {
                       // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ChangedThreshold: " + JSON.stringify(logData.args));
                       if (log.address in safeToIndex) {
@@ -1587,26 +1612,42 @@
                 txHashToIndex[txHash] = index;
               }
             }
-            const factoryAddresses = this.factories;
-            for (const factoryAddress in factoryAddresses) {
-              if (!(factoryAddress in addressToIndex)) {
-                addressToIndex[factoryAddress] = indexToAddress.length;
-                indexToAddress.push(factoryAddress);
-              }
-            }
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - factoryAddresses: " + JSON.stringify(factoryAddresses));
+
+            // const factoryAddresses = this.factoriesToVersion;
+            // for (const factoryAddress in factoryAddresses) {
+            //   if (!(factoryAddress in addressToIndex)) {
+            //     addressToIndex[factoryAddress] = indexToAddress.length;
+            //     indexToAddress.push(factoryAddress);
+            //   }
+            // }
+            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - factoryAddresses: " + JSON.stringify(factoryAddresses));
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - versionToFactories: " + JSON.stringify(this.versionToFactories));
 
             let indexToSafe = [];
             let safeToIndex = {};
             const indexToSafeDataItems = await db.cache.where("objectName").equals("indexToSafe").toArray();
             if (indexToSafeDataItems.length == 1) {
               indexToSafe = indexToSafeDataItems[0].object;
-              for (const [index, safe] of indexToSafe.entries()) {
-                safeToIndex[safe] = index;
-              }
+            }
+            const safeToIndexDataItems = await db.cache.where("objectName").equals("safeToIndex").toArray();
+            if (safeToIndexDataItems.length == 1) {
+              safeToIndex = safeToIndexDataItems[0].object;
             }
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToSafe 1: " + JSON.stringify(indexToSafe));
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeToIndex 1: " + JSON.stringify(safeToIndex));
+
+            let indexToOwner = [];
+            let ownerToIndex = {};
+            const indexToOwnerDataItems = await db.cache.where("objectName").equals("indexToOwner").toArray();
+            if (indexToOwnerDataItems.length == 1) {
+              indexToOwner = indexToOwnerDataItems[0].object;
+            }
+            const ownerToIndexDataItems = await db.cache.where("objectName").equals("ownerToIndex").toArray();
+            if (ownerToIndexDataItems.length == 1) {
+              ownerToIndex = ownerToIndexDataItems[0].object;
+            }
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToOwner 1: " + JSON.stringify(indexToOwner));
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownerToIndex 1: " + JSON.stringify(ownerToIndex));
 
             const latest = await db.safeEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latest: " + JSON.stringify(latest));
@@ -1633,6 +1674,28 @@
             });
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToSafe 2: " + JSON.stringify(indexToSafe));
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeToIndex 2: " + JSON.stringify(safeToIndex, null, 2));
+            await db.cache.put({ objectName: "indexToSafe", object: indexToSafe }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+            await db.cache.put({ objectName: "safeToIndex", object: safeToIndex }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+            Vue.set(this, "indexToOwner", indexToOwner);
+            Vue.set(this, "ownerToIndex", ownerToIndex);
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToOwner 2: " + JSON.stringify(indexToOwner));
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownerToIndex 2: " + JSON.stringify(ownerToIndex, null, 2));
+            await db.cache.put({ objectName: "indexToOwner", object: indexToOwner }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+            await db.cache.put({ objectName: "ownerToIndex", object: ownerToIndex }).then (function() {
+            }).catch(function(error) {
+              console.log("error: " + error);
+            });
+            Vue.set(this, "indexToOwner", indexToOwner);
+            Vue.set(this, "ownerToIndex", ownerToIndex);
 
             await this.loadCurrentData();
             this.sync.section = null;
