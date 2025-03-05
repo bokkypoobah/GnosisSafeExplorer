@@ -357,6 +357,8 @@
           txHashToIndex: {},
           indexToTxHash: [],
 
+          // TODO: safeAddress => [index, factoryVersion, [ownerIndex,...], [removedOwnerIndex, ...], threshold[, initializerAddressIndex, fallbackHandlerAddressIndex]]
+          // safeAddress => [index, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...]]
           safeToIndex: {},
           indexToSafe: [],
 
@@ -1419,15 +1421,25 @@
                           owners.push(ownerToIndex[owner]);
                         }
                         if (!(log.address in safeToIndex)) {
-                          safeToIndex[log.address] = {
-                            index: parseInt(indexToSafe.length),
+                          // safeToIndex[log.address] = {
+                          //   index: parseInt(indexToSafe.length),
+                          //   factoryVersion,
+                          //   owners,
+                          //   threshold: parseInt(logData.args[2]),
+                          //   removedOwners: [],
+                          //   initializer: logData.args[3],
+                          //   fallbackHandler: logData.args[4],
+                          // };
+                          safeToIndex[log.address] = [
+                            parseInt(indexToSafe.length),
                             factoryVersion,
                             owners,
-                            removedOwners: [],
-                            threshold: parseInt(logData.args[2]),
-                            initializer: logData.args[3],
-                            fallbackHandler: logData.args[4],
-                          };
+                            parseInt(logData.args[2]),
+                            [],
+                            // initializer: logData.args[3],
+                            // fallbackHandler: logData.args[4],
+                          ];
+
                           indexToSafe.push(log.address);
                         }
                       } else {
@@ -1465,8 +1477,8 @@
                     } else if (logData.name == "ChangedThreshold") {
                       // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ChangedThreshold: " + JSON.stringify(logData.args));
                       if (log.address in safeToIndex) {
-                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ChangedThreshold - safeToIndex[" + log.address + "] - from: " + safeToIndex[log.address].threshold + ", to: " + parseInt(logData.args[0]));
-                        safeToIndex[log.address].threshold = parseInt(logData.args[0]);
+                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ChangedThreshold - safeToIndex[" + log.address + "] - from: " + safeToIndex[log.address].threshold + ", to: " + parseInt(logData.args[0]));
+                        // safeToIndex[log.address].threshold = parseInt(logData.args[0]);
                       }
                     }
                   }
