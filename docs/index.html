@@ -202,14 +202,14 @@
           <!-- :MENU -->
           <div class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
             <div class="mt-0 pr-1" style="max-width: 24.0rem;">
-              <b-form-input type="text" size="sm" v-model.trim="settings.safesTable.filter" @change="saveSettings(); loadCurrentData();" debounce="600" v-b-popover.hover.bottom="'Filter by safe address'" placeholder="🔍 0xabcd"></b-form-input>
+              <b-form-input type="text" size="sm" v-model.trim="settings.safesTable.filter" @change="saveSettings();" debounce="600" v-b-popover.hover.bottom="'Filter by safe address'" placeholder="🔍 0xabcd"></b-form-input>
             </div>
             <div class="mt-0 pr-1">
               <b-dropdown size="sm" right text="" variant="link" class="m-0 p-0">
                 <b-dropdown-text>Sample Safes</b-dropdown-text>
                 <b-dropdown-divider></b-dropdown-divider>
-                <b-dropdown-item @click="settings.safesTable.filter = '0x9fC3dc011b461664c835F2527fffb1169b3C213e'; saveSettings(); loadCurrentData()">EF: DeFi Multisig - Safe v1.4.1</b-dropdown-item>
-                <b-dropdown-item @click="settings.safesTable.filter = '0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4'; saveSettings(); loadCurrentData()">Hacked Bybit: Cold Wallet 1 - Originally Safe 1.3.0; now Non-Safe Contract</b-dropdown-item>
+                <b-dropdown-item @click="settings.safesTable.filter = '0x9fC3dc011b461664c835F2527fffb1169b3C213e'; saveSettings();">EF: DeFi Multisig - Safe v1.4.1</b-dropdown-item>
+                <b-dropdown-item @click="settings.safesTable.filter = '0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4'; saveSettings();">Hacked Bybit: Cold Wallet 1 - Originally Safe 1.3.0; now Non-Safe Contract</b-dropdown-item>
               </b-dropdown>
             </div>
             <div class="mt-0 flex-grow-1">
@@ -284,8 +284,8 @@
               </template>
               <template #cell(owners)="data">
                 <span v-for="(owner, index) of data.item[2]" v-bind:key="index">
-                  <b-link :href="'https://etherscan.io/address/' + ownersIndex[owner[0]]" target="_blank">
-                    {{ ownersIndex[owner[0]].substring(0, 6) + '...' + ownersIndex[owner[0]].slice(-4) }}
+                  <b-link :href="'https://etherscan.io/address/' + ownersIndex[owner[0]]" target="_blank" class="mr-2">
+                    <font size="-1">{{ ownersIndex[owner[0]].substring(0, 6) + '...' + ownersIndex[owner[0]].slice(-4) }}</font>
                   </b-link>
                 </span>
               </template>
@@ -455,8 +455,8 @@
           safesFields: [
             { key: 'index', label: '#', sortable: false, thStyle: 'width: 7%;', tdClass: 'text-truncate' },
             { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
-            { key: 'safe', label: 'Safe', sortable: false, thStyle: 'width: 30%;', tdClass: 'text-truncate' },
-            { key: 'owners', label: 'Owners', sortable: false, thStyle: 'width: 30%;', tdClass: 'text-truncate' },
+            { key: 'safe', label: 'Safe', sortable: false, thStyle: 'width: 20%;', tdClass: 'text-truncate' },
+            { key: 'owners', label: 'Owners', sortable: false, thStyle: 'width: 40%;', tdClass: 'text-left' },
             { key: 'threshold', label: 'Threshold', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
             { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
             // { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
@@ -643,31 +643,31 @@
             // console.log(moment().format("HH:mm:ss") + " filteredSortedSafes - filter: " + this.settings.safesTable.filter);
             const results = [];
             // const filter = this.settings.safesTable.filter != null && this.settings.safesTable.filter.length > 0 ? this.settings.safesTable.filter : null;
-            // let regex = null;
-            // if (this.settings.safesTable.filter != null && this.settings.safesTable.filter.length > 0) {
-            //   try {
-            //     regex = new RegExp(this.settings.safesTable.filter.toLowerCase());
-            //   } catch (e) {
-            //     console.log(moment().format("HH:mm:ss") + " filteredSortedSafes - regex error: " + e.message);
-            //     regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
-            //   }
-            // }
+            let regex = null;
+            if (this.settings.safesTable.filter != null && this.settings.safesTable.filter.length > 0) {
+              try {
+                regex = new RegExp(this.settings.safesTable.filter, 'i');
+              } catch (e) {
+                console.log(moment().format("HH:mm:ss") + " filteredSortedSafes - regex error: " + e.message);
+                regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
+              }
+            }
             for (const safe of this.allSafes) {
-              // let include = true;
-              // if (regex) {
-              //   if (!(regex.test(this.addressesIndex[safe.safeAddressIndex].toLowerCase()))) {
-              //     include = false;
-              //   }
-              // }
+              let include = true;
+              if (regex) {
+                if (!(regex.test(safe[0]))) {
+                  include = false;
+                }
+              }
               // if (filter) {
-              //   const safeAddress = this.addressesIndex[safe.safeAddressIndex];
-              //   if (safeAddress.indexOf(filter) < 0) {
+              //   // const safeAddress = this.addressesIndex[safe.safeAddressIndex];
+              //   if (safe[0].indexOf(filter) < 0) {
               //     include = false;
               //   }
               // }
-              // if (include) {
+              if (include) {
                 results.push(safe);
-              // }
+              }
             }
             if (this.settings.safesTable.sortOption == 'blocknumberasc') {
               results.sort((a, b) => {
@@ -987,7 +987,7 @@
           },
 
           async loadCurrentData() {
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - this.settings.safesTable.filter: " + this.settings.safesTable.filter);
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData");
             const DB_PROCESSING_BATCH_SIZE = 50000;
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
