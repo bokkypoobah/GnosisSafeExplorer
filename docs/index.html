@@ -352,18 +352,19 @@
         // --- DATA ---
         data: {
 
-          addressToIndex: {},
           indexToAddress: [],
-          txHashToIndex: {},
+          addressToIndex: {},
           indexToTxHash: [],
+          txHashToIndex: {},
+
+          indexToOwner: [],
+          ownerToIndex: {},
 
           // TODO: safeAddress => [index, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...], proxyCreationFromFactoryVersion[, initializerAddressIndex, fallbackHandlerAddressIndex]]
           // safeAddress => [index, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...]]
-          safeToIndex: {},
           indexToSafe: [],
+          safeToIndex: {},
 
-          ownerToIndex: {},
-          indexToOwner: [],
 
           safes: {},
 
@@ -971,23 +972,13 @@
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
             const chainId = this.chainId;
-            for (const name of ['indexToAddress', 'indexToTxHash', 'txHashToIndex', 'indexToSafe', 'safeToIndex', 'indexToOwner', 'ownerToIndex', 'timestamps']) {
-              const dataItems = await db.cache.where("objectName").equals(name + "_" + chainId).toArray();
-              if (dataItems.length == 1) {
-                Vue.set(this, name, dataItems[0].object);
-                console.log(moment().format("HH:mm:ss") + " loadCurrentData - data." + name + ": " + JSON.stringify(dataItems[0].object).substring(0, 1000) + "...");
-              }
+
+            for (const name of ['indexToAddress', 'addressToIndex', 'indexToTxHash', 'txHashToIndex', 'indexToOwner', 'ownerToIndex', 'indexToSafe', 'safeToIndex'/*, 'timestamps'*/]) {
+              const data = await this.getCachedData(name, db, chainId, name.startsWith("index") ? [] : {});
+              Vue.set(this, name, data);
+              console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name + ": " + JSON.stringify(data).substring(0, 1000) + "...");
             }
-            const addressToIndex = {};
-            for (const [index, address] of this.indexToAddress.entries()) {
-              addressToIndex[address] = index;
-            }
-            Vue.set(this, 'addressToIndex', addressToIndex);
-            // const txHashToIndex = {};
-            // for (const [index, address] of this.indexToTxHash.entries()) {
-            //   txHashToIndex[address] = index;
-            // }
-            // Vue.set(this, 'txHashToIndex', txHashToIndex);
+
             let rows = 0;
             let done = false;
             const safes = {};
@@ -1608,68 +1599,29 @@
             this.sync.section = "Syncing";
             this.sync.total = latestBlockNumber;
             this.sync.completed = 0;
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeABI141: " + JSON.stringify(safeABI141));
             const safeFactoryInterface111 = new ethers.utils.Interface(ABIS[111].proxy_factory);
             const safeFactoryInterface130 = new ethers.utils.Interface(ABIS[130].proxy_factory);
             const safeFactoryInterface141 = new ethers.utils.Interface(ABIS[141].proxy_factory);
             const safeInterface130 = new ethers.utils.Interface(ABIS[130].gnosis_safe);
             const safeInterface141 = new ethers.utils.Interface(ABIS[141].gnosis_safe);
 
-            let indexToAddress = [];
-            let addressToIndex = {};
-            const indexToAddressDataItems = await db.cache.where("objectName").equals("indexToAddress" + "_" + chainId).toArray();
-            if (indexToAddressDataItems.length == 1) {
-              indexToAddress = indexToAddressDataItems[0].object;
-              for (const [index, address] of indexToAddress.entries()) {
-                addressToIndex[address] = index;
-              }
-            }
-            let indexToTxHash = [];
-            let txHashToIndex = {};
-            const indexToTxHashDataItems = await db.cache.where("objectName").equals("indexToTxHash" + "_" + chainId).toArray();
-            if (indexToTxHashDataItems.length == 1) {
-              indexToTxHash = indexToTxHashDataItems[0].object;
-            }
-            const txHashToIndexDataItems = await db.cache.where("objectName").equals("txHashToIndex" + "_" + chainId).toArray();
-            if (txHashToIndexDataItems.length == 1) {
-              txHashToIndex = txHashToIndexDataItems[0].object;
-            }
-
-            // const factoryAddresses = this.factoriesToVersion;
-            // for (const factoryAddress in factoryAddresses) {
-            //   if (!(factoryAddress in addressToIndex)) {
-            //     addressToIndex[factoryAddress] = indexToAddress.length;
-            //     indexToAddress.push(factoryAddress);
-            //   }
-            // }
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - factoryAddresses: " + JSON.stringify(factoryAddresses));
+            const indexToAddress = await this.getCachedData('indexToAddress', db, chainId, []);
+            const addressToIndex = await this.getCachedData('addressToIndex', db, chainId, {});
+            const indexToTxHash = await this.getCachedData('indexToTxHash', db, chainId, []);
+            const txHashToIndex = await this.getCachedData('txHashToIndex', db, chainId, {});
+            const indexToOwner = await this.getCachedData('indexToOwner', db, chainId, []);
+            const ownerToIndex = await this.getCachedData('ownerToIndex', db, chainId, {});
+            const indexToSafe = await this.getCachedData('indexToSafe', db, chainId, []);
+            const safeToIndex = await this.getCachedData('safeToIndex', db, chainId, {});
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - versionToFactories: " + JSON.stringify(this.versionToFactories));
-
-            let indexToSafe = [];
-            let safeToIndex = {};
-            const indexToSafeDataItems = await db.cache.where("objectName").equals("indexToSafe" + "_" + chainId).toArray();
-            if (indexToSafeDataItems.length == 1) {
-              indexToSafe = indexToSafeDataItems[0].object;
-            }
-            const safeToIndexDataItems = await db.cache.where("objectName").equals("safeToIndex" + "_" + chainId).toArray();
-            if (safeToIndexDataItems.length == 1) {
-              safeToIndex = safeToIndexDataItems[0].object;
-            }
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToSafe 1: " + JSON.stringify(indexToSafe));
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeToIndex 1: " + JSON.stringify(safeToIndex));
-
-            let indexToOwner = [];
-            let ownerToIndex = {};
-            const indexToOwnerDataItems = await db.cache.where("objectName").equals("indexToOwner").toArray();
-            if (indexToOwnerDataItems.length == 1) {
-              indexToOwner = indexToOwnerDataItems[0].object;
-            }
-            const ownerToIndexDataItems = await db.cache.where("objectName").equals("ownerToIndex").toArray();
-            if (ownerToIndexDataItems.length == 1) {
-              ownerToIndex = ownerToIndexDataItems[0].object;
-            }
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToOwner 1: " + JSON.stringify(indexToOwner));
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownerToIndex 1: " + JSON.stringify(ownerToIndex));
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToAddress 1: " + JSON.stringify(indexToAddress).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addressToIndex 1: " + JSON.stringify(addressToIndex).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToTxHash 1: " + JSON.stringify(indexToTxHash).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashToIndex 1: " + JSON.stringify(txHashToIndex).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToOwner 1: " + JSON.stringify(indexToOwner).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownerToIndex 1: " + JSON.stringify(ownerToIndex).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToSafe 1: " + JSON.stringify(indexToSafe).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeToIndex 1: " + JSON.stringify(safeToIndex).substring(0, 1000) + "...");
 
             const latest = await db.safeEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latest: " + JSON.stringify(latest));
@@ -1682,50 +1634,23 @@
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await getLogsFromRange(startBlock, latestBlockNumber);
 
-            Vue.set(this, "addressToIndex", addressToIndex);
-            Vue.set(this, "indexToAddress", indexToAddress);
+            await this.saveCacheData("indexToAddress", indexToAddress, db, chainId);
+            await this.saveCacheData("addressToIndex", addressToIndex, db, chainId);
+            await this.saveCacheData("indexToTxHash", indexToTxHash, db, chainId);
+            await this.saveCacheData("txHashToIndex", txHashToIndex, db, chainId);
+            await this.saveCacheData("indexToOwner", indexToOwner, db, chainId);
+            await this.saveCacheData("ownerToIndex", ownerToIndex, db, chainId);
+            await this.saveCacheData("indexToSafe", indexToSafe, db, chainId);
+            await this.saveCacheData("safeToIndex", safeToIndex, db, chainId);
+
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addressToIndex 2: " + JSON.stringify(addressToIndex).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToAddress 2: " + JSON.stringify(indexToAddress).substring(0, 1000) + "...");
-            await db.cache.put({ objectName: "indexToAddress" + "_" + chainId, object: indexToAddress }).then (function() {
-            }).catch(function(error) {
-              console.log("error: " + error);
-            });
-            Vue.set(this, "txHashToIndex", txHashToIndex);
-            Vue.set(this, "indexToTxHash", indexToTxHash);
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashToIndex 2: " + JSON.stringify(txHashToIndex).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToTxHash 2: " + JSON.stringify(indexToTxHash).substring(0, 1000) + "...");
-            await db.cache.put({ objectName: "txHashToIndex" + "_" + chainId, object: txHashToIndex }).then (function() {
-            }).catch(function(error) {
-              console.log("error: " + error);
-            });
-            await db.cache.put({ objectName: "indexToTxHash" + "_" + chainId, object: indexToTxHash }).then (function() {
-            }).catch(function(error) {
-              console.log("error: " + error);
-            });
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToSafe 2: " + JSON.stringify(indexToSafe).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeToIndex 2: " + JSON.stringify(safeToIndex).substring(0, 1000) + "...");
-            await db.cache.put({ objectName: "indexToSafe" + "_" + chainId, object: indexToSafe }).then (function() {
-            }).catch(function(error) {
-              console.log("error: " + error);
-            });
-            await db.cache.put({ objectName: "safeToIndex" + "_" + chainId, object: safeToIndex }).then (function() {
-            }).catch(function(error) {
-              console.log("error: " + error);
-            });
-            Vue.set(this, "indexToOwner", indexToOwner);
-            Vue.set(this, "ownerToIndex", ownerToIndex);
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToOwner 2: " + JSON.stringify(indexToOwner).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownerToIndex 2: " + JSON.stringify(ownerToIndex).substring(0, 1000) + "...");
-            await db.cache.put({ objectName: "indexToOwner" + "_" + chainId, object: indexToOwner }).then (function() {
-            }).catch(function(error) {
-              console.log("error: " + error);
-            });
-            await db.cache.put({ objectName: "ownerToIndex" + "_" + chainId, object: ownerToIndex }).then (function() {
-            }).catch(function(error) {
-              console.log("error: " + error);
-            });
-            Vue.set(this, "indexToOwner", indexToOwner);
-            Vue.set(this, "ownerToIndex", ownerToIndex);
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - indexToSafe 2: " + JSON.stringify(indexToSafe).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeToIndex 2: " + JSON.stringify(safeToIndex).substring(0, 1000) + "...");
 
             await this.loadCurrentData();
             this.sync.section = null;
@@ -1894,6 +1819,27 @@
               a = this.modalSafeOwners[a] + " " + a.substring(0, 8) + '...' + a.slice(-6);
             }
             return a;
+          },
+
+          async saveCacheData(name, data, db, chainId) {
+            console.log(moment().format("HH:mm:ss") + " saveCacheData - name: " + name + ", chainId: " + chainId);
+            await db.cache.put({ objectName: name + "_" + chainId, object: data }).then (function() {
+              }).catch(function(error) {
+                console.error(moment().format("HH:mm:ss") + " saveCacheData - error: " + error);
+              });
+          },
+
+          async getCachedData(name, db, chainId, empty) {
+            // console.log(moment().format("HH:mm:ss") + " getCachedData - name: " + name + ", chainId: " + chainId);
+            const dataItems = await db.cache.where("objectName").equals(name + "_" + chainId).toArray();
+            // console.log(moment().format("HH:mm:ss") + " getCachedData - dataItems: " + JSON.stringify(dataItems).substring(0, 1000) + "...");
+            if (dataItems.length == 1) {
+              // console.log(moment().format("HH:mm:ss") + " getCachedData - " + name + ": " + JSON.stringify(dataItems[0].object).substring(0, 1000) + "...");
+              return dataItems[0].object;
+            } else {
+              // console.log(moment().format("HH:mm:ss") + " getCachedData - " + name + ": " + JSON.stringify(empty));
+              return empty;
+            }
           },
 
           nameOrShortAddress(address, length = 0) {
