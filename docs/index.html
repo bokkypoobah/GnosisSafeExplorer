@@ -144,9 +144,6 @@
             </div> -->
             <div class="mt-0 flex-grow-1">
             </div>
-            <!-- <div v-if="!sync.section" class="mt-0 pr-1">
-              <b-button size="sm" @click="retrieveSafeFactoryEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
-            </div> -->
             <!-- <b-progress v-if="sync.section != null" height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 24.0rem;">
               <b-progress-bar :value="sync.completed">
                 {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
@@ -214,9 +211,6 @@
             </div>
             <div class="mt-0 flex-grow-1">
             </div>
-            <!-- <div v-if="!sync.section" class="mt-0 pr-1">
-              <b-button size="sm" @click="retrieveSafeFactoryEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
-            </div> -->
             <div v-if="!sync.section" class="mt-0 pr-1">
               <b-button size="sm" @click="retrieveSafeEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
             </div>
@@ -266,7 +260,7 @@
                 </div>
               </template> -->
               <template #cell(blockNumber)="data">
-                <b-link :href="'https://etherscan.io/tx/' + txHashesIndex[data.item[6]][0] + '#eventlog#' + data.item[8]" target="_blank">
+                <b-link :href="'https://etherscan.io/tx/' + txHashes[data.item[6]][0] + '#eventlog#' + data.item[8]" target="_blank">
                   {{ data.item[7] }}
                 </b-link>
                 <font size="-2" class="text-muted">
@@ -284,8 +278,8 @@
               </template>
               <template #cell(owners)="data">
                 <span v-for="(owner, index) of data.item[2]" v-bind:key="index">
-                  <b-link :href="'https://etherscan.io/address/' + ownersIndex[owner[0]]" target="_blank" class="mr-2">
-                    <font size="-1">{{ ownersIndex[owner[0]].substring(0, 6) + '...' + ownersIndex[owner[0]].slice(-4) }}</font>
+                  <b-link :href="'https://etherscan.io/address/' + owners[owner[0]]" target="_blank" class="mr-2">
+                    <font size="-1">{{ owners[owner[0]].substring(0, 6) + '...' + owners[owner[0]].slice(-4) }}</font>
                   </b-link>
                 </span>
               </template>
@@ -298,12 +292,6 @@
                 </b-link>
               </template>
             </b-table>
-
-            <!-- <b-form-group label="" label-cols="3" label-align="right" class="m-0 mt-2" :description="!connected ? 'Click [Connect] to connect to Ethereum mainnet' : ''">
-              <b-button size="sm" @click="retrieveSafeFactoryEvents();" variant="primary">
-                Retrieve Safe Factory Events
-              </b-button>
-            </b-form-group> -->
           </b-card>
 
           <!-- :INFO -->
@@ -363,14 +351,14 @@
         // --- DATA ---
         data: {
 
-          addressesIndex: [],
-          addresses: {},
-          txHashesIndex: [], // index => [txHash, blockNumber, txIndex]
-          txHashes: {},
-          ownersIndex: [],
-          owners: {},
-          safesIndex: [],  // index => [safeAddress, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...], proxyCreationFromFactoryVersion, txHashIndex, blockNumber, logIndex]
-          safes: {},
+          addresses: [],      // index => address
+          addressesIndex: {}, // address => index
+          txHashes: [],       // index => [txHash, blockNumber, txIndex]
+          txHashesIndex: {},  // txHash => index
+          owners: [],         // index => ownerAddress
+          ownersIndex: {},    // ownerAddress => index
+          safes: [],          // index => [safeAddress, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...], proxyCreationFromFactoryVersion, txHashIndex, blockNumber, logIndex]
+          safesIndex: {},     // safeAddress => index
 
           connected: false,
           chainId: null,
@@ -462,27 +450,6 @@
             // { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
           ],
 
-          // --- Data Structures ---
-          // addressesIndex: [],
-          //   [address]
-          //   Stored in db.cache with key 'addressesIndex' // TODO: Add chainId to key
-          // addresses: {},
-          //   address => addressIndex
-          //   Rebuilt from addressesIndex
-          // TODO: functions to getIndex('type', address) and persistIndex('type') - type 'factory', 'safe', 'owner', 'others'
-
-          // txHashesIndex: [],
-          //   [txHash]
-          //   Stored in db.cache with key 'txHashesIndex' // TODO: Add chainId to key
-          // txHashes: {},
-          //   txHash => txHashIndex
-          //   Rebuilt from txHashesIndex
-
-          // safes: {},
-          //   chainId => safeAddressIndex => { blockNumber, logIndex, txHashIndex, factoryAddressIndex }
-          //   Generated in loadCurrentData()
-          // TODO: Store in db.cache with key `safe_{chainId}`
-          //
           db: {
             name: "gnosissafeexplorer088h",
             version: 1,
@@ -608,21 +575,21 @@
           //     for (const [safeAddressIndex, safeData] of Object.entries(chainData)) {
           //       console.log(moment().format("HH:mm:ss") + " validSafes - " + safeAddressIndex + " => " + JSON.stringify(safeData));
           //       // results.push({ chainId, safeAddressIndex, ...safeData });
-          //       results[this.addressesIndex[safeAddressIndex]] = safeAddressIndex;
+          //       results[this.addresses[safeAddressIndex]] = safeAddressIndex;
           //     }
           //   }
           //   return results;
           // },
 
           allSafes() {
-            // // console.log(moment().format("HH:mm:ss") + " allSafes - safes: " + JSON.stringify(this.safes).substring(0, 1000) + "...");
+            // // console.log(moment().format("HH:mm:ss") + " allSafes - safesIndex: " + JSON.stringify(this.safesIndex).substring(0, 1000) + "...");
             // const results = [];
-            // for (const [index, safe] of this.safesIndex.entries()) {
+            // for (const [index, safe] of this.safes.entries()) {
             //   results.push(safe);
             // }
             // // console.log(moment().format("HH:mm:ss") + " allSafes - results: " + JSON.stringify(results).substring(0, 1000) + "...");
             // return results;
-            return this.safesIndex;
+            return this.safes;
           },
 
           filteredSortedSafes() {
@@ -646,7 +613,7 @@
                 }
               }
               // if (filter) {
-              //   // const safeAddress = this.addressesIndex[safe.safeAddressIndex];
+              //   // const safeAddress = this.addresses[safe.safeAddressIndex];
               //   if (safe[0].indexOf(filter) < 0) {
               //     include = false;
               //   }
@@ -689,12 +656,12 @@
               console.log(moment().format("HH:mm:ss") + " safesRowSelected - item: " + JSON.stringify(item, null, 2));
               this.modalSafe.chainId = item[0].chainId;
               this.modalSafe.safeAddressIndex = item[0].safeAddressIndex;
-              this.modalSafe.safe = this.addressesIndex[item[0].safeAddressIndex];
+              this.modalSafe.safe = this.addresses[item[0].safeAddressIndex];
               this.modalSafe.blockNumber = item[0].blockNumber;
               this.modalSafe.logIndex = item[0].logIndex;
               this.modalSafe.txHashIndex = item[0].txHashIndex;
               this.modalSafe.factoryAddressIndex = item[0].factoryAddressIndex;
-              this.modalSafe.factory = this.addressesIndex[item[0].factoryAddressIndex];
+              this.modalSafe.factory = this.addresses[item[0].factoryAddressIndex];
               this.$bvModal.show('modal-safe');
               this.$refs.safesTable.clearSelected();
               this.retrieveModalSafeEvents();
@@ -817,16 +784,16 @@
               txData[chainId] = {};
             }
             // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txData 1: " + JSON.stringify(txData, null, 2));
-            const txHashes = {};
+            const txHashesIndex = {};
             for (const [blockNumber, blockData] of Object.entries(this.modalSafe.events)) {
               for (const [txHash, txData] of Object.entries(blockData)) {
-                if (!(txHash in txHashes)) {
-                  txHashes[txHash] = blockNumber;
+                if (!(txHash in txHashesIndex)) {
+                  txHashesIndex[txHash] = blockNumber;
                 }
               }
             }
-            // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHashes: " + JSON.stringify(txHashes));
-            for (const [txHash, blockNumber] of Object.entries(txHashes)) {
+            // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHashesIndex: " + JSON.stringify(txHashesIndex));
+            for (const [txHash, blockNumber] of Object.entries(txHashesIndex)) {
               // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHash: " + txHash + ", blockNumber: " + blockNumber);
               if (!(blockNumber in timestamps[chainId])) {
                 const block = await provider.getBlock(parseInt(blockNumber));
@@ -979,8 +946,8 @@
             db.version(this.db.version).stores(this.db.schemaDefinition);
             const chainId = this.chainId;
 
-            for (const name of ['addressesIndex', 'addresses', 'txHashesIndex', 'txHashes', 'ownersIndex', 'owners', 'safesIndex', 'safes'/*, 'timestamps'*/]) {
-              const data = await this.getCachedData(name, db, chainId, name.endsWith("Index") ? [] : {});
+            for (const name of ['addresses', 'addressesIndex', 'txHashes', 'txHashesIndex', 'owners', 'ownersIndex', 'safes', 'safesIndex'/*, 'timestamps'*/]) {
+              const data = await this.getCachedData(name, db, chainId, name.endsWith("Index") ? {} : []);
               Vue.set(this, name, data);
               console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name); // + ": " + JSON.stringify(data).substring(0, 1000) + "...");
             }
@@ -1015,190 +982,6 @@
             // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safes: " + JSON.stringify(safes));
             // Vue.set(this, 'safes', safes);
             // db.close();
-          },
-
-          async retrieveSafeFactoryEvents() {
-            async function processLogs(fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - processLogs: " + fromBlock + ", toBlock: " + toBlock);
-              const records = [];
-              for (const log of logs) {
-                if (!log.removed) {
-                  if (log.address in this.factoriesToVersion) {
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - log: " + JSON.stringify(log));
-                    let safeAddress = null;
-                    let implementationAddress = null;
-                    if (log.address == "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B" || log.address == "0x12302fE9c02ff50939BaAaaf415fc226C078613C") {
-                      // 1.1.1 event ProxyCreation(Proxy proxy)
-                      safeAddress = ethers.utils.getAddress('0x' + log.data.substring(26, 66));
-                      implementationAddress = "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F";
-                    } else if (log.address == "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2") {
-                      // '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235', // 1.3.0 event ProxyCreation(GnosisSafeProxy proxy, address singleton);
-                      safeAddress = ethers.utils.getAddress('0x' + log.data.substring(26, 66));
-                      implementationAddress = ethers.utils.getAddress('0x' + log.data.substring(90, 130));
-                    } else {
-                      // '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235', // 1.4.1 event ProxyCreation(SafeProxy indexed proxy, address singleton);
-                      safeAddress = ethers.utils.getAddress('0x' + log.topics[1].substring(26, 66));
-                      implementationAddress = ethers.utils.getAddress('0x' + log.data.substring(26, 66));
-                    }
-                    if (!(safeAddress in addresses)) {
-                      addresses[safeAddress] = addressesIndex.length;
-                      addressesIndex.push(safeAddress);
-                    }
-                    const safeAddressIndex = addresses[safeAddress];
-                    if (!(implementationAddress in addresses)) {
-                      addresses[implementationAddress] = addressesIndex.length;
-                      addressesIndex.push(implementationAddress);
-                    }
-                    const implementationAddressIndex = addresses[implementationAddress];
-                    if (!(log.transactionHash in txHashes)) {
-                      txHashes[log.transactionHash] = [txHashesIndex.length, log.blockNumber, log.txIndex];
-                      txHashesIndex.push(log.transactionHash);
-                    }
-                    const txHashIndex = txHashes[log.transactionHash][0];
-                    records.push({
-                      chainId,
-                      blockNumber: parseInt(log.blockNumber),
-                      logIndex: parseInt(log.logIndex),
-                      txIndex: parseInt(log.transactionIndex),
-                      txHashIndex,
-                      txHash: log.transactionHash,
-                      safeAddressIndex,
-                      safe: safeAddress,
-                      factoryAddressIndex: addresses[log.address],
-                      factory: log.address,
-                    });
-                  } else {
-                    if (log.topics[0] == "0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8") {
-                      // '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8',
-                      // event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
-                      console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - log - SafeSetup: " + JSON.stringify(log));
-                      try {
-                        const logData = safeInterface141.parseLog(log);
-                        console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - log - SafeSetup: " + JSON.stringify(logData));
-                      } catch (e) {
-                        console.log("error: " + e.message);
-                      }
-                    }
-                  }
-                }
-              }
-              if (records.length) {
-                await db.safeFactoryEvents.bulkAdd(records).then(function(lastKey) {
-                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - bulkAdd lastKey: " + JSON.stringify(lastKey));
-                }).catch(Dexie.BulkError, function(e) {
-                  console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
-                });
-              }
-            }
-
-            async function getLogsFromRange(fromBlock, toBlock) {
-              console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - getLogsFromRange: " + fromBlock + ", toBlock: " + toBlock);
-              try {
-                const logs = await provider.getLogs({
-                  // address: "0x12302fE9c02ff50939BaAaaf415fc226C078613C", // 1.0.0
-                  // address: "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B", // 1.1.1
-                  // address: "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2", // 1.3.0
-                  // address: "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67", // 1.4.1
-                  address: null,
-                  fromBlock,
-                  toBlock,
-                  topics: [[
-                      // 1.1.1 event ProxyCreation(Proxy proxy)
-                      '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80',
-                      // 1.3.0 event ProxyCreation(GnosisSafeProxy proxy, address singleton)
-                      // 1.4.1 event ProxyCreation(SafeProxy indexed proxy, address singleton)
-                      '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235',
-
-                      // TODO
-                      // 1.0.0 No SafeSetup
-                      // 1.1.1
-                      //  *** SafeSetup (index_topic_1 address initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler)
-                      // 1.3.0 0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8
-                      // event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
-                      // 1.4.1 0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8
-                      // event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
-                      // '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8',
-                    ],
-                  ],
-                });
-                await processLogs(fromBlock, toBlock, logs);
-                t.sync.completed = toBlock;
-              } catch (e) {
-                console.error(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - Error: " + e.message);
-                const mid = parseInt((fromBlock + toBlock) / 2);
-                await getLogsFromRange(fromBlock, mid);
-                await getLogsFromRange(parseInt(mid) + 1, toBlock);
-              }
-            }
-
-            const t = this;
-            const db = new Dexie(this.db.name);
-            db.version(this.db.version).stores(this.db.schemaDefinition);
-
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const network = await provider.getNetwork();
-            const chainId = network.chainId;
-            localStorage.gnosisSafeExplorerChainId = chainId;
-            const block = await provider.getBlock();
-            const latestBlockNumber = block && block.number || null;
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - latestBlockNumber: " + latestBlockNumber);
-            this.sync.section = "Syncing";
-            this.sync.total = latestBlockNumber;
-            this.sync.completed = 0;
-            const safeABI141 = ABIS[141].gnosis_safe;
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - safeABI141: " + JSON.stringify(safeABI141));
-            const safeInterface141 = new ethers.utils.Interface(safeABI141);
-
-            let addressesIndex = [];
-            let addresses = {};
-            const addressesIndexDataItems = await db.cache.where("objectName").equals("addressesIndex").toArray();
-            if (addressesIndexDataItems.length == 1) {
-              addressesIndex = addressesIndexDataItems[0].object;
-              for (const [index, address] of addressesIndex.entries()) {
-                addresses[address] = index;
-              }
-            }
-            let txHashesIndex = [];
-            let txHashes = {};
-            const txHashesIndexDataItems = await db.cache.where("objectName").equals("txHashesIndex").toArray();
-            if (txHashesIndexDataItems.length == 1) {
-              txHashesIndex = txHashesIndexDataItems[0].object;
-              for (const [index, txHash] of txHashesIndex.entries()) {
-                txHashes[txHash] = index;
-              }
-            }
-            const factoryAddresses = this.factoriesToVersion;
-            for (const factoryAddress in factoryAddresses) {
-              if (!(factoryAddress in addresses)) {
-                addresses[factoryAddress] = addressesIndex.length;
-                addressesIndex.push(factoryAddress);
-              }
-            }
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - factoryAddresses: " + JSON.stringify(factoryAddresses));
-
-            const latest = await db.safeFactoryEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - latest: " + JSON.stringify(latest));
-            // TODO: TEST
-            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 100000;
-            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
-            this.sync.completed = startBlock;
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - startBlock: " + startBlock);
-            await getLogsFromRange(startBlock, latestBlockNumber);
-
-            Vue.set(this, "addresses", addresses);
-            Vue.set(this, "addressesIndex", addressesIndex);
-            await db.cache.put({ objectName: "addressesIndex", object: addressesIndex }).then (function() {
-            }).catch(function(error) {
-              console.log("error: " + error);
-            });
-            Vue.set(this, "txHashes", txHashes);
-            Vue.set(this, "txHashesIndex", txHashesIndex);
-            await db.cache.put({ objectName: "txHashesIndex", object: txHashesIndex }).then (function() {
-            }).catch(function(error) {
-              console.log("error: " + error);
-            });
-            await this.loadCurrentData();
-            this.sync.section = null;
           },
 
           async retrieveSafeEvents() {
@@ -1393,7 +1176,7 @@
                       if (type == "uint256") {
                         value = ethers.BigNumber.from(value).toString();
                       } else if (type == "address[]") {
-                        // TODO: Handle indexation of addresses
+                        // TODO: Handle indexation of addressesIndex
                       }
                       parameters.push({
                         value,
@@ -1408,26 +1191,26 @@
                       signature: logData.signature,
                       parameters,
                     };
-                    if (!(log.transactionHash in txHashes)) {
-                      txHashes[log.transactionHash] = txHashesIndex.length;
-                      txHashesIndex.push([log.transactionHash, log.blockNumber, log.transactionIndex]);
+                    if (!(log.transactionHash in txHashesIndex)) {
+                      txHashesIndex[log.transactionHash] = txHashes.length;
+                      txHashes.push([log.transactionHash, log.blockNumber, log.transactionIndex]);
                     }
-                    const txHashIndex = txHashes[log.transactionHash];
+                    const txHashIndex = txHashesIndex[log.transactionHash];
                     if (logData.name == "SafeSetup") {
                       // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
                       const factoryVersion = logData.args[0] && t.factoriesToVersion[logData.args[0]] || null;
                       if (factoryVersion) {
                         const ownerList = [];
                         for (const owner of logData.args[1]) {
-                          if (!(owner in owners)) {
-                            owners[owner] = parseInt(ownersIndex.length);
-                            ownersIndex.push(owner);
+                          if (!(owner in ownersIndex)) {
+                            ownersIndex[owner] = parseInt(owners.length);
+                            owners.push(owner);
                           }
-                          ownerList.push([owners[owner], txHashIndex]);
+                          ownerList.push([ownersIndex[owner], txHashIndex]);
                         }
-                        if (!(log.address in safes)) {
-                          safes[log.address] = parseInt(safesIndex.length);
-                          safesIndex.push([
+                        if (!(log.address in safesIndex)) {
+                          safesIndex[log.address] = parseInt(safes.length);
+                          safes.push([
                             log.address,                 // Address
                             factoryVersion,              // Factory version
                             ownerList,                   // Owners
@@ -1449,12 +1232,12 @@
 
                       const factoryVersion = log.address && t.factoriesToVersion[log.address] || null;
                       if (factoryVersion) {
-                        if (logData.args[0] in safes) {
-                          safes[logData.args[0]][5] = parseInt(t.factoriesToVersion[log.address]);
+                        if (logData.args[0] in safesIndex) {
+                          safesIndex[logData.args[0]][5] = parseInt(t.factoriesToVersion[log.address]);
                         } else {
                           // Create new safe record
-                          safes[logData.args[0]] = parseInt(safesIndex.length);
-                          safesIndex.push([
+                          safesIndex[logData.args[0]] = parseInt(safes.length);
+                          safes.push([
                             logData.args[0],             // Address
                             factoryVersion,              // Factory version
                             null,                        // Owners
@@ -1473,29 +1256,29 @@
                       }
                     } else if (logData.name == "AddedOwner") {
                       // // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner: " + JSON.stringify(logData.args));
-                      // if (log.address in safes) {
-                      //   if (!(logData.args[0] in owners)) {
-                      //     owners[logData.args[0]] = parseInt(ownersIndex.length);
-                      //     ownersIndex.push(logData.args[0]);
+                      // if (log.address in safesIndex) {
+                      //   if (!(logData.args[0] in ownersIndex)) {
+                      //     ownersIndex[logData.args[0]] = parseInt(owners.length);
+                      //     owners.push(logData.args[0]);
                       //   }
-                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safes[" + log.address + "] - before owners: " + JSON.stringify(safes[log.address][2]));
-                      //   safes[log.address][2] = [...safes[log.address][2], owners[logData.args[0]]];
-                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safes[" + log.address + "] - after owners: " + JSON.stringify(safes[log.address][2]));
+                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safesIndex[" + log.address + "] - before ownersIndex: " + JSON.stringify(safesIndex[log.address][2]));
+                      //   safesIndex[log.address][2] = [...safesIndex[log.address][2], ownersIndex[logData.args[0]]];
+                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - AddedOwner - safesIndex[" + log.address + "] - after ownersIndex: " + JSON.stringify(safesIndex[log.address][2]));
                       // }
 
                     } else if (logData.name == "RemovedOwner") {
                       // // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner: " + JSON.stringify(logData.args));
-                      // if (log.address in safes) {
-                      //   safes[log.address][4].push(owners[logData.args[0]]);
-                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safes[" + log.address + "].owners before: " + JSON.stringify(safes[log.address][2]));
-                      //   safes[log.address][2] = safes[log.address][2].filter(e => e != owners[logData.args[0]]);
-                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safes[" + log.address + "][2] after: " + JSON.stringify(safes[log.address][2]) + ", removedOwners: " + JSON.stringify(safes[log.address][4]));
+                      // if (log.address in safesIndex) {
+                      //   safesIndex[log.address][4].push(ownersIndex[logData.args[0]]);
+                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safesIndex[" + log.address + "].ownersIndex before: " + JSON.stringify(safesIndex[log.address][2]));
+                      //   safesIndex[log.address][2] = safesIndex[log.address][2].filter(e => e != ownersIndex[logData.args[0]]);
+                      //   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - RemovedOwner - safesIndex[" + log.address + "][2] after: " + JSON.stringify(safesIndex[log.address][2]) + ", removedOwners: " + JSON.stringify(safesIndex[log.address][4]));
                       // }
                     } else if (logData.name == "ChangedThreshold") {
                       // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ChangedThreshold: " + JSON.stringify(logData.args));
-                      if (log.address in safes) {
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ChangedThreshold - safes[" + log.address + "] - from: " + safes[log.address][3] + ", to: " + parseInt(logData.args[0]));
-                        safes[log.address][3] = parseInt(logData.args[0]);
+                      if (log.address in safesIndex) {
+                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ChangedThreshold - safesIndex[" + log.address + "] - from: " + safesIndex[log.address][3] + ", to: " + parseInt(logData.args[0]));
+                        safesIndex[log.address][3] = parseInt(logData.args[0]);
                       }
                     }
                   }
@@ -1511,7 +1294,7 @@
                       address: log.address,
                     //   safeAddressIndex,
                       safe: log.address,
-                    //   factoryAddressIndex: addresses[log.address],
+                    //   factoryAddressIndex: addressesIndex[log.address],
                       ...event,
                     });
                   }
@@ -1622,52 +1405,52 @@
             const safeInterface130 = new ethers.utils.Interface(ABIS[130].gnosis_safe);
             const safeInterface141 = new ethers.utils.Interface(ABIS[141].gnosis_safe);
 
-            const addressesIndex = await this.getCachedData('addressesIndex', db, chainId, []);
-            const addresses = await this.getCachedData('addresses', db, chainId, {});
-            const txHashesIndex = await this.getCachedData('txHashesIndex', db, chainId, []);
-            const txHashes = await this.getCachedData('txHashes', db, chainId, {});
-            const ownersIndex = await this.getCachedData('ownersIndex', db, chainId, []);
-            const owners = await this.getCachedData('owners', db, chainId, {});
-            const safesIndex = await this.getCachedData('safesIndex', db, chainId, []);
-            const safes = await this.getCachedData('safes', db, chainId, {});
+            const addresses = await this.getCachedData('addresses', db, chainId, []);
+            const addressesIndex = await this.getCachedData('addressesIndex', db, chainId, {});
+            const txHashes = await this.getCachedData('txHashes', db, chainId, []);
+            const txHashesIndex = await this.getCachedData('txHashesIndex', db, chainId, {});
+            const owners = await this.getCachedData('owners', db, chainId, []);
+            const ownersIndex = await this.getCachedData('ownersIndex', db, chainId, {});
+            const safes = await this.getCachedData('safes', db, chainId, []);
+            const safesIndex = await this.getCachedData('safesIndex', db, chainId, {});
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - versionToFactories: " + JSON.stringify(this.versionToFactories));
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addressesIndex 1: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addresses 1: " + JSON.stringify(addresses).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashesIndex 1: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addressesIndex 1: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashes 1: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownersIndex 1: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashesIndex 1: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - owners 1: " + JSON.stringify(owners).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safesIndex 1: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownersIndex 1: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safes 1: " + JSON.stringify(safes).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safesIndex 1: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
 
             const latest = await db.safeEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latest: " + JSON.stringify(latest));
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            // const startBlock = latestBlockNumber - 100000;
-            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            const startBlock = latestBlockNumber - 100000;
+            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await getLogsFromRange(startBlock, latestBlockNumber);
 
-            await this.saveCacheData("addressesIndex", addressesIndex, db, chainId);
             await this.saveCacheData("addresses", addresses, db, chainId);
-            await this.saveCacheData("txHashesIndex", txHashesIndex, db, chainId);
+            await this.saveCacheData("addressesIndex", addressesIndex, db, chainId);
             await this.saveCacheData("txHashes", txHashes, db, chainId);
-            await this.saveCacheData("ownersIndex", ownersIndex, db, chainId);
+            await this.saveCacheData("txHashesIndex", txHashesIndex, db, chainId);
             await this.saveCacheData("owners", owners, db, chainId);
-            await this.saveCacheData("safesIndex", safesIndex, db, chainId);
+            await this.saveCacheData("ownersIndex", ownersIndex, db, chainId);
             await this.saveCacheData("safes", safes, db, chainId);
+            await this.saveCacheData("safesIndex", safesIndex, db, chainId);
 
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addresses 2: " + JSON.stringify(addresses).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addressesIndex 2: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashes 2: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addresses 2: " + JSON.stringify(addresses).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashesIndex 2: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownersIndex 2: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashes 2: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - owners 2: " + JSON.stringify(owners).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safesIndex 2: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownersIndex 2: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safes 2: " + JSON.stringify(safes).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safesIndex 2: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
 
             await this.loadCurrentData();
             this.sync.section = null;
@@ -1814,19 +1597,19 @@
 
           lookupAddress(a) {
             // if (a.toString().length < 42) {
-            //   a = this.addressesIndex[a];
+            //   a = this.addresses[a];
             // }
             return a;
           },
           lookupName(a) {
             // if (a.toString().length < 42) {
-            //   if (this.chainId && (a in this.safes[this.chainId])) {
-            //     a = "Safe " + this.addressesIndex[a].substring(0, 8) + '...' + this.addressesIndex[a].slice(-6);
+            //   if (this.chainId && (a in this.safesIndex[this.chainId])) {
+            //     a = "Safe " + this.addresses[a].substring(0, 8) + '...' + this.addresses[a].slice(-6);
             //   } else {
-            //     a = this.addressesIndex[a];
+            //     a = this.addresses[a];
             //   }
             // } else {
-            //   if (this.chainId && (this.addresses[a] in this.safes[this.chainId])) {
+            //   if (this.chainId && (this.addresses[a] in this.safesIndex[this.chainId])) {
             //     a = "Safe " + a.substring(0, 8) + '...' + a.slice(-6);
             //   }
             // }
