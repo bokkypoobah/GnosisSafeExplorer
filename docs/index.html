@@ -358,6 +358,7 @@
           indexToTxHash: [],
 
           safes: {},
+          safes_New: {},
 
           connected: false,
           chainId: null,
@@ -469,7 +470,7 @@
           // TODO: Store in db.cache with key `safe_{chainId}`
           //
           db: {
-            name: "gnosissafeexplorer088f",
+            name: "gnosissafeexplorer088g",
             version: 1,
             schemaDefinition: {
               safeFactoryEvents: '[chainId+blockNumber+logIndex],safe,factory',
@@ -494,6 +495,7 @@
                 }
               }
             }
+            console.log(moment().format("HH:mm:ss") + " factories: " + JSON.stringify(result, null, 2));
             return result;
           },
 
@@ -680,7 +682,7 @@
           async processSafeEvents141(logs, factoryVersion, safeVersion) {
             console.log(moment().format("HH:mm:ss") + " processSafeEvents141 - factoryVersion: " + factoryVersion + ", safeVersion:" + safeVersion);
 
-            const safeABI = safeVersion && ABIS[safeVersion] && ABIS[safeVersion].gnosis_safe || ABIS["1.3.0"].gnosis_safe;
+            const safeABI = safeVersion && ABIS[safeVersion] && ABIS[safeVersion].gnosis_safe || ABIS[130].gnosis_safe;
             // console.log(moment().format("HH:mm:ss") + " processSafeEvents141 - safeABI: " + JSON.stringify(safeABI));
             const safeInterface = new ethers.utils.Interface(safeABI);
             for (const log of logs) {
@@ -935,7 +937,7 @@
             Vue.set(this.modalSafe.info, 'nonce', parseInt(nonce));
 
             // TODO: 1.1.1 and 1.3.0
-            // if (safeVersion == "1.4.1") {
+            // if (safeVersion == 141) {
               const logs = await provider.getLogs({
                 address: this.modalSafe.safe,
                 fromBlock: 0,
@@ -1129,7 +1131,7 @@
             this.sync.section = "Syncing";
             this.sync.total = latestBlockNumber;
             this.sync.completed = 0;
-            const safeABI141 = ABIS["1.4.1"].gnosis_safe;
+            const safeABI141 = ABIS[141].gnosis_safe;
             // console.log(moment().format("HH:mm:ss") + " retrieveSafeFactoryEvents - safeABI141: " + JSON.stringify(safeABI141));
             const safeInterface141 = new ethers.utils.Interface(safeABI141);
 
@@ -1365,8 +1367,8 @@
                     console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - logData ???: " + JSON.stringify(log));
                   }
                   if (logData) {
-                    console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - name: " + logData.name);
-                    console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - signature: " + logData.signature);
+                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - name: " + logData.name);
+                    console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - signature: " + logData.signature + ", abiVersion: " + abiVersion);
                     const parameters = [];
                     for (let [i, value] of logData.args.entries()) {
                       // console.log(i + " => " + value + " " + logData.eventFragment.inputs[i].name + " " + logData.eventFragment.inputs[i].type);
@@ -1382,58 +1384,18 @@
                         type,
                       });
                     }
-                    console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - parameters: " + JSON.stringify(parameters, null, 2));
+                    console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - parameters: " + JSON.stringify(parameters));
                     event = {
                       eventType: EVENT_TYPES[logData.name],
                       name: logData.name,
                       signature: logData.signature,
                       parameters,
                     };
+                    if (logData.name == "ProxyCreation") {
+                    } else if (logData.name == "SafeSetup") {
+                      console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - SafeSetup: " + JSON.stringify(parameters, null, 2));
+                    }
                   }
-
-                  // if (log.topics[0] == "0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8" ||
-                  //     log.topics[0] == "0xf2a0eb156472d1440255b0d7c1e19cc07115d1051fe605b0dce69acfec884d9c" ||
-                  //     log.topics[0] == "0xe7f4675038f4f6034dfcbbb24c4dc08e4ebf10eb9d257d3d02c0f38d122ac6e4") {
-                  //     // 1.3.0 & 1.4.1 event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
-                  //     // 1.3.0 & 1.4.1 event ApproveHash(bytes32 indexed approvedHash, address indexed owner);
-                  //     // 1.3.0 & 1.4.1 event SignMsg(bytes32 indexed msgHash)
-                  //   const logData = safeInterface141.parseLog(log);
-                  //   console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - logData SafeSetup: " + JSON.stringify(logData));
-                  //   event = {
-                  //     name: logData.eventFragment.name,
-                  //   };
-                  //
-                  // } else if (log.topics[0] == "0x23428b18acfb3ea64b08dc0c1d296ea9c09702c09083ca5272e64d115b687d23" ||
-                  //            log.topics[0] == "0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e") {
-                  //     if (log.topics.length == 1) {
-                  //       // 1.3.0 event ExecutionFailure(bytes32 txHash, uint256 payment)
-                  //       // 1.3.0 event ExecutionSuccess(bytes32 txHash, uint256 payment)
-                  //       // const logData = safeInterface130.parseLog(log);
-                  //       // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - logData 1.3.0: " + JSON.stringify(logData));
-                  //
-                  //     } else {
-                  //       // 1.4.1 event ExecutionFailure(bytes32 indexed txHash, uint256 payment)
-                  //       // 1.4.1 event ExecutionSuccess(bytes32 indexed txHash, uint256 payment)
-                  //       // const logData = safeInterface141.parseLog(log);
-                  //       // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - logData 1.4.1: " + JSON.stringify(logData));
-                  //     }
-                  //
-                  // } else {
-                  //   // if (log.topics[0] == "0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8") {
-                  //     // '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8',
-                  //     // event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
-                  //     // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - log - SafeSetup: " + JSON.stringify(log));
-                  //     try {
-                  //       const logData = safeInterface141.parseLog(log);
-                  //       console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - logData: " + JSON.stringify(logData));
-                  //       event = {
-                  //         name: logData.eventFragment.name,
-                  //       };
-                  //     } catch (e) {
-                  //       console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents - error: " + e.message);
-                  //     }
-                  //   // }
-                  // }
 
                   if (event) {
                     records.push({
@@ -1450,71 +1412,14 @@
                       ...event,
                     });
                   }
-
-                  // if (log.address in factoryAddresses) {
-                  //   let safeAddress = null;
-                  //   let implementationAddress = null;
-                  //   if (log.address == "0x76E2cFc1F5Fa8F6a5b3fC4c8F4788F0116861F9B" || log.address == "0x12302fE9c02ff50939BaAaaf415fc226C078613C") {
-                  //     // 1.1.1 event ProxyCreation(Proxy proxy)
-                  //     safeAddress = ethers.utils.getAddress('0x' + log.data.substring(26, 66));
-                  //     implementationAddress = "0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F";
-                  //   } else if (log.address == "0xa6B71E26C5e0845f74c812102Ca7114b6a896AB2") {
-                  //     // '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235', // 1.3.0 event ProxyCreation(GnosisSafeProxy proxy, address singleton);
-                  //     safeAddress = ethers.utils.getAddress('0x' + log.data.substring(26, 66));
-                  //     implementationAddress = ethers.utils.getAddress('0x' + log.data.substring(90, 130));
-                  //   } else {
-                  //     // '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235', // 1.4.1 event ProxyCreation(SafeProxy indexed proxy, address singleton);
-                  //     safeAddress = ethers.utils.getAddress('0x' + log.topics[1].substring(26, 66));
-                  //     implementationAddress = ethers.utils.getAddress('0x' + log.data.substring(26, 66));
-                  //   }
-                  //   if (!(safeAddress in addressToIndex)) {
-                  //     addressToIndex[safeAddress] = indexToAddress.length;
-                  //     indexToAddress.push(safeAddress);
-                  //   }
-                  //   const safeAddressIndex = addressToIndex[safeAddress];
-                  //   if (!(implementationAddress in addressToIndex)) {
-                  //     addressToIndex[implementationAddress] = indexToAddress.length;
-                  //     indexToAddress.push(implementationAddress);
-                  //   }
-                  //   const implementationAddressIndex = addressToIndex[implementationAddress];
-                  //   if (!(log.transactionHash in txHashToIndex)) {
-                  //     txHashToIndex[log.transactionHash] = indexToTxHash.length;
-                  //     indexToTxHash.push(log.transactionHash);
-                  //   }
-                  //   const txHashIndex = txHashToIndex[log.transactionHash];
-                  //   records.push({
-                  //     chainId,
-                  //     blockNumber: parseInt(log.blockNumber),
-                  //     logIndex: parseInt(log.logIndex),
-                  //     txIndex: parseInt(log.transactionIndex),
-                  //     txHashIndex,
-                  //     txHash: log.transactionHash,
-                  //     safeAddressIndex,
-                  //     safe: safeAddress,
-                  //     factoryAddressIndex: addressToIndex[log.address],
-                  //     factory: log.address,
-                  //   });
-                  // } else {
-                  //   if (log.topics[0] == "0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8") {
-                  //     // '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8',
-                  //     // event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
-                  //     console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - log - SafeSetup: " + JSON.stringify(log));
-                  //     try {
-                  //       const logData = safeInterface141.parseLog(log);
-                  //       console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - log - SafeSetup: " + JSON.stringify(logData));
-                  //     } catch (e) {
-                  //       console.log("error: " + e.message);
-                  //     }
-                  //   }
-                  // }
                 }
               }
               if (records.length) {
-                console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - records: " + JSON.stringify(records, null, 2));
+                // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - records: " + JSON.stringify(records, null, 2));
                 await db.safeEvents.bulkAdd(records).then(function(lastKey) {
                   console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - bulkAdd lastKey: " + JSON.stringify(lastKey));
                   }).catch(Dexie.BulkError, function(e) {
-                    console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
                   });
               }
             }
@@ -1531,11 +1436,11 @@
                       // '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80',
                       // 1.3.0 event ProxyCreation(GnosisSafeProxy proxy, address singleton)
                       // 1.4.1 event ProxyCreation(SafeProxy indexed proxy, address singleton)
-                      '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235',
+                      // '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235',
 
                       // // 1.0.0 & 1.1.1 No SafeSetup
                       // // 1.3.0 & 1.4.1 event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
-                      // '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8',
+                      '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8',
                       // // 1.3.0 & 1.4.1 event ApproveHash(bytes32 indexed approvedHash, address indexed owner);
                       // '0xf2a0eb156472d1440255b0d7c1e19cc07115d1051fe605b0dce69acfec884d9c',
                       // // 1.3.0 & 1.4.1 event SignMsg(bytes32 indexed msgHash)
@@ -1609,11 +1514,11 @@
             this.sync.total = latestBlockNumber;
             this.sync.completed = 0;
             // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safeABI141: " + JSON.stringify(safeABI141));
-            const safeFactoryInterface111 = new ethers.utils.Interface(ABIS["1.1.1"].proxy_factory);
-            const safeFactoryInterface130 = new ethers.utils.Interface(ABIS["1.3.0"].proxy_factory);
-            const safeFactoryInterface141 = new ethers.utils.Interface(ABIS["1.4.1"].proxy_factory);
-            const safeInterface130 = new ethers.utils.Interface(ABIS["1.3.0"].gnosis_safe);
-            const safeInterface141 = new ethers.utils.Interface(ABIS["1.4.1"].gnosis_safe);
+            const safeFactoryInterface111 = new ethers.utils.Interface(ABIS[111].proxy_factory);
+            const safeFactoryInterface130 = new ethers.utils.Interface(ABIS[130].proxy_factory);
+            const safeFactoryInterface141 = new ethers.utils.Interface(ABIS[141].proxy_factory);
+            const safeInterface130 = new ethers.utils.Interface(ABIS[130].gnosis_safe);
+            const safeInterface141 = new ethers.utils.Interface(ABIS[141].gnosis_safe);
 
             let indexToAddress = [];
             let addressToIndex = {};
@@ -1641,6 +1546,9 @@
               }
             }
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - factoryAddresses: " + JSON.stringify(factoryAddresses));
+            const safes_New = null;
+            // TODO: Load from cache
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safes_New 1: " + JSON.stringify(safes_New));
 
             const latest = await db.safeEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latest: " + JSON.stringify(latest));
@@ -1665,6 +1573,8 @@
             }).catch(function(error) {
               console.log("error: " + error);
             });
+            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safes_New 2: " + JSON.stringify(safes_New));
+
             await this.loadCurrentData();
             this.sync.section = null;
           },
