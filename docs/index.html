@@ -296,7 +296,7 @@
 
           <div v-if="settings.tabIndex == 1" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
             <div class="mt-0 pr-1" style="min-width: 24.0rem; max-width: 24.0rem;">
-              <b-form-input type="text" size="sm" v-model.trim="settings.safe" @change="saveSettings();" debounce="600" v-b-popover.hover.bottom="'Exact safe address'" placeholder="🔍 0xabcd"></b-form-input>
+              <b-form-input type="text" size="sm" v-model.trim="settings.safe" @change="saveSettings(); loadSafe();" debounce="600" v-b-popover.hover.bottom="'Exact safe address'" placeholder="🔍 0xabcd"></b-form-input>
             </div>
             <!-- <div class="mt-0 pr-1">
               <b-dropdown size="sm" right text="" variant="link" class="m-0 p-0">
@@ -306,6 +306,15 @@
                 <b-dropdown-item @click="settings.safesTable.filter = '0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4'; saveSettings();">Hacked Bybit: Cold Wallet 1 - Originally Safe 1.3.0; now Non-Safe Contract</b-dropdown-item>
               </b-dropdown>
             </div> -->
+            <div v-if="sync.section != null" class="mt-0 flex-grow-1">
+            </div>
+            <div v-if="sync.section != null" class="mt-0 pr-1">
+              <b-progress height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 24.0rem;">
+                <b-progress-bar :value="sync.completed">
+                  {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
+                </b-progress-bar>
+              </b-progress>
+            </div>
             <div class="mt-0 flex-grow-1">
             </div>
             <div v-if="safe[3]" class="mt-0 pr-1">
@@ -321,10 +330,6 @@
               <font size="-1" class="text-muted">
                 /
               </font>
-              <!-- <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + safe[0]" target="_blank" v-b-popover.hover.bottom="'# Owners. Click to view Safe in app.safe.global'">
-                {{ safe[2].length }}
-              </b-link> -->
-
               <font size="+1">
                 <b-badge pill variant="light" class="px-0" v-b-popover.hover.bottom="'# Owners. Click to view Safe in app.safe.global'">
                   <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + safe[0]" target="_blank" >
@@ -332,7 +337,6 @@
                   </b-link>
                 </b-badge>
               </font>
-
             </div>
             <div class="mt-0 flex-grow-1">
             </div>
@@ -359,13 +363,6 @@
               <b-button size="sm" @click="resetData()" variant="primary" v-b-popover.hover.bottom="'Reset data'">Reset Data</b-button>
             </div> -->
             <!-- <div class="mt-0 flex-grow-1">
-            </div> -->
-            <!-- <div class="mt-0 pr-1">
-              <b-progress v-if="sync.section != null" height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 24.0rem;">
-                <b-progress-bar :value="sync.completed">
-                  {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
-                </b-progress-bar>
-              </b-progress>
             </div> -->
             <!-- <div class="mt-0 flex-grow-1">
             </div> -->
@@ -749,7 +746,28 @@
               // this.$bvModal.show('modal-safe');
               this.$refs.safesTable.clearSelected();
               // this.retrieveModalSafeEvents();
+              await this.loadSafe();
             }
+          },
+
+          async loadSafe() {
+            console.log(moment().format("HH:mm:ss") + " loadSafe - this.settings.safe: " + this.settings.safe);
+            const t = this;
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const network = await provider.getNetwork();
+            const chainId = network.chainId;
+            localStorage.gnosisSafeExplorerChainId = chainId;
+            const block = await provider.getBlock();
+            const latestBlockNumber = block && block.number || null;
+            console.log(moment().format("HH:mm:ss") + " loadSafe - latestBlockNumber: " + latestBlockNumber);
+            this.sync.section = "Syncing";
+            this.sync.total = latestBlockNumber;
+            this.sync.completed = 0;
+
+            // this.sync.section = null;
           },
 
           async processSafeEvents141(logs, factoryVersion, safeVersion) {
