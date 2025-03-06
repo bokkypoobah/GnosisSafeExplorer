@@ -52,7 +52,7 @@ const SAFE_ADDRESSES = {
   },
 }
 
-const ABIS = {
+const SAFE_ABIS = {
   100: {
     "gnosis_safe": [{"constant":true,"inputs":[{"name":"message","type":"bytes"}],"name":"getMessageHash","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"owner","type":"address"},{"name":"_threshold","type":"uint256"}],"name":"addOwnerWithThreshold","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"DOMAIN_SEPARATOR_TYPEHASH","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_data","type":"bytes"},{"name":"_signature","type":"bytes"}],"name":"isValidSignature","outputs":[{"name":"","type":"bytes4"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"owner","type":"address"}],"name":"isOwner","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"value","type":"uint256"},{"name":"data","type":"bytes"},{"name":"operation","type":"uint8"}],"name":"execTransactionFromModule","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"bytes32"}],"name":"signedMessages","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"module","type":"address"}],"name":"enableModule","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_threshold","type":"uint256"}],"name":"changeThreshold","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"value","type":"uint256"},{"name":"data","type":"bytes"},{"name":"operation","type":"uint8"},{"name":"safeTxGas","type":"uint256"},{"name":"baseGas","type":"uint256"},{"name":"gasPrice","type":"uint256"},{"name":"gasToken","type":"address"},{"name":"refundReceiver","type":"address"},{"name":"signatures","type":"bytes"}],"name":"execTransaction","outputs":[{"name":"success","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"},{"name":"","type":"bytes32"}],"name":"approvedHashes","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_masterCopy","type":"address"}],"name":"changeMasterCopy","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_data","type":"bytes"}],"name":"signMessage","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"SENTINEL_MODULES","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"SENTINEL_OWNERS","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getOwners","outputs":[{"name":"","type":"address[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"NAME","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_owners","type":"address[]"},{"name":"_threshold","type":"uint256"},{"name":"to","type":"address"},{"name":"data","type":"bytes"},{"name":"paymentToken","type":"address"},{"name":"payment","type":"uint256"},{"name":"paymentReceiver","type":"address"}],"name":"setup","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"nonce","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"getModules","outputs":[{"name":"","type":"address[]"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"SAFE_MSG_TYPEHASH","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"value","type":"uint256"},{"name":"data","type":"bytes"},{"name":"operation","type":"uint8"}],"name":"requiredTxGas","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"SAFE_TX_TYPEHASH","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"hashToApprove","type":"bytes32"}],"name":"approveHash","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"to","type":"address"},{"name":"value","type":"uint256"},{"name":"data","type":"bytes"},{"name":"operation","type":"uint8"},{"name":"safeTxGas","type":"uint256"},{"name":"baseGas","type":"uint256"},{"name":"gasPrice","type":"uint256"},{"name":"gasToken","type":"address"},{"name":"refundReceiver","type":"address"},{"name":"_nonce","type":"uint256"}],"name":"getTransactionHash","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"prevModule","type":"address"},{"name":"module","type":"address"}],"name":"disableModule","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"prevOwner","type":"address"},{"name":"oldOwner","type":"address"},{"name":"newOwner","type":"address"}],"name":"swapOwner","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"getThreshold","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"to","type":"address"},{"name":"value","type":"uint256"},{"name":"data","type":"bytes"},{"name":"operation","type":"uint8"},{"name":"safeTxGas","type":"uint256"},{"name":"baseGas","type":"uint256"},{"name":"gasPrice","type":"uint256"},{"name":"gasToken","type":"address"},{"name":"refundReceiver","type":"address"},{"name":"_nonce","type":"uint256"}],"name":"encodeTransactionData","outputs":[{"name":"","type":"bytes"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"domainSeparator","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"prevOwner","type":"address"},{"name":"owner","type":"address"},{"name":"_threshold","type":"uint256"}],"name":"removeOwner","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"VERSION","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},{"payable":true,"stateMutability":"payable","type":"fallback"},{"anonymous":false,"inputs":[{"indexed":false,"name":"txHash","type":"bytes32"}],"name":"ExecutionFailed","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"owner","type":"address"}],"name":"AddedOwner","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"owner","type":"address"}],"name":"RemovedOwner","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"threshold","type":"uint256"}],"name":"ChangedThreshold","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"module","type":"address"}],"name":"EnabledModule","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"module","type":"address"}],"name":"DisabledModule","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"name":"newContract","type":"address"}],"name":"ContractCreation","type":"event"}],
     "proxy_factory": [{"constant":false,"inputs":[{"name":"_mastercopy","type":"address"},{"name":"initializer","type":"bytes"},{"name":"saltNonce","type":"uint256"}],"name":"createProxyWithNonce","outputs":[{"name":"proxy","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"proxyCreationCode","outputs":[{"name":"","type":"bytes"}],"payable":false,"stateMutability":"pure","type":"function"},{"constant":false,"inputs":[{"name":"masterCopy","type":"address"},{"name":"data","type":"bytes"}],"name":"createProxy","outputs":[{"name":"proxy","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"proxyRuntimeCode","outputs":[{"name":"","type":"bytes"}],"payable":false,"stateMutability":"pure","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"proxy","type":"address"}],"name":"ProxyCreation","type":"event"}],
@@ -73,3 +73,148 @@ const ABIS = {
     "proxy_factory": [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"contract SafeProxy","name":"proxy","type":"address"},{"indexed":false,"internalType":"address","name":"singleton","type":"address"}],"name":"ProxyCreation","type":"event"},{"inputs":[{"internalType":"address","name":"_singleton","type":"address"},{"internalType":"bytes","name":"initializer","type":"bytes"},{"internalType":"uint256","name":"saltNonce","type":"uint256"}],"name":"createChainSpecificProxyWithNonce","outputs":[{"internalType":"contract SafeProxy","name":"proxy","type":"address"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_singleton","type":"address"},{"internalType":"bytes","name":"initializer","type":"bytes"},{"internalType":"uint256","name":"saltNonce","type":"uint256"},{"internalType":"contract IProxyCreationCallback","name":"callback","type":"address"}],"name":"createProxyWithCallback","outputs":[{"internalType":"contract SafeProxy","name":"proxy","type":"address"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_singleton","type":"address"},{"internalType":"bytes","name":"initializer","type":"bytes"},{"internalType":"uint256","name":"saltNonce","type":"uint256"}],"name":"createProxyWithNonce","outputs":[{"internalType":"contract SafeProxy","name":"proxy","type":"address"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"getChainId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"proxyCreationCode","outputs":[{"internalType":"bytes","name":"","type":"bytes"}],"stateMutability":"pure","type":"function"}],
   },
 }
+
+const SAFE_EVENT_TYPE_PROXYCREATION = 0;
+const SAFE_EVENT_TYPE_SAFESETUP = 1;
+const SAFE_EVENT_TYPE_APPROVEHASH = 2;
+const SAFE_EVENT_TYPE_SIGNMSG = 3;
+const SAFE_EVENT_TYPE_EXECUTIONFAILURE = 4;
+const SAFE_EVENT_TYPE_EXECUTIONSUCCESS = 5;
+const SAFE_EVENT_TYPE_CHANGEDFALLBACKHANDLER = 6;
+const SAFE_EVENT_TYPE_CHANGEDGUARD = 7;
+const SAFE_EVENT_TYPE_ENABLEDMODULE = 8;
+const SAFE_EVENT_TYPE_DISABLEDMODULE = 9;
+const SAFE_EVENT_TYPE_EXECUTIONFROMMODULESUCCESS = 10;
+const SAFE_EVENT_TYPE_EXECUTIONFROMMODULEFAILURE = 11;
+const SAFE_EVENT_TYPE_ADDEDOWNER = 12;
+const SAFE_EVENT_TYPE_REMOVEDOWNER = 13;
+const SAFE_EVENT_TYPE_CHANGEDTHRESHOLD = 14;
+const SAFE_EVENT_TYPE_SAFERECEIVED = 15;
+
+const SAFE_EVENT_TYPES = {
+  "ProxyCreation": SAFE_EVENT_TYPE_PROXYCREATION,
+  "SafeSetup": SAFE_EVENT_TYPE_SAFESETUP,
+  "ApproveHash": SAFE_EVENT_TYPE_APPROVEHASH,
+  "SignMsg": SAFE_EVENT_TYPE_SIGNMSG,
+  "ExecutionFailure": SAFE_EVENT_TYPE_EXECUTIONFAILURE,
+  "ExecutionSuccess": SAFE_EVENT_TYPE_EXECUTIONSUCCESS,
+  "ChangedFallbackHandler": SAFE_EVENT_TYPE_CHANGEDFALLBACKHANDLER,
+  "ChangedGuard": SAFE_EVENT_TYPE_CHANGEDGUARD,
+  "EnabledModule": SAFE_EVENT_TYPE_ENABLEDMODULE,
+  "DisabledModule": SAFE_EVENT_TYPE_DISABLEDMODULE,
+  "ExecutionFromModuleSuccess": SAFE_EVENT_TYPE_EXECUTIONFROMMODULESUCCESS,
+  "ExecutionFromModuleFailure": SAFE_EVENT_TYPE_EXECUTIONFROMMODULEFAILURE,
+  "AddedOwner": SAFE_EVENT_TYPE_ADDEDOWNER,
+  "RemovedOwner": SAFE_EVENT_TYPE_REMOVEDOWNER,
+  "ChangedThreshold": SAFE_EVENT_TYPE_CHANGEDTHRESHOLD,
+  "SafeReceived": SAFE_EVENT_TYPE_SAFERECEIVED,
+};
+
+const SAFE_EVENT_SIGS = {
+  "ProxyCreation": "ProxyCreation(Proxy proxy)", // 1.1.1 ProxyCreation(Proxy proxy); 1.3.0 ProxyCreation(GnosisSafeProxy proxy, address singleton); 1.4.1 ProxyCreation(SafeProxy indexed proxy, address singleton)
+  "SafeSetup": "SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler)",
+  "ApproveHash": "ApproveHash(bytes32 indexed approvedHash, address indexed owner)",
+  "SignMsg": "SignMsg(bytes32 indexed msgHash)",
+  "ExecutionFailure": "ExecutionFailure(bytes32 txHash, uint256 payment)", // 1.3.0; 1.4.0 ExecutionFailure(bytes32 indexed txHash, uint256 payment)
+  "ExecutionSuccess": "ExecutionSuccess(bytes32 txHash, uint256 payment)", // 1.3.0; 1.4.0 ExecutionSuccess(bytes32 indexed txHash, uint256 payment)
+  "ChangedFallbackHandler": "ChangedFallbackHandler(address handler)", // 1.3.0; 1.4.0 ChangedFallbackHandler(address indexed handler)
+  "ChangedGuard": "ChangedGuard(address guard)", // 1.3.0; 1.4.0 ChangedGuard(address indexed guard)
+  "EnabledModule": "EnabledModule(address module)", // 1.3.0; 1.4.0 EnabledModule(address indexed module)
+  "DisabledModule": "DisabledModule(address module)", // 1.3.0; 1.4.0 DisabledModule(address indexed module)
+  "ExecutionFromModuleSuccess": "ExecutionFromModuleSuccess(address indexed module)",
+  "ExecutionFromModuleFailure": "ExecutionFromModuleFailure(address indexed module)",
+  "AddedOwner": "AddedOwner(address owner)", // 1.3.0; 1.4.0 AddedOwner(address indexed owner)
+  "RemovedOwner": "RemovedOwner(address owner)", // 1.3.0; 1.4.0 RemovedOwner(address indexed owner)
+  "ChangedThreshold": "ChangedThreshold(uint256 threshold)",
+  "SafeReceived": "SafeReceived(address indexed sender, uint256 value)",
+};
+
+// topicHash => #topics => version
+const EVENTSIGNATURE_BY_TOPICSLENGTH = {
+  // 1.1.1 Factory event ProxyCreation(Proxy proxy)
+  '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80': {
+    1: 111,
+  },
+  // 1.3.0 Factory event ProxyCreation(GnosisSafeProxy proxy, address singleton); 1.4.1 event ProxyCreation(SafeProxy indexed proxy, address singleton)
+  '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235': {
+    1: 130,
+    2: 141,
+  },
+  // 1.3.0 & 1.4.1 Safe event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
+  '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8': {
+    2: 141,
+  },
+  // 1.3.0 & 1.4.1 Safe event ApproveHash(bytes32 indexed approvedHash, address indexed owner);
+  '0xf2a0eb156472d1440255b0d7c1e19cc07115d1051fe605b0dce69acfec884d9c': {
+    3: 141,
+  },
+  // 1.3.0 & 1.4.1 Safe event SignMsg(bytes32 indexed msgHash)
+  '0xe7f4675038f4f6034dfcbbb24c4dc08e4ebf10eb9d257d3d02c0f38d122ac6e4': {
+    2: 141,
+  },
+  // 1.3.0 Safe event ExecutionFailure(bytes32 txHash, uint256 payment)
+  // 1.4.1 Safe event ExecutionFailure(bytes32 indexed txHash, uint256 payment)
+  '0x23428b18acfb3ea64b08dc0c1d296ea9c09702c09083ca5272e64d115b687d23': {
+    1: 130,
+    2: 141,
+  },
+  // 1.3.0 Safe event ExecutionSuccess(bytes32 txHash, uint256 payment)
+  // 1.4.1 Safe event ExecutionSuccess(bytes32 indexed txHash, uint256 payment)
+  '0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e': {
+    1: 130,
+    2: 141,
+  },
+  // 1.3.0 Safe event ChangedFallbackHandler(address handler)
+  // 1.4.1 Safe event ChangedFallbackHandler(address indexed handler)
+  '0x5ac6c46c93c8d0e53714ba3b53db3e7c046da994313d7ed0d192028bc7c228b0': {
+    1: 130,
+    2: 141,
+  },
+  // 1.3.0 Safe event ChangedGuard(address guard)
+  // 1.4.1 Safe event ChangedGuard(address indexed guard)
+  '0x1151116914515bc0891ff9047a6cb32cf902546f83066499bcf8ba33d2353fa2': {
+    1: 130,
+    2: 141,
+  },
+  // 1.3.0 Safe event EnabledModule(address module)
+  // 1.4.1 Safe event EnabledModule(address indexed module)
+  '0xecdf3a3effea5783a3c4c2140e677577666428d44ed9d474a0b3a4c9943f8440': {
+    1: 130,
+    2: 141,
+  },
+  // 1.3.0 Safe event DisabledModule(address module)
+  // 1.4.1 Safe event DisabledModule(address indexed module)
+  '0xaab4fa2b463f581b2b32cb3b7e3b704b9ce37cc209b5fb4d77e593ace4054276': {
+    1: 130,
+    2: 141,
+  },
+  // 1.3.0 & 1.4.1 Safe event ExecutionFromModuleSuccess(address indexed module)
+  '0x6895c13664aa4f67288b25d7a21d7aaa34916e355fb9b6fae0a139a9085becb8': {
+    2: 141,
+  },
+  // 1.3.0 & 1.4.1 Safe event ExecutionFromModuleFailure(address indexed module)
+  '0xacd2c8702804128fdb0db2bb49f6d127dd0181c13fd45dbfe16de0930e2bd375': {
+    2: 141,
+  },
+  // 1.3.0 Safe event AddedOwner(address owner)
+  // 1.4.1 Safe event AddedOwner(address indexed owner)
+  '0x9465fa0c962cc76958e6373a993326400c1c94f8be2fe3a952adfa7f60b2ea26': {
+    1: 130,
+    2: 141,
+  },
+  // 1.3.0 Safe event RemovedOwner(address owner)
+  // 1.4.1 Safe event RemovedOwner(address indexed owner)
+  '0xf8d49fc529812e9a7c5c50e69c20f0dccc0db8fa95c98bc58cc9a4f1c1299eaf': {
+    1: 130,
+    2: 141,
+  },
+  // 1.3.0 & 1.4.1 Safe event ChangedThreshold(uint256 threshold)
+  '0x610f7ff2b304ae8903c3de74c60c6ab1f7d6226b3f52c5161905bb5ad4039c93': {
+    1: 141,
+  },
+  // Safe event SafeReceived(address indexed sender, uint256 value);
+  // '0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d',
+  '0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d': {
+    2: 141,
+  },
+};
