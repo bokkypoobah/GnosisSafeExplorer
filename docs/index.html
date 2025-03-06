@@ -1530,7 +1530,7 @@
                         }
                         const ownerIndex = ownersIndex[logData.args[0]];
                         const before = safes[safeIndex][2];
-                        safes[safeIndex][2] = [...safes[safeIndex][2], [ownerIndex, txHashIndex]];
+                        safes[safeIndex][2] = [...safes[safeIndex][2].filter(e => e[0] != ownerIndex), [ownerIndex, txHashIndex]];
                         console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - AddedOwner - safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
                       }
 
@@ -1545,10 +1545,11 @@
                       }
 
                     } else if (logData.name == "ChangedThreshold") {
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - ChangedThreshold: " + JSON.stringify(logData.args));
-                      if (log.address in safesIndex) {
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - ChangedThreshold - safesIndex[" + log.address + "] - from: " + safesIndex[log.address][3] + ", to: " + parseInt(logData.args[0]));
-                        safesIndex[log.address][3] = parseInt(logData.args[0]);
+                      const safeIndex = safesIndex[log.address];
+                      if (safeIndex) {
+                        const before = safes[safeIndex][3];
+                        safes[safeIndex][3] = parseInt(logData.args[0]);
+                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - ChangedThreshold - safeIndex: " + safeIndex + ", threshold: " + parseInt(logData.args[0]) + ", before: " + before + ", after: " + safes[safeIndex][3]);
                       }
                     }
                   }
@@ -1634,7 +1635,7 @@
                       // // 1.4.1 event RemovedOwner(address indexed owner)
                       '0xf8d49fc529812e9a7c5c50e69c20f0dccc0db8fa95c98bc58cc9a4f1c1299eaf',
                       // // 1.3.0 & 1.4.1 event ChangedThreshold(uint256 threshold)
-                      // '0x610f7ff2b304ae8903c3de74c60c6ab1f7d6226b3f52c5161905bb5ad4039c93',
+                      '0x610f7ff2b304ae8903c3de74c60c6ab1f7d6226b3f52c5161905bb5ad4039c93',
 
                       // // event SafeReceived(address indexed sender, uint256 value);
                       // '0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d',
@@ -1683,23 +1684,23 @@
             const ownersIndex = await this.getCachedData('ownersIndex', db, chainId, {});
             const safes = await this.getCachedData('safes', db, chainId, []);
             const safesIndex = await this.getCachedData('safesIndex', db, chainId, {});
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - versionToFactories: " + JSON.stringify(this.versionToFactories));
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addresses 1: " + JSON.stringify(addresses).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addressesIndex 1: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashes 1: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashesIndex 1: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - owners 1: " + JSON.stringify(owners).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownersIndex 1: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safes 1: " + JSON.stringify(safes).substring(0, 1000) + "...");
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safesIndex 1: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - versionToFactories: " + JSON.stringify(this.versionToFactories));
+            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addresses 1: " + JSON.stringify(addresses).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addressesIndex 1: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashes 1: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashesIndex 1: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - owners 1: " + JSON.stringify(owners).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownersIndex 1: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safes 1: " + JSON.stringify(safes).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safesIndex 1: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
 
             const latest = await db.safeEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latest: " + JSON.stringify(latest));
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            const startBlock = latestBlockNumber - 100000;
-            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            // const startBlock = latestBlockNumber - 100000;
+            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await getLogsFromRange(startBlock, latestBlockNumber);
