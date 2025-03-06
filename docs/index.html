@@ -376,19 +376,19 @@
               <!-- <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safes'">{{ filteredSortedSafes.length + ' / ' + safes.length }}</font> -->
               <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safe Events'">{{ safeEvents.length }}</font>
             </div>
-            <!-- <div class="mt-0 pl-1">
-              <b-pagination size="sm" v-model="settings.safesTable.currentPage" @input="saveSettings" :total-rows="safes.length" :per-page="settings.safesTable.pageSize" style="height: 0;"></b-pagination>
-            </div> -->
-            <!-- <div class="mt-0 pl-1">
-              <b-form-select size="sm" v-model="settings.safesTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
-            </div> -->
+            <div class="mt-0 pl-1">
+              <b-pagination size="sm" v-model="settings.safeEventsTable.currentPage" @input="saveSettings" :total-rows="safeEvents.length" :per-page="settings.safeEventsTable.pageSize" style="height: 0;"></b-pagination>
+            </div>
+            <div class="mt-0 pl-1">
+              <b-form-select size="sm" v-model="settings.safeEventsTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+            </div>
           </div>
 
           <b-card v-if="settings.tabIndex == 1" no-body class="m-1 p-0 border-0" bg-variant="light">
             Safe
             <font size="-2">
               <pre>
-{{ safeEvents }}
+{{ pagedFilteredSortedSafeEvents }}
               </pre>
             </font>
           </b-card>
@@ -476,13 +476,19 @@
               sortOption: 'blocknumberdsc',
             },
             safe: null,
+            safeEventsTable: {
+              filter: null,
+              currentPage: 1,
+              pageSize: 15,
+              sortOption: 'blocknumberdsc',
+            },
             safeTxsTable: {
               filter: null,
               currentPage: 1,
               pageSize: 15,
               sortOption: 'blocknumberdsc',
             },
-            version: 3,
+            version: 4,
           },
 
           modalSafe: {
@@ -723,6 +729,61 @@
           pagedFilteredSortedSafes() {
             const results = this.filteredSortedSafes.slice((this.settings.safesTable.currentPage - 1) * this.settings.safesTable.pageSize, this.settings.safesTable.currentPage * this.settings.safesTable.pageSize);
             // console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedSafes - results: " + JSON.stringify(results, null, 2));
+            return results;
+          },
+
+          filteredSortedSafeEvents() {
+            // console.log(moment().format("HH:mm:ss") + " filteredSortedSafeEvents - filter: " + this.settings.safesTable.filter);
+            const results = [];
+            // const filter = this.settings.safesTable.filter != null && this.settings.safesTable.filter.length > 0 ? this.settings.safesTable.filter : null;
+            let regex = null;
+            if (this.settings.safesTable.filter != null && this.settings.safesTable.filter.length > 0) {
+              try {
+                regex = new RegExp(this.settings.safesTable.filter, 'i');
+              } catch (e) {
+                console.log(moment().format("HH:mm:ss") + " filteredSortedSafeEvents - regex error: " + e.message);
+                regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
+              }
+            }
+            for (const safeEvent of this.safeEvents) {
+              let include = true;
+              // if (regex) {
+              //   if (!(regex.test(safe[0]))) {
+              //     include = false;
+              //   }
+              // }
+              // if (filter) {
+              //   // const safeAddress = this.addresses[safe.safeAddressIndex];
+              //   if (safe[0].indexOf(filter) < 0) {
+              //     include = false;
+              //   }
+              // }
+              if (include) {
+                results.push(safeEvent);
+              }
+            }
+            if (this.settings.safeEventsTable.sortOption == 'blocknumberasc') {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return a.logIndex - b.logIndex;
+                } else {
+                  return a.blockNumber - b.blockNumber;
+                }
+              });
+            } else if (this.settings.safeEventsTable.sortOption == 'blocknumberdsc') {
+              results.sort((a, b) => {
+                if (a.blockNumber == b.blockNumber) {
+                  return b.logIndex - a.logIndex;
+                } else {
+                  return b.blockNumber - a.blockNumber;
+                }
+              });
+            }
+            return results;
+          },
+          pagedFilteredSortedSafeEvents() {
+            const results = this.filteredSortedSafeEvents.slice((this.settings.safeEventsTable.currentPage - 1) * this.settings.safeEventsTable.pageSize, this.settings.safeEventsTable.currentPage * this.settings.safeEventsTable.pageSize);
+            // console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedSafeEvents - results: " + JSON.stringify(results, null, 2));
             return results;
           },
 
@@ -1549,8 +1610,8 @@
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            // const startBlock = latestBlockNumber - 1000000;
-            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            const startBlock = latestBlockNumber - 1000000;
+            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await getLogsFromRange(startBlock, latestBlockNumber);
