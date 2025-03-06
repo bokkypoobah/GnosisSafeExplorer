@@ -905,9 +905,18 @@
             const safeInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].gnosis_safe);
 
             const safeEvents = [];
-            await getLogsFromRange(0, latestBlockNumber);
+            let safeAddress = null;
+            try {
+              safeAddress = ethers.utils.getAddress(this.settings.safe);
+            } catch (e) {
+            }
+            // console.log(moment().format("HH:mm:ss") + " loadSafe - safeAddress: " + safeAddress);
+            if (safeAddress) {
+              await getLogsFromRange(0, latestBlockNumber);
+            }
             console.log(moment().format("HH:mm:ss") + " loadSafe - safeEvents: " + JSON.stringify(safeEvents, null, 2).substring(0, 2000) + "...");
             Vue.set(this, 'safeEvents', safeEvents);
+            await this.saveCacheData("safeEvents_" + safeAddress, safeEvents, db, chainId);
             this.sync.section = null;
           },
 
@@ -1195,6 +1204,16 @@
               console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name); // + ": " + JSON.stringify(data).substring(0, 1000) + "...");
             }
 
+            let safeAddress = null;
+            try {
+              safeAddress = ethers.utils.getAddress(this.settings.safe);
+            } catch (e) {
+            }
+            if (safeAddress) {
+              const data = await this.getCachedData("safeEvents_" + safeAddress, db, chainId, []);
+              console.log(moment().format("HH:mm:ss") + " loadCurrentData - safeEvents_*: " + JSON.stringify(data, null, 2));
+              Vue.set(this, 'safeEvents', data);
+            }
             // let rows = 0;
             // let done = false;
             // const safes = {};
@@ -1528,8 +1547,8 @@
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            const startBlock = latestBlockNumber - 1000000;
-            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            // const startBlock = latestBlockNumber - 1000000;
+            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await getLogsFromRange(startBlock, latestBlockNumber);
