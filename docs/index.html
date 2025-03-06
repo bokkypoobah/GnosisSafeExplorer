@@ -901,12 +901,12 @@
 
           async retrieveSafeEvents() {
 
-            async function processLogs(fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+            async function retrieveSafeEvents_processLogs(fromBlock, toBlock, logs) {
+              console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
               const records = [];
               for (const log of logs) {
                 if (!log.removed) {
-                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - log: " + JSON.stringify(log));
+                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - log: " + JSON.stringify(log));
                   let event = null;
                   let abiVersion = null;
                   if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
@@ -914,33 +914,33 @@
                       abiVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
                     }
                   }
-                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - abiVersion: " + abiVersion);
+                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - abiVersion: " + abiVersion);
                   let logData = null;
                   // Factory events
                   if (log.topics[0] == '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80' || log.topics[0] == '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235') {
                     if (abiVersion == 111) {
                       logData = safeFactoryInterface111.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - safeFactoryInterface111: " + JSON.stringify(logData, null, 2));
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - safeFactoryInterface111: " + JSON.stringify(logData, null, 2));
                     } else if (abiVersion == 130) {
                       logData = safeFactoryInterface130.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - safeFactoryInterface130: " + JSON.stringify(logData, null, 2));
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - safeFactoryInterface130: " + JSON.stringify(logData, null, 2));
                     } else if (abiVersion == 141) {
                       logData = safeFactoryInterface141.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - safeFactoryInterface141: " + JSON.stringify(logData, null, 2));
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - safeFactoryInterface141: " + JSON.stringify(logData, null, 2));
                     }
                   // Safe events
                   } else if (abiVersion == 130) {
                     logData = safeInterface130.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - logData 130: " + JSON.stringify(logData, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - logData 130: " + JSON.stringify(logData, null, 2));
                   } else if (abiVersion == 141) {
                     logData = safeInterface141.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - logData 141: " + JSON.stringify(logData, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - logData 141: " + JSON.stringify(logData, null, 2));
                   } else {
-                    console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - logData ???: " + JSON.stringify(log));
+                    console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - logData ???: " + JSON.stringify(log));
                   }
                   if (logData) {
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - name: " + logData.name);
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - signature: " + logData.signature + ", abiVersion: " + abiVersion);
+                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - name: " + logData.name);
+                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - signature: " + logData.signature + ", abiVersion: " + abiVersion);
                     const parameters = [];
                     for (let [i, value] of logData.args.entries()) {
                       // console.log(i + " => " + value + " " + logData.eventFragment.inputs[i].name + " " + logData.eventFragment.inputs[i].type);
@@ -956,7 +956,7 @@
                         type,
                       });
                     }
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - parameters: " + JSON.stringify(parameters));
+                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - parameters: " + JSON.stringify(parameters));
                     event = {
                       type: SAFE_EVENT_TYPES[logData.name],
                       name: logData.name,
@@ -969,7 +969,7 @@
                     }
                     const txHashIndex = txHashesIndex[log.transactionHash];
                     if (logData.name == "SafeSetup") {
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
                       const factoryVersion = logData.args[0] && t.factoriesToVersion[logData.args[0]] || null;
                       if (factoryVersion) {
                         const ownerList = [];
@@ -998,10 +998,10 @@
                           ]);
                         }
                       } else {
-                        // console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - SafeSetup not emitted by the configured factories: " + JSON.stringify(log, null, 2));
+                        // console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - SafeSetup not emitted by the configured factories: " + JSON.stringify(log, null, 2));
                       }
                     } else if (logData.name == "ProxyCreation") {
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - ProxyCreation: " + JSON.stringify(logData.args));
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - ProxyCreation: " + JSON.stringify(logData.args));
 
                       const factoryVersion = log.address && t.factoriesToVersion[log.address] || null;
                       if (factoryVersion) {
@@ -1026,7 +1026,7 @@
                           ]);
                         }
                       } else {
-                        // console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - ProxyCreation not emitted by the configured factories: " + JSON.stringify(log, null, 2));
+                        // console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - ProxyCreation not emitted by the configured factories: " + JSON.stringify(log, null, 2));
                       }
                     } else if (logData.name == "AddedOwner") {
                       const safeIndex = safesIndex[log.address];
@@ -1039,18 +1039,18 @@
                         const before = safes[safeIndex][2];
                         safes[safeIndex][2] = [...safes[safeIndex][2].filter(e => e[0] != ownerIndex), [ownerIndex, txHashIndex]];
                         safes[safeIndex][9] = txHashIndex;
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - AddedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
+                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - AddedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
                       }
 
                     } else if (logData.name == "RemovedOwner") {
                       const safeIndex = safesIndex[log.address];
                       const ownerIndex = ownersIndex[logData.args[0]];
                       if (safeIndex && ownerIndex) {
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - RemovedOwner safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex);
+                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - RemovedOwner safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex);
                         const before = safes[safeIndex][2];
                         safes[safeIndex][2] = safes[safeIndex][2].filter(e => e[0] != ownerIndex);
                         safes[safeIndex][9] = txHashIndex;
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - RemovedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
+                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - RemovedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
                       }
 
                     } else if (logData.name == "ChangedThreshold") {
@@ -1058,7 +1058,7 @@
                       if (safeIndex) {
                         const before = safes[safeIndex][3];
                         safes[safeIndex][3] = parseInt(logData.args[0]);
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - ChangedThreshold - safeIndex: " + safeIndex + ", threshold: " + parseInt(logData.args[0]) + ", before: " + before + ", after: " + safes[safeIndex][3]);
+                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - ChangedThreshold - safeIndex: " + safeIndex + ", threshold: " + parseInt(logData.args[0]) + ", before: " + before + ", after: " + safes[safeIndex][3]);
                       }
                     }
                   }
@@ -1081,17 +1081,17 @@
                 }
               }
               if (records.length) {
-                // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - records: " + JSON.stringify(records, null, 2));
+                // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - records: " + JSON.stringify(records, null, 2));
                 await db.safeEvents.bulkAdd(records).then(function(lastKey) {
-                  console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - bulkAdd lastKey: " + JSON.stringify(lastKey));
+                  console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - bulkAdd lastKey: " + JSON.stringify(lastKey));
                   }).catch(Dexie.BulkError, function(e) {
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
                   });
               }
             }
 
-            async function getLogsFromRange(fromBlock, toBlock) {
-              console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+            async function retrieveSafeEvents_getLogsFromRange(fromBlock, toBlock) {
+              console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
               try {
                 if (!t.sync.halt) {
                   const logs = await provider.getLogs({
@@ -1152,15 +1152,15 @@
                       ],
                     ],
                   });
-                  await processLogs(fromBlock, toBlock, logs);
-                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
+                  await retrieveSafeEvents_processLogs(fromBlock, toBlock, logs);
+                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
                   t.sync.completed = toBlock;
                 }
               } catch (e) {
-                console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents.getLogsFromRange - Error: " + e.message);
+                console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents_getLogsFromRange - Error: " + e.message);
                 const mid = parseInt((fromBlock + toBlock) / 2);
-                await getLogsFromRange(fromBlock, mid);
-                await getLogsFromRange(parseInt(mid) + 1, toBlock);
+                await retrieveSafeEvents_getLogsFromRange(fromBlock, mid);
+                await retrieveSafeEvents_getLogsFromRange(parseInt(mid) + 1, toBlock);
               }
             }
 
@@ -1211,7 +1211,7 @@
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
-            await getLogsFromRange(startBlock, latestBlockNumber);
+            await retrieveSafeEvents_getLogsFromRange(startBlock, latestBlockNumber);
 
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - saveCacheData BEGIN");
             await this.saveCacheData("addresses", addresses, db, chainId);
@@ -1297,32 +1297,32 @@
 
           async loadSafe() {
 
-            async function processLogs(fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
-              // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logs: " + JSON.stringify(logs, null, 2));
+            async function loadSafe_processLogs(fromBlock, toBlock, logs) {
+              console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+              // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - logs: " + JSON.stringify(logs, null, 2));
               for (const log of logs) {
                 if (!log.removed) {
-                  console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - log: " + JSON.stringify(log, null, 2));
+                  // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - log: " + JSON.stringify(log, null, 2));
                   let abiVersion = null;
                   if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
                     if (log.topics.length in SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]]) {
                       abiVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
                     }
                   }
-                  // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - abiVersion: " + abiVersion);
+                  // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - abiVersion: " + abiVersion);
                   let logData = null;
                   if (abiVersion == 130) {
                     logData = safeInterface130.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logData 130: " + JSON.stringify(logData, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - logData 130: " + JSON.stringify(logData, null, 2));
                   } else if (abiVersion == 141) {
                     logData = safeInterface141.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logData 141: " + JSON.stringify(logData, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - logData 141: " + JSON.stringify(logData, null, 2));
                   } else {
-                    console.error(moment().format("HH:mm:ss") + " loadSafe.processLogs - No Interface - log: " + JSON.stringify(log));
+                    console.error(moment().format("HH:mm:ss") + " loadSafe_processLogs - No Interface - log: " + JSON.stringify(log));
                   }
                   if (logData) {
-                    console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - name: " + logData.name);
-                    console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - signature: " + logData.signature + ", abiVersion: " + abiVersion);
+                    // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - name: " + logData.name);
+                    // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - signature: " + logData.signature + ", abiVersion: " + abiVersion);
                     const parameters = [];
                     for (let [i, value] of logData.args.entries()) {
                       const type = logData.eventFragment.inputs[i].type;
@@ -1331,7 +1331,7 @@
                       }
                       parameters.push({ value, name: logData.eventFragment.inputs[i].name, type });
                     }
-                    console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - parameters: " + JSON.stringify(parameters));
+                    console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - " + abiVersion + "." + logData.name + ": " + JSON.stringify(parameters));
                     safeEvents.push({
                       blockNumber: parseInt(log.blockNumber),
                       txIndex: parseInt(log.transactionIndex),
@@ -1343,14 +1343,14 @@
                       signature: logData.signature,
                       parameters,
                     });
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - records: " + JSON.stringify(records));
+                    // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - records: " + JSON.stringify(records));
                   }
                 }
               }
             }
 
-            async function getLogsFromRange(fromBlock, toBlock) {
-              console.log(moment().format("HH:mm:ss") + " loadSafe.getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+            async function loadSafe_getLogsFromRange(fromBlock, toBlock) {
+              console.log(moment().format("HH:mm:ss") + " loadSafe_getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
               try {
                 const logs = await provider.getLogs({
                   address: t.settings.safe,
@@ -1410,14 +1410,14 @@
                     ],
                   ],
                 });
-                await processLogs(fromBlock, toBlock, logs);
-                // console.log(moment().format("HH:mm:ss") + " loadSafe.getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
+                await loadSafe_processLogs(fromBlock, toBlock, logs);
+                // console.log(moment().format("HH:mm:ss") + " loadSafe_getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
                 t.sync.completed = toBlock;
               } catch (e) {
-                console.error(moment().format("HH:mm:ss") + " loadSafe.getLogsFromRange - Error: " + e.message);
+                console.error(moment().format("HH:mm:ss") + " loadSafe_getLogsFromRange - Error: " + e.message);
                 const mid = parseInt((fromBlock + toBlock) / 2);
-                await getLogsFromRange(fromBlock, mid);
-                await getLogsFromRange(parseInt(mid) + 1, toBlock);
+                await loadSafe_getLogsFromRange(fromBlock, mid);
+                await loadSafe_getLogsFromRange(parseInt(mid) + 1, toBlock);
               }
             }
 
@@ -1447,9 +1447,8 @@
             }
             // console.log(moment().format("HH:mm:ss") + " loadSafe - safeAddress: " + safeAddress);
             if (safeAddress) {
-              await getLogsFromRange(0, latestBlockNumber);
-
-              console.log(moment().format("HH:mm:ss") + " loadSafe - safeEvents: " + JSON.stringify(safeEvents, null, 2).substring(0, 2000) + "...");
+              await loadSafe_getLogsFromRange(0, latestBlockNumber);
+              // console.log(moment().format("HH:mm:ss") + " loadSafe - safeEvents: " + JSON.stringify(safeEvents, null, 2).substring(0, 2000) + "...");
               Vue.set(this, 'safeEvents', safeEvents);
               await this.saveCacheData("safeEvents_" + safeAddress, safeEvents, db, chainId);
             }
