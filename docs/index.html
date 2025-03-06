@@ -899,233 +899,6 @@
             }
           },
 
-          async loadSafe() {
-
-            async function processLogs(fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
-              // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logs: " + JSON.stringify(logs, null, 2));
-              for (const log of logs) {
-                if (!log.removed) {
-                  console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - log: " + JSON.stringify(log, null, 2));
-                  let abiVersion = null;
-                  if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
-                    if (log.topics.length in SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]]) {
-                      abiVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
-                    }
-                  }
-                  // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - abiVersion: " + abiVersion);
-                  let logData = null;
-                  if (abiVersion == 130) {
-                    logData = safeInterface130.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logData 130: " + JSON.stringify(logData, null, 2));
-                  } else if (abiVersion == 141) {
-                    logData = safeInterface141.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logData 141: " + JSON.stringify(logData, null, 2));
-                  } else {
-                    console.error(moment().format("HH:mm:ss") + " loadSafe.processLogs - No Interface - log: " + JSON.stringify(log));
-                  }
-                  if (logData) {
-                    console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - name: " + logData.name);
-                    console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - signature: " + logData.signature + ", abiVersion: " + abiVersion);
-                    const parameters = [];
-                    for (let [i, value] of logData.args.entries()) {
-                      const type = logData.eventFragment.inputs[i].type;
-                      if (type == "uint256") {
-                        value = ethers.BigNumber.from(value).toString();
-                      }
-                      parameters.push({ value, name: logData.eventFragment.inputs[i].name, type });
-                    }
-                    console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - parameters: " + JSON.stringify(parameters));
-                    safeEvents.push({
-                      blockNumber: parseInt(log.blockNumber),
-                      txIndex: parseInt(log.transactionIndex),
-                      txHash: log.transactionHash,
-                      logIndex: parseInt(log.logIndex),
-                      address: log.address,
-                      safe: log.address,
-                      name: logData.name,
-                      signature: logData.signature,
-                      parameters,
-                    });
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - records: " + JSON.stringify(records));
-                  }
-                }
-              }
-            }
-
-            async function getLogsFromRange(fromBlock, toBlock) {
-              console.log(moment().format("HH:mm:ss") + " loadSafe.getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
-              try {
-                const logs = await provider.getLogs({
-                  address: t.settings.safe,
-                  fromBlock,
-                  toBlock,
-                  topics: [[
-                      // // 1.1.1 event ProxyCreation(Proxy proxy)
-                      // '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80',
-                      // // 1.3.0 event ProxyCreation(GnosisSafeProxy proxy, address singleton)
-                      // // 1.4.1 event ProxyCreation(SafeProxy indexed proxy, address singleton)
-                      // '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235',
-                      //
-                      // // // 1.0.0 & 1.1.1 No SafeSetup
-                      // // // 1.3.0 & 1.4.1 event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
-                      // '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8',
-                      // // 1.3.0 & 1.4.1 event ApproveHash(bytes32 indexed approvedHash, address indexed owner);
-                      // '0xf2a0eb156472d1440255b0d7c1e19cc07115d1051fe605b0dce69acfec884d9c',
-                      // // 1.3.0 & 1.4.1 event SignMsg(bytes32 indexed msgHash)
-                      // '0xe7f4675038f4f6034dfcbbb24c4dc08e4ebf10eb9d257d3d02c0f38d122ac6e4',
-                      // // 1.3.0 event ExecutionFailure(bytes32 txHash, uint256 payment)
-                      // // 1.4.1 event ExecutionFailure(bytes32 indexed txHash, uint256 payment)
-                      // '0x23428b18acfb3ea64b08dc0c1d296ea9c09702c09083ca5272e64d115b687d23',
-                      // // 1.3.0 event ExecutionSuccess(bytes32 txHash, uint256 payment)
-                      // // 1.4.1 event ExecutionSuccess(bytes32 indexed txHash, uint256 payment)
-                      // '0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e',
-                      //
-                      // // 1.3.0 event ChangedFallbackHandler(address handler)
-                      // // 1.4.1 event ChangedFallbackHandler(address indexed handler)
-                      // '0x5ac6c46c93c8d0e53714ba3b53db3e7c046da994313d7ed0d192028bc7c228b0',
-                      //
-                      // // 1.3.0 event ChangedGuard(address guard)
-                      // // 1.4.1 event ChangedGuard(address indexed guard)
-                      // '0x1151116914515bc0891ff9047a6cb32cf902546f83066499bcf8ba33d2353fa2',
-                      //
-                      // // 1.3.0 event EnabledModule(address module)
-                      // // 1.4.1 event EnabledModule(address indexed module)
-                      // '0xecdf3a3effea5783a3c4c2140e677577666428d44ed9d474a0b3a4c9943f8440',
-                      // // 1.3.0 event DisabledModule(address module)
-                      // // 1.4.1 event DisabledModule(address indexed module)
-                      // '0xaab4fa2b463f581b2b32cb3b7e3b704b9ce37cc209b5fb4d77e593ace4054276',
-                      // // 1.3.0 & 1.4.1 event ExecutionFromModuleSuccess(address indexed module)
-                      // '0x6895c13664aa4f67288b25d7a21d7aaa34916e355fb9b6fae0a139a9085becb8',
-                      // // 1.3.0 & 1.4.1 event ExecutionFromModuleFailure(address indexed module)
-                      // '0xacd2c8702804128fdb0db2bb49f6d127dd0181c13fd45dbfe16de0930e2bd375',
-
-                      // // 1.3.0 event AddedOwner(address owner)
-                      // // 1.4.1 event AddedOwner(address indexed owner)
-                      // '0x9465fa0c962cc76958e6373a993326400c1c94f8be2fe3a952adfa7f60b2ea26',
-                      // // 1.3.0 event RemovedOwner(address owner)
-                      // // 1.4.1 event RemovedOwner(address indexed owner)
-                      // '0xf8d49fc529812e9a7c5c50e69c20f0dccc0db8fa95c98bc58cc9a4f1c1299eaf',
-                      // // 1.3.0 & 1.4.1 event ChangedThreshold(uint256 threshold)
-                      // '0x610f7ff2b304ae8903c3de74c60c6ab1f7d6226b3f52c5161905bb5ad4039c93',
-
-                      // // event SafeReceived(address indexed sender, uint256 value);
-                      // '0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d',
-                    ],
-                  ],
-                });
-                await processLogs(fromBlock, toBlock, logs);
-                // console.log(moment().format("HH:mm:ss") + " loadSafe.getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
-                t.sync.completed = toBlock;
-              } catch (e) {
-                console.error(moment().format("HH:mm:ss") + " loadSafe.getLogsFromRange - Error: " + e.message);
-                const mid = parseInt((fromBlock + toBlock) / 2);
-                await getLogsFromRange(fromBlock, mid);
-                await getLogsFromRange(parseInt(mid) + 1, toBlock);
-              }
-            }
-
-            console.log(moment().format("HH:mm:ss") + " loadSafe - this.settings.safe: " + this.settings.safe);
-            const t = this;
-            const db = new Dexie(this.db.name);
-            db.version(this.db.version).stores(this.db.schemaDefinition);
-
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const network = await provider.getNetwork();
-            const chainId = network.chainId;
-            localStorage.gnosisSafeExplorerChainId = chainId;
-            const block = await provider.getBlock();
-            const latestBlockNumber = block && block.number || null;
-            console.log(moment().format("HH:mm:ss") + " loadSafe - latestBlockNumber: " + latestBlockNumber);
-            this.sync.section = "Syncing";
-            this.sync.total = latestBlockNumber;
-            this.sync.completed = 0;
-            const safeInterface130 = new ethers.utils.Interface(SAFE_ABIS[130].gnosis_safe);
-            const safeInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].gnosis_safe);
-
-            const safeEvents = [];
-            let safeAddress = null;
-            try {
-              safeAddress = ethers.utils.getAddress(this.settings.safe);
-            } catch (e) {
-            }
-            // console.log(moment().format("HH:mm:ss") + " loadSafe - safeAddress: " + safeAddress);
-            if (safeAddress) {
-              await getLogsFromRange(0, latestBlockNumber);
-
-              console.log(moment().format("HH:mm:ss") + " loadSafe - safeEvents: " + JSON.stringify(safeEvents, null, 2).substring(0, 2000) + "...");
-              Vue.set(this, 'safeEvents', safeEvents);
-              await this.saveCacheData("safeEvents_" + safeAddress, safeEvents, db, chainId);
-            }
-
-            if (safeAddress && !this.sync.halt) {
-              console.log(moment().format("HH:mm:ss") + " loadSafe - computeTxs");
-
-            }
-
-            // TODO: Get transactions
-            db.close();
-            this.sync.section = null;
-            this.sync.halt = false;
-          },
-
-          async loadCurrentData() {
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - BEGIN");
-            const DB_PROCESSING_BATCH_SIZE = 50000;
-            const db = new Dexie(this.db.name);
-            db.version(this.db.version).stores(this.db.schemaDefinition);
-            const chainId = this.chainId;
-
-            let safeAddress = null;
-            try {
-              safeAddress = ethers.utils.getAddress(this.settings.safe);
-            } catch (e) {
-            }
-            if (safeAddress) {
-              const data = await this.getCachedData("safeEvents_" + safeAddress, db, chainId, []);
-              // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safeEvents_*: " + JSON.stringify(data, null, 2));
-              Vue.set(this, 'safeEvents', data);
-            }
-
-            for (const name of ['addresses', 'addressesIndex', 'txHashes', 'txHashesIndex', 'owners', 'ownersIndex', 'safes', 'safesIndex'/*, 'timestamps'*/]) {
-              const data = await this.getCachedData(name, db, chainId, name.endsWith("Index") ? {} : []);
-              Vue.set(this, name, data);
-              // console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name); // + ": " + JSON.stringify(data).substring(0, 1000) + "...");
-            }
-
-            // let rows = 0;
-            // let done = false;
-            // const safes = {};
-            // do {
-            //   let data;
-            //   if (this.settings.safesTable.filter && this.settings.safesTable.filter.length > 2) {
-            //     data = await db.safeFactoryEvents.where('safe').startsWithIgnoreCase(this.settings.safesTable.filter).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
-            //   } else {
-            //     data = await db.safeFactoryEvents.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
-            //   }
-            //   console.log(moment().format("HH:mm:ss") + " loadCurrentData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
-            //   for (const item of data) {
-            //     if (!(item.chainId in safes)) {
-            //       safes[item.chainId] = {};
-            //     }
-            //     if (!(item.safeAddressIndex in safes[item.chainId])) {
-            //       safes[item.chainId][item.safeAddressIndex] = {
-            //         blockNumber: item.blockNumber,
-            //         logIndex: item.logIndex,
-            //         txHashIndex: item.txHashIndex,
-            //         factoryAddressIndex: item.factoryAddressIndex,
-            //       };
-            //     }
-            //   }
-            //   rows = parseInt(rows) + data.length;
-            //   done = data.length < DB_PROCESSING_BATCH_SIZE;
-            // } while (!done);
-            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safes: " + JSON.stringify(safes));
-            // Vue.set(this, 'safes', safes);
-            db.close();
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - END");
-          },
-
           async retrieveSafeEvents() {
 
             async function processLogs(fromBlock, toBlock, logs) {
@@ -1461,6 +1234,233 @@
             // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safesIndex 2: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
             db.close();
             await this.loadCurrentData();
+            this.sync.section = null;
+            this.sync.halt = false;
+          },
+
+          async loadCurrentData() {
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - BEGIN");
+            const DB_PROCESSING_BATCH_SIZE = 50000;
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            const chainId = this.chainId;
+
+            let safeAddress = null;
+            try {
+              safeAddress = ethers.utils.getAddress(this.settings.safe);
+            } catch (e) {
+            }
+            if (safeAddress) {
+              const data = await this.getCachedData("safeEvents_" + safeAddress, db, chainId, []);
+              // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safeEvents_*: " + JSON.stringify(data, null, 2));
+              Vue.set(this, 'safeEvents', data);
+            }
+
+            for (const name of ['addresses', 'addressesIndex', 'txHashes', 'txHashesIndex', 'owners', 'ownersIndex', 'safes', 'safesIndex'/*, 'timestamps'*/]) {
+              const data = await this.getCachedData(name, db, chainId, name.endsWith("Index") ? {} : []);
+              Vue.set(this, name, data);
+              // console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name); // + ": " + JSON.stringify(data).substring(0, 1000) + "...");
+            }
+
+            // let rows = 0;
+            // let done = false;
+            // const safes = {};
+            // do {
+            //   let data;
+            //   if (this.settings.safesTable.filter && this.settings.safesTable.filter.length > 2) {
+            //     data = await db.safeFactoryEvents.where('safe').startsWithIgnoreCase(this.settings.safesTable.filter).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+            //   } else {
+            //     data = await db.safeFactoryEvents.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+            //   }
+            //   console.log(moment().format("HH:mm:ss") + " loadCurrentData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+            //   for (const item of data) {
+            //     if (!(item.chainId in safes)) {
+            //       safes[item.chainId] = {};
+            //     }
+            //     if (!(item.safeAddressIndex in safes[item.chainId])) {
+            //       safes[item.chainId][item.safeAddressIndex] = {
+            //         blockNumber: item.blockNumber,
+            //         logIndex: item.logIndex,
+            //         txHashIndex: item.txHashIndex,
+            //         factoryAddressIndex: item.factoryAddressIndex,
+            //       };
+            //     }
+            //   }
+            //   rows = parseInt(rows) + data.length;
+            //   done = data.length < DB_PROCESSING_BATCH_SIZE;
+            // } while (!done);
+            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safes: " + JSON.stringify(safes));
+            // Vue.set(this, 'safes', safes);
+            db.close();
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - END");
+          },
+
+          async loadSafe() {
+
+            async function processLogs(fromBlock, toBlock, logs) {
+              console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+              // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logs: " + JSON.stringify(logs, null, 2));
+              for (const log of logs) {
+                if (!log.removed) {
+                  console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - log: " + JSON.stringify(log, null, 2));
+                  let abiVersion = null;
+                  if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
+                    if (log.topics.length in SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]]) {
+                      abiVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
+                    }
+                  }
+                  // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - abiVersion: " + abiVersion);
+                  let logData = null;
+                  if (abiVersion == 130) {
+                    logData = safeInterface130.parseLog(log);
+                    // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logData 130: " + JSON.stringify(logData, null, 2));
+                  } else if (abiVersion == 141) {
+                    logData = safeInterface141.parseLog(log);
+                    // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logData 141: " + JSON.stringify(logData, null, 2));
+                  } else {
+                    console.error(moment().format("HH:mm:ss") + " loadSafe.processLogs - No Interface - log: " + JSON.stringify(log));
+                  }
+                  if (logData) {
+                    console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - name: " + logData.name);
+                    console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - signature: " + logData.signature + ", abiVersion: " + abiVersion);
+                    const parameters = [];
+                    for (let [i, value] of logData.args.entries()) {
+                      const type = logData.eventFragment.inputs[i].type;
+                      if (type == "uint256") {
+                        value = ethers.BigNumber.from(value).toString();
+                      }
+                      parameters.push({ value, name: logData.eventFragment.inputs[i].name, type });
+                    }
+                    console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - parameters: " + JSON.stringify(parameters));
+                    safeEvents.push({
+                      blockNumber: parseInt(log.blockNumber),
+                      txIndex: parseInt(log.transactionIndex),
+                      txHash: log.transactionHash,
+                      logIndex: parseInt(log.logIndex),
+                      address: log.address,
+                      safe: log.address,
+                      name: logData.name,
+                      signature: logData.signature,
+                      parameters,
+                    });
+                    // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - records: " + JSON.stringify(records));
+                  }
+                }
+              }
+            }
+
+            async function getLogsFromRange(fromBlock, toBlock) {
+              console.log(moment().format("HH:mm:ss") + " loadSafe.getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+              try {
+                const logs = await provider.getLogs({
+                  address: t.settings.safe,
+                  fromBlock,
+                  toBlock,
+                  topics: [[
+                      // // 1.1.1 event ProxyCreation(Proxy proxy)
+                      // '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80',
+                      // // 1.3.0 event ProxyCreation(GnosisSafeProxy proxy, address singleton)
+                      // // 1.4.1 event ProxyCreation(SafeProxy indexed proxy, address singleton)
+                      // '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235',
+                      //
+                      // // // 1.0.0 & 1.1.1 No SafeSetup
+                      // // // 1.3.0 & 1.4.1 event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
+                      // '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8',
+                      // // 1.3.0 & 1.4.1 event ApproveHash(bytes32 indexed approvedHash, address indexed owner);
+                      // '0xf2a0eb156472d1440255b0d7c1e19cc07115d1051fe605b0dce69acfec884d9c',
+                      // // 1.3.0 & 1.4.1 event SignMsg(bytes32 indexed msgHash)
+                      // '0xe7f4675038f4f6034dfcbbb24c4dc08e4ebf10eb9d257d3d02c0f38d122ac6e4',
+                      // // 1.3.0 event ExecutionFailure(bytes32 txHash, uint256 payment)
+                      // // 1.4.1 event ExecutionFailure(bytes32 indexed txHash, uint256 payment)
+                      // '0x23428b18acfb3ea64b08dc0c1d296ea9c09702c09083ca5272e64d115b687d23',
+                      // // 1.3.0 event ExecutionSuccess(bytes32 txHash, uint256 payment)
+                      // // 1.4.1 event ExecutionSuccess(bytes32 indexed txHash, uint256 payment)
+                      // '0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e',
+                      //
+                      // // 1.3.0 event ChangedFallbackHandler(address handler)
+                      // // 1.4.1 event ChangedFallbackHandler(address indexed handler)
+                      // '0x5ac6c46c93c8d0e53714ba3b53db3e7c046da994313d7ed0d192028bc7c228b0',
+                      //
+                      // // 1.3.0 event ChangedGuard(address guard)
+                      // // 1.4.1 event ChangedGuard(address indexed guard)
+                      // '0x1151116914515bc0891ff9047a6cb32cf902546f83066499bcf8ba33d2353fa2',
+                      //
+                      // // 1.3.0 event EnabledModule(address module)
+                      // // 1.4.1 event EnabledModule(address indexed module)
+                      // '0xecdf3a3effea5783a3c4c2140e677577666428d44ed9d474a0b3a4c9943f8440',
+                      // // 1.3.0 event DisabledModule(address module)
+                      // // 1.4.1 event DisabledModule(address indexed module)
+                      // '0xaab4fa2b463f581b2b32cb3b7e3b704b9ce37cc209b5fb4d77e593ace4054276',
+                      // // 1.3.0 & 1.4.1 event ExecutionFromModuleSuccess(address indexed module)
+                      // '0x6895c13664aa4f67288b25d7a21d7aaa34916e355fb9b6fae0a139a9085becb8',
+                      // // 1.3.0 & 1.4.1 event ExecutionFromModuleFailure(address indexed module)
+                      // '0xacd2c8702804128fdb0db2bb49f6d127dd0181c13fd45dbfe16de0930e2bd375',
+
+                      // // 1.3.0 event AddedOwner(address owner)
+                      // // 1.4.1 event AddedOwner(address indexed owner)
+                      // '0x9465fa0c962cc76958e6373a993326400c1c94f8be2fe3a952adfa7f60b2ea26',
+                      // // 1.3.0 event RemovedOwner(address owner)
+                      // // 1.4.1 event RemovedOwner(address indexed owner)
+                      // '0xf8d49fc529812e9a7c5c50e69c20f0dccc0db8fa95c98bc58cc9a4f1c1299eaf',
+                      // // 1.3.0 & 1.4.1 event ChangedThreshold(uint256 threshold)
+                      // '0x610f7ff2b304ae8903c3de74c60c6ab1f7d6226b3f52c5161905bb5ad4039c93',
+
+                      // // event SafeReceived(address indexed sender, uint256 value);
+                      // '0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d',
+                    ],
+                  ],
+                });
+                await processLogs(fromBlock, toBlock, logs);
+                // console.log(moment().format("HH:mm:ss") + " loadSafe.getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
+                t.sync.completed = toBlock;
+              } catch (e) {
+                console.error(moment().format("HH:mm:ss") + " loadSafe.getLogsFromRange - Error: " + e.message);
+                const mid = parseInt((fromBlock + toBlock) / 2);
+                await getLogsFromRange(fromBlock, mid);
+                await getLogsFromRange(parseInt(mid) + 1, toBlock);
+              }
+            }
+
+            console.log(moment().format("HH:mm:ss") + " loadSafe - this.settings.safe: " + this.settings.safe);
+            const t = this;
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const network = await provider.getNetwork();
+            const chainId = network.chainId;
+            localStorage.gnosisSafeExplorerChainId = chainId;
+            const block = await provider.getBlock();
+            const latestBlockNumber = block && block.number || null;
+            console.log(moment().format("HH:mm:ss") + " loadSafe - latestBlockNumber: " + latestBlockNumber);
+            this.sync.section = "Syncing";
+            this.sync.total = latestBlockNumber;
+            this.sync.completed = 0;
+            const safeInterface130 = new ethers.utils.Interface(SAFE_ABIS[130].gnosis_safe);
+            const safeInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].gnosis_safe);
+
+            const safeEvents = [];
+            let safeAddress = null;
+            try {
+              safeAddress = ethers.utils.getAddress(this.settings.safe);
+            } catch (e) {
+            }
+            // console.log(moment().format("HH:mm:ss") + " loadSafe - safeAddress: " + safeAddress);
+            if (safeAddress) {
+              await getLogsFromRange(0, latestBlockNumber);
+
+              console.log(moment().format("HH:mm:ss") + " loadSafe - safeEvents: " + JSON.stringify(safeEvents, null, 2).substring(0, 2000) + "...");
+              Vue.set(this, 'safeEvents', safeEvents);
+              await this.saveCacheData("safeEvents_" + safeAddress, safeEvents, db, chainId);
+            }
+
+            if (safeAddress && !this.sync.halt) {
+              console.log(moment().format("HH:mm:ss") + " loadSafe - computeTxs");
+
+            }
+
+            // TODO: Get transactions
+            db.close();
             this.sync.section = null;
             this.sync.halt = false;
           },
