@@ -370,7 +370,7 @@
             <!-- <div class="mt-0 flex-grow-1">
             </div> -->
             <div class="mt-0 pl-1">
-              <b-form-select size="sm" v-model="settings.safeEventsTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+              <b-form-select size="sm" v-model="settings.safeEventsTable.sortOption" @change="saveSettings" :options="safeEventsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
             </div>
             <div class="mt-0 pl-1">
               <!-- <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safes'">{{ filteredSortedSafes.length + ' / ' + safes.length }}</font> -->
@@ -525,11 +525,11 @@
 
           addresses: [],      // index => address
           addressesIndex: {}, // address => index
-          txHashes: [],       // index => [txHash, blockNumber, txIndex]
+          txHashes: [],       // index => [ txHash, blockNumber, txIndex ]
           txHashesIndex: {},  // txHash => index
           owners: [],         // index => ownerAddress
           ownersIndex: {},    // ownerAddress => index
-          safes: [],          // index => [safeAddress, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...], proxyCreationFromFactoryVersion, txHashIndex, blockNumber, logIndex]
+          safes: [],          // index => [ safeAddress, factoryVersion, [ ownerIndex,... ], threshold, [ removedOwnerIndex, ... ], proxyCreationFromFactoryVersion, txHashIndex, blockNumber, logIndex, latestTxHashIndex ]
           safesIndex: {},     // safeAddress => index
 
           safeEvents: [],     // Safe events
@@ -595,6 +595,14 @@
             { value: 'blocknumberdsc', text: '▼ BlockNumber, ▼ TxIndex' },
           ],
           safesSortOptions: [
+            // { value: 'addressasc', text: '▲ Addr' },
+            // { value: 'addressdsc', text: '▼ Addr' },
+            { value: 'blocknumberasc', text: '▲ BlockNumber, ▲ LogIndex' },
+            { value: 'blocknumberdsc', text: '▼ BlockNumber, ▼ LogIndex' },
+            { value: 'updatedasc', text: '▲ Updated' },
+            { value: 'updateddsc', text: '▼ Updated' },
+          ],
+          safeEventsSortOptions: [
             // { value: 'addressasc', text: '▲ Addr' },
             // { value: 'addressdsc', text: '▼ Addr' },
             { value: 'blocknumberasc', text: '▲ BlockNumber, ▲ LogIndex' },
@@ -805,6 +813,30 @@
                   return b[8] - a[8];
                 } else {
                   return b[7] - a[7];
+                }
+              });
+            } else if (this.settings.safesTable.sortOption == 'updatedasc') {
+              results.sort((a, b) => {
+                if (a[9] == b[9]) {
+                  if (a[7] == b[7]) {
+                    return a[8] - b[8];
+                  } else {
+                    return a[7] - b[7];
+                  }
+                } else {
+                  return a[9] - b[9];
+                }
+              });
+            } else if (this.settings.safesTable.sortOption == 'updateddsc') {
+              results.sort((a, b) => {
+                if (a[9] == b[9]) {
+                  if (a[7] == b[7]) {
+                    return b[8] - a[8];
+                  } else {
+                    return b[7] - a[7];
+                  }
+                } else {
+                  return b[9] - a[9];
                 }
               });
             }
@@ -1484,9 +1516,10 @@
                             parseInt(logData.args[2]),   // Threshold
                             [],                          // Removed owners
                             null,                        // Factory ProxyCreation event - factory version number
-                            txHashIndex,                 // txHash index
-                            log.blockNumber,             // Block number
-                            log.logIndex,                // logIndex
+                            txHashIndex,                 // Creation txHash index
+                            log.blockNumber,             // Creation Block number
+                            log.logIndex,                // Creation logIndex
+                            txHashIndex,                 // Latest txHash index
                             // initializer: logData.args[3],
                             // fallbackHandler: logData.args[4],
                           ]);
@@ -1511,9 +1544,10 @@
                             null,                        // Threshold
                             [],                          // Removed owners
                             factoryVersion,              // Factory ProxyCreation event - factory version number
-                            txHashIndex,                 // txHash index
-                            log.blockNumber,             // Block number
-                            log.logIndex,                // logIndex
+                            txHashIndex,                 // Creation txHash index
+                            log.blockNumber,             // Creationi Block number
+                            log.logIndex,                // Creation logIndex
+                            txHashIndex,                 // Latest txHash index
                             // initializer: logData.args[3],
                             // fallbackHandler: logData.args[4],
                           ]);
@@ -1531,7 +1565,8 @@
                         const ownerIndex = ownersIndex[logData.args[0]];
                         const before = safes[safeIndex][2];
                         safes[safeIndex][2] = [...safes[safeIndex][2].filter(e => e[0] != ownerIndex), [ownerIndex, txHashIndex]];
-                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - AddedOwner - safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
+                        safes[safeIndex][9] = txHashIndex;
+                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - AddedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
                       }
 
                     } else if (logData.name == "RemovedOwner") {
@@ -1541,7 +1576,8 @@
                         // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - RemovedOwner safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex);
                         const before = safes[safeIndex][2];
                         safes[safeIndex][2] = safes[safeIndex][2].filter(e => e[0] != ownerIndex);
-                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - RemovedOwner - safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
+                        safes[safeIndex][9] = txHashIndex;
+                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - RemovedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
                       }
 
                     } else if (logData.name == "ChangedThreshold") {
@@ -1699,8 +1735,8 @@
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            // const startBlock = latestBlockNumber - 100000;
-            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            const startBlock = latestBlockNumber - 100000;
+            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await getLogsFromRange(startBlock, latestBlockNumber);
