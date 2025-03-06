@@ -1171,42 +1171,42 @@
           },
 
           async retrieveSafeEvents() {
-            const EVENT_TYPE_PROXYCREATION = 0;
-            const EVENT_TYPE_SAFESETUP = 1;
-            const EVENT_TYPE_APPROVEHASH = 2;
-            const EVENT_TYPE_SIGNMSG = 3;
-            const EVENT_TYPE_EXECUTIONFAILURE = 4;
-            const EVENT_TYPE_EXECUTIONSUCCESS = 5;
-            const EVENT_TYPE_CHANGEDFALLBACKHANDLER = 6;
-            const EVENT_TYPE_CHANGEDGUARD = 7;
-            const EVENT_TYPE_ENABLEDMODULE = 8;
-            const EVENT_TYPE_DISABLEDMODULE = 9;
-            const EVENT_TYPE_EXECUTIONFROMMODULESUCCESS = 10;
-            const EVENT_TYPE_EXECUTIONFROMMODULEFAILURE = 11;
-            const EVENT_TYPE_ADDEDOWNER = 12;
-            const EVENT_TYPE_REMOVEDOWNER = 13;
-            const EVENT_TYPE_CHANGEDTHRESHOLD = 14;
-            const EVENT_TYPE_SAFERECEIVED = 15;
+            const SAFE_EVENT_TYPE_PROXYCREATION = 0;
+            const SAFE_EVENT_TYPE_SAFESETUP = 1;
+            const SAFE_EVENT_TYPE_APPROVEHASH = 2;
+            const SAFE_EVENT_TYPE_SIGNMSG = 3;
+            const SAFE_EVENT_TYPE_EXECUTIONFAILURE = 4;
+            const SAFE_EVENT_TYPE_EXECUTIONSUCCESS = 5;
+            const SAFE_EVENT_TYPE_CHANGEDFALLBACKHANDLER = 6;
+            const SAFE_EVENT_TYPE_CHANGEDGUARD = 7;
+            const SAFE_EVENT_TYPE_ENABLEDMODULE = 8;
+            const SAFE_EVENT_TYPE_DISABLEDMODULE = 9;
+            const SAFE_EVENT_TYPE_EXECUTIONFROMMODULESUCCESS = 10;
+            const SAFE_EVENT_TYPE_EXECUTIONFROMMODULEFAILURE = 11;
+            const SAFE_EVENT_TYPE_ADDEDOWNER = 12;
+            const SAFE_EVENT_TYPE_REMOVEDOWNER = 13;
+            const SAFE_EVENT_TYPE_CHANGEDTHRESHOLD = 14;
+            const SAFE_EVENT_TYPE_SAFERECEIVED = 15;
 
-            const EVENT_TYPES = {
-              "ProxyCreation": EVENT_TYPE_PROXYCREATION,
-              "SafeSetup": EVENT_TYPE_SAFESETUP,
-              "ApproveHash": EVENT_TYPE_APPROVEHASH,
-              "SignMsg": EVENT_TYPE_SIGNMSG,
-              "ExecutionFailure": EVENT_TYPE_EXECUTIONFAILURE,
-              "ExecutionSuccess": EVENT_TYPE_EXECUTIONSUCCESS,
-              "ChangedFallbackHandler": EVENT_TYPE_CHANGEDFALLBACKHANDLER,
-              "ChangedGuard": EVENT_TYPE_CHANGEDGUARD,
-              "EnabledModule": EVENT_TYPE_ENABLEDMODULE,
-              "DisabledModule": EVENT_TYPE_DISABLEDMODULE,
-              "ExecutionFromModuleSuccess": EVENT_TYPE_EXECUTIONFROMMODULESUCCESS,
-              "ExecutionFromModuleFailure": EVENT_TYPE_EXECUTIONFROMMODULEFAILURE,
-              "AddedOwner": EVENT_TYPE_ADDEDOWNER,
-              "RemovedOwner": EVENT_TYPE_REMOVEDOWNER,
-              "ChangedThreshold": EVENT_TYPE_CHANGEDTHRESHOLD,
-              "SafeReceived": EVENT_TYPE_SAFERECEIVED,
+            const SAFE_EVENT_TYPES = {
+              "ProxyCreation": SAFE_EVENT_TYPE_PROXYCREATION,
+              "SafeSetup": SAFE_EVENT_TYPE_SAFESETUP,
+              "ApproveHash": SAFE_EVENT_TYPE_APPROVEHASH,
+              "SignMsg": SAFE_EVENT_TYPE_SIGNMSG,
+              "ExecutionFailure": SAFE_EVENT_TYPE_EXECUTIONFAILURE,
+              "ExecutionSuccess": SAFE_EVENT_TYPE_EXECUTIONSUCCESS,
+              "ChangedFallbackHandler": SAFE_EVENT_TYPE_CHANGEDFALLBACKHANDLER,
+              "ChangedGuard": SAFE_EVENT_TYPE_CHANGEDGUARD,
+              "EnabledModule": SAFE_EVENT_TYPE_ENABLEDMODULE,
+              "DisabledModule": SAFE_EVENT_TYPE_DISABLEDMODULE,
+              "ExecutionFromModuleSuccess": SAFE_EVENT_TYPE_EXECUTIONFROMMODULESUCCESS,
+              "ExecutionFromModuleFailure": SAFE_EVENT_TYPE_EXECUTIONFROMMODULEFAILURE,
+              "AddedOwner": SAFE_EVENT_TYPE_ADDEDOWNER,
+              "RemovedOwner": SAFE_EVENT_TYPE_REMOVEDOWNER,
+              "ChangedThreshold": SAFE_EVENT_TYPE_CHANGEDTHRESHOLD,
+              "SafeReceived": SAFE_EVENT_TYPE_SAFERECEIVED,
             };
-            const EVENT_SIGS = {
+            const SAFE_EVENT_SIGS = {
               "ProxyCreation": "ProxyCreation(Proxy proxy)", // 1.1.1 ProxyCreation(Proxy proxy); 1.3.0 ProxyCreation(GnosisSafeProxy proxy, address singleton); 1.4.1 ProxyCreation(SafeProxy indexed proxy, address singleton)
               "SafeSetup": "SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler)",
               "ApproveHash": "ApproveHash(bytes32 indexed approvedHash, address indexed owner)",
@@ -1372,7 +1372,7 @@
                     }
                     // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - parameters: " + JSON.stringify(parameters));
                     event = {
-                      type: EVENT_TYPES[logData.name],
+                      type: SAFE_EVENT_TYPES[logData.name],
                       name: logData.name,
                       signature: logData.signature,
                       parameters,
