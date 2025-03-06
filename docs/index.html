@@ -309,33 +309,43 @@
             <div class="mt-0 flex-grow-1">
             </div>
             <div v-if="safe[3]" class="mt-0 pr-1">
-              <font size="-1" v-b-popover.hover.bottom="'Threshold. Click to view in explorer'">
-                <b-link :href="'https://etherscan.io/address/' + safe[0]" target="_blank">
-                  {{ safe[3] }}
-                </b-link>
+              <font size="+1">
+                <b-badge pill variant="light" class="px-0" v-b-popover.hover.bottom="'Threshold. Click to view Safe in the explorer'">
+                  <b-link :href="'https://etherscan.io/address/' + safe[0]" target="_blank" >
+                    {{ safe[3] }}
+                  </b-link>
+                </b-badge>
               </font>
             </div>
             <div v-if="safe[2]" class="mt-0 pr-1">
               <font size="-1" class="text-muted">
                 /
               </font>
-              <font size="-1" v-b-popover.hover.bottom="'# Owners'">
+              <!-- <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + safe[0]" target="_blank" v-b-popover.hover.bottom="'# Owners. Click to view Safe in app.safe.global'">
                 {{ safe[2].length }}
+              </b-link> -->
+
+              <font size="+1">
+                <b-badge pill variant="light" class="px-0" v-b-popover.hover.bottom="'# Owners. Click to view Safe in app.safe.global'">
+                  <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + safe[0]" target="_blank" >
+                    {{ safe[2].length }}
+                  </b-link>
+                </b-badge>
               </font>
+
             </div>
             <div class="mt-0 flex-grow-1">
             </div>
             <div v-if="safe[2]" class="mt-0 pr-1">
-              <!-- <font size="-1" v-b-popover.hover.bottom="'# Owners'">
-                {{ safe[2] }}
-              </font> -->
               <span v-for="(owner, index) of safe[2]" v-bind:key="index">
                 <font v-if="index > 0" size="-1" class="text-muted">
                   ,
                 </font>
-                <b-link :href="'https://etherscan.io/address/' + owners[owner[0]]" target="_blank" class="mr-0">
-                  <font size="-1">{{ owners[owner[0]].substring(0, 6) + '...' + owners[owner[0]].slice(-4) }}</font>
-                </b-link>
+                <b-badge pill variant="light" class="px-0" v-b-popover.hover.bottom="'View owner #' + (index + 1) + ' in the explorer'">
+                  <b-link :href="'https://etherscan.io/address/' + owners[owner[0]]" target="_blank">
+                    <font size="-1">{{ owners[owner[0]].substring(0, 6) + '...' + owners[owner[0]].slice(-4) }}</font>
+                  </b-link>
+                </b-badge>
               </span>
             </div>
             <div class="mt-0 flex-grow-1">
