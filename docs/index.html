@@ -350,7 +350,7 @@
                 </font>
                 <b-badge pill variant="light" class="px-0" v-b-popover.hover.bottom="'View owner #' + (index + 1) + ' in the explorer'">
                   <b-link :href="'https://etherscan.io/address/' + owners[owner[0]]" target="_blank">
-                    <font size="-1">{{ owners[owner[0]].substring(0, 6) + '...' + owners[owner[0]].slice(-4) }}</font>
+                    <font size="-1">{{ owners[owner[0]].substring(0, 8) }}</font>
                   </b-link>
                 </b-badge>
               </span>
@@ -369,9 +369,9 @@
             </div> -->
             <!-- <div class="mt-0 flex-grow-1">
             </div> -->
-            <!-- <div class="mt-0 pl-1">
-              <b-form-select size="sm" v-model="settings.safesTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
-            </div> -->
+            <div class="mt-0 pl-1">
+              <b-form-select size="sm" v-model="settings.safeEventsTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+            </div>
             <div class="mt-0 pl-1">
               <!-- <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safes'">{{ filteredSortedSafes.length + ' / ' + safes.length }}</font> -->
               <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safe Events'">{{ safeEvents.length }}</font>
@@ -385,12 +385,60 @@
           </div>
 
           <b-card v-if="settings.tabIndex == 1" no-body class="m-1 p-0 border-0" bg-variant="light">
-            Safe
-            <font size="-2">
-              <pre>
-{{ pagedFilteredSortedSafeEvents }}
-              </pre>
-            </font>
+            <!-- <b-table ref="safeEvensTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safeEventsFields" :items="pagedFilteredSortedSafeEvents" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0"> -->
+            <b-table ref="safeEvensTable" small fixed striped responsive hover :fields="safeEventsFields" :items="pagedFilteredSortedSafeEvents" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
+              <template #cell(index)="data">
+                <font size="-1" class="text-muted">
+                  {{ parseInt(data.index) + ((settings.safeEventsTable.currentPage - 1) * settings.safeEventsTable.pageSize) + 1 }}
+                </font>
+              </template>
+              <template #cell(info)="data">
+                <font size="-2">
+                  <pre>
+{{ data.item }}
+                  </pre>
+                </font>
+              </template>
+              <!-- <template #cell(chain)="data">
+                <div v-if="data.item.chainId == 1">
+                  ETH Mainnet
+                </div>
+                <div v-else>
+                  {{ "Chain Id " + data.item.chainId }}
+                </div>
+              </template> -->
+              <template #cell(blockNumber)="data">
+                <b-link :href="'https://etherscan.io/tx/' + data.item.txHash + '#eventlog#' + data.item.logIndex" target="_blank">
+                  {{ data.item.blockNumber }}
+                </b-link>
+                <font size="-2" class="text-muted">
+                  {{ data.item.logIndex }}
+                </font>
+              </template>
+              <!-- <template #cell(safe)="data">
+                <b-link :href="'https://etherscan.io/address/' + data.item[0]" target="_blank">
+                  {{ data.item[0].substring(0, 10) + '...' + data.item[0].slice(-8) }}
+                </b-link>
+                <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + data.item[0]" v-b-popover.hover.bottom="'View in app.safe.global'" target="_blank">
+                  <b-icon-wallet shift-v="+2" font-scale="0.9" variant="primary"></b-icon-wallet>
+                </b-link>
+              </template> -->
+              <!-- <template #cell(owners)="data">
+                <span v-for="(owner, index) of data.item[2]" v-bind:key="index">
+                  <b-link :href="'https://etherscan.io/address/' + owners[owner[0]]" target="_blank" class="mr-2">
+                    <font size="-1">{{ owners[owner[0]].substring(0, 6) + '...' + owners[owner[0]].slice(-4) }}</font>
+                  </b-link>
+                </span>
+              </template> -->
+              <!-- <template #cell(threshold)="data">
+                {{ data.item[3] }}
+              </template> -->
+              <!-- <template #cell(factory)="data">
+                <b-link :href="'https://etherscan.io/address/' + versionToFactories[data.item[1]]" target="_blank">
+                  {{ data.item[1] }}
+                </b-link>
+              </template> -->
+            </b-table>
           </b-card>
 
           <!-- :INFO -->
@@ -556,6 +604,17 @@
             { key: 'owners', label: 'Owners', sortable: false, thStyle: 'width: 40%;', tdClass: 'text-left' },
             { key: 'threshold', label: 'Threshold', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
             { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
+            // { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
+          ],
+
+          safeEventsFields: [
+            { key: 'index', label: '#', sortable: false, thStyle: 'width: 7%;', tdClass: 'text-truncate' },
+            { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
+            { key: 'info', label: 'Info', sortable: false, thStyle: 'width: 80%;', tdClass: 'text-truncate' },
+            // { key: 'safe', label: 'Safe', sortable: false, thStyle: 'width: 20%;', tdClass: 'text-truncate' },
+            // { key: 'owners', label: 'Owners', sortable: false, thStyle: 'width: 40%;', tdClass: 'text-left' },
+            // { key: 'threshold', label: 'Threshold', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
+            // { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
             // { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
           ],
 
