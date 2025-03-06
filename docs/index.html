@@ -453,6 +453,8 @@
           safes: [],          // index => [safeAddress, factoryVersion, [ownerIndex,...], threshold, [removedOwnerIndex, ...], proxyCreationFromFactoryVersion, txHashIndex, blockNumber, logIndex]
           safesIndex: {},     // safeAddress => index
 
+          safeEvents: [],     // Safe events
+
           connected: false,
           chainId: null,
           coinbase: null,
@@ -757,7 +759,54 @@
 
             async function processLogs(fromBlock, toBlock, logs) {
               console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
-              console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logs: " + JSON.stringify(logs, null, 2));
+              // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logs: " + JSON.stringify(logs, null, 2));
+              for (const log of logs) {
+                if (!log.removed) {
+                  console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - log: " + JSON.stringify(log, null, 2));
+                  let abiVersion = null;
+                  if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
+                    if (log.topics.length in SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]]) {
+                      abiVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
+                    }
+                  }
+                  // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - abiVersion: " + abiVersion);
+                  let logData = null;
+                  if (abiVersion == 130) {
+                    logData = safeInterface130.parseLog(log);
+                    // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logData 130: " + JSON.stringify(logData, null, 2));
+                  } else if (abiVersion == 141) {
+                    logData = safeInterface141.parseLog(log);
+                    // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - logData 141: " + JSON.stringify(logData, null, 2));
+                  } else {
+                    console.error(moment().format("HH:mm:ss") + " loadSafe.processLogs - No Interface - log: " + JSON.stringify(log));
+                  }
+                  if (logData) {
+                    console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - name: " + logData.name);
+                    console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - signature: " + logData.signature + ", abiVersion: " + abiVersion);
+                    const parameters = [];
+                    for (let [i, value] of logData.args.entries()) {
+                      const type = logData.eventFragment.inputs[i].type;
+                      if (type == "uint256") {
+                        value = ethers.BigNumber.from(value).toString();
+                      }
+                      parameters.push({ value, name: logData.eventFragment.inputs[i].name, type });
+                    }
+                    console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - parameters: " + JSON.stringify(parameters));
+                    safeEvents.push({
+                      blockNumber: parseInt(log.blockNumber),
+                      logIndex: parseInt(log.logIndex),
+                      txIndex: parseInt(log.transactionIndex),
+                      txHash: log.transactionHash,
+                      address: log.address,
+                      safe: log.address,
+                      name: logData.name,
+                      signature: logData.signature,
+                      parameters,
+                    });
+                    // console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - records: " + JSON.stringify(records));
+                  }
+                }
+              }
             }
 
             async function getLogsFromRange(fromBlock, toBlock) {
@@ -850,7 +899,10 @@
             const safeInterface130 = new ethers.utils.Interface(SAFE_ABIS[130].gnosis_safe);
             const safeInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].gnosis_safe);
 
+            const safeEvents = [];
             await getLogsFromRange(0, latestBlockNumber);
+            console.log(moment().format("HH:mm:ss") + " loadSafe - safeEvents: " + JSON.stringify(safeEvents, null, 2).substring(0, 2000) + "...");
+            Vue.set(this, 'safeEvents', safeEvents);
             this.sync.section = null;
           },
 
@@ -1180,9 +1232,9 @@
                   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - log: " + JSON.stringify(log));
                   let event = null;
                   let abiVersion = null;
-                  if (log.topics[0] in EVENTSIGNATURE_BY_TOPICSLENGTH) {
-                    if (log.topics.length in EVENTSIGNATURE_BY_TOPICSLENGTH[log.topics[0]]) {
-                      abiVersion = EVENTSIGNATURE_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
+                  if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
+                    if (log.topics.length in SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]]) {
+                      abiVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
                     }
                   }
                   // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - abiVersion: " + abiVersion);

@@ -130,7 +130,7 @@ const SAFE_EVENT_SIGS = {
 };
 
 // topicHash => #topics => version
-const EVENTSIGNATURE_BY_TOPICSLENGTH = {
+const SAFE_TOPICS_BY_TOPICSLENGTH = {
   // 1.1.1 Factory event ProxyCreation(Proxy proxy)
   '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80': {
     1: 111,
