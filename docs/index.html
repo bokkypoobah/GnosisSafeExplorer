@@ -309,8 +309,10 @@
             <div class="mt-0 flex-grow-1">
             </div>
             <div v-if="safe[3]" class="mt-0 pr-1">
-              <font size="-1" v-b-popover.hover.bottom="'Threshold'">
-                {{ safe[3] }}
+              <font size="-1" v-b-popover.hover.bottom="'Threshold. Click to view in explorer'">
+                <b-link :href="'https://etherscan.io/address/' + safe[0]" target="_blank">
+                  {{ safe[3] }}
+                </b-link>
               </font>
             </div>
             <div v-if="safe[2]" class="mt-0 pr-1">
@@ -320,6 +322,21 @@
               <font size="-1" v-b-popover.hover.bottom="'# Owners'">
                 {{ safe[2].length }}
               </font>
+            </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
+            <div v-if="safe[2]" class="mt-0 pr-1">
+              <!-- <font size="-1" v-b-popover.hover.bottom="'# Owners'">
+                {{ safe[2] }}
+              </font> -->
+              <span v-for="(owner, index) of safe[2]" v-bind:key="index">
+                <font v-if="index > 0" size="-1" class="text-muted">
+                  ,
+                </font>
+                <b-link :href="'https://etherscan.io/address/' + owners[owner[0]]" target="_blank" class="mr-0">
+                  <font size="-1">{{ owners[owner[0]].substring(0, 6) + '...' + owners[owner[0]].slice(-4) }}</font>
+                </b-link>
+              </span>
             </div>
             <div class="mt-0 flex-grow-1">
             </div>
@@ -1485,7 +1502,7 @@
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            const startBlock = latestBlockNumber - 100000;
+            const startBlock = latestBlockNumber - 1000000;
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
