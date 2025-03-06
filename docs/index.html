@@ -1522,7 +1522,23 @@
                         // console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - ProxyCreation not emitted by the configured factories: " + JSON.stringify(log, null, 2));
                       }
                     } else if (logData.name == "AddedOwner") {
-                      console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - AddedOwner: " + JSON.stringify(logData.args));
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - AddedOwner - log: " + JSON.stringify(log));
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - AddedOwner - logData.args: " + JSON.stringify(logData.args));
+                      const safeIndex = safesIndex[log.address];
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - safeIndex: " + safeIndex);
+                      if (safeIndex) {
+                        if (!(logData.args[0] in ownersIndex)) {
+                          // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - Adding owner: " + logData.args[0]);
+                          ownersIndex[logData.args[0]] = parseInt(owners.length);
+                          owners.push(logData.args[0]);
+                        }
+                        const ownerIndex = ownersIndex[logData.args[0]];
+                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - Adding new ownerIndex: " + ownerIndex);
+                        safes[safeIndex][2] = [...safes[safeIndex][2], [ownerIndex, txHashIndex]];
+                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - Added new ownerIndex safes[safeIndex][2]: " + JSON.stringify(safes[safeIndex][2]));
+                      }
+
+                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - t.ownersIndex: " + JSON.stringify(t.ownersIndex));
                       // if (log.address in safesIndex) {
                       //   if (!(logData.args[0] in ownersIndex)) {
                       //     ownersIndex[logData.args[0]] = parseInt(owners.length);
