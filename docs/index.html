@@ -322,7 +322,7 @@
             </div>
             <div v-if="safe[3]" class="mt-0 pr-1">
               <font size="+1">
-                <b-badge pill variant="light" class="px-0" v-b-popover.hover.bottom="'Threshold. Click to view Safe in the explorer'">
+                <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'Threshold. Click to view Safe in the explorer'">
                   <b-link :href="'https://etherscan.io/address/' + safe[0]" target="_blank" >
                     {{ safe[3] }}
                   </b-link>
@@ -334,7 +334,7 @@
                 /
               </font>
               <font size="+1">
-                <b-badge pill variant="light" class="px-0" v-b-popover.hover.bottom="'# Owners. Click to view Safe in app.safe.global'">
+                <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'# Owners. Click to view Safe in app.safe.global'">
                   <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + safe[0]" target="_blank" >
                     {{ safe[2].length }}
                   </b-link>
@@ -348,7 +348,7 @@
                 <font v-if="index > 0" size="-1" class="text-muted">
                   ,
                 </font>
-                <b-badge pill variant="light" class="px-0" v-b-popover.hover.bottom="'View owner #' + (index + 1) + ' in the explorer'">
+                <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View owner #' + (index + 1) + ' in the explorer'">
                   <b-link :href="'https://etherscan.io/address/' + owners[owner[0]]" target="_blank">
                     <font size="-1">{{ owners[owner[0]].substring(0, 8) }}</font>
                   </b-link>
@@ -392,12 +392,37 @@
                   {{ parseInt(data.index) + ((settings.safeEventsTable.currentPage - 1) * settings.safeEventsTable.pageSize) + 1 }}
                 </font>
               </template>
-              <template #cell(info)="data">
-                <font size="-2">
-                  <pre>
-{{ data.item }}
-                  </pre>
-                </font>
+              <template #cell(event)="data">
+                <b-badge variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.signature">
+                  {{ data.item.name }}
+                </b-badge>
+              </template>
+              <template #cell(parameters)="data">
+                <div v-for="(parameter, index) of data.item.parameters" v-bind:key="index">
+                  <font size="-1" class="text-muted">
+                    {{ parameter.name }}
+                  </font>
+                  <b-badge v-if="parameter.type == 'address'" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + parameter.value + ' in the explorer'">
+                    <b-link :href="'https://etherscan.io/address/' + parameter.value" target="_blank">
+                      <font size="-1">{{ parameter.value }}</font>
+                    </b-link>
+                  </b-badge>
+                  <span v-else-if="parameter.type == 'address[]'">
+                    <span v-for="(address, addressIndex) of parameter.value" v-bind:key="addressIndex">
+                      <font v-if="addressIndex > 0" size="-1" class="text-muted">
+                        ,
+                      </font>
+                      <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + address + ' in the explorer'">
+                        <b-link :href="'https://etherscan.io/address/' + address" target="_blank">
+                          <font size="-1">{{ address.substring(0, 8) }}</font>
+                        </b-link>
+                      </b-badge>
+                    </span>
+                  </span>
+                  <b-badge v-else variant="transparent" class="px-0" v-b-popover.hover.bottom="parameter.type">
+                    {{ parameter.value }}
+                  </b-badge>
+                </div>
               </template>
               <!-- <template #cell(chain)="data">
                 <div v-if="data.item.chainId == 1">
@@ -610,8 +635,8 @@
           safeEventsFields: [
             { key: 'index', label: '#', sortable: false, thStyle: 'width: 7%;', tdClass: 'text-truncate' },
             { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
-            { key: 'info', label: 'Info', sortable: false, thStyle: 'width: 80%;', tdClass: 'text-truncate' },
-            // { key: 'safe', label: 'Safe', sortable: false, thStyle: 'width: 20%;', tdClass: 'text-truncate' },
+            { key: 'event', label: 'Event', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
+            { key: 'parameters', label: 'Parameters', sortable: false, thStyle: 'width: 65%;', tdClass: 'text-left' },
             // { key: 'owners', label: 'Owners', sortable: false, thStyle: 'width: 40%;', tdClass: 'text-left' },
             // { key: 'threshold', label: 'Threshold', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
             // { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
