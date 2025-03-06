@@ -799,9 +799,9 @@
                     console.log(moment().format("HH:mm:ss") + " loadSafe.processLogs - parameters: " + JSON.stringify(parameters));
                     safeEvents.push({
                       blockNumber: parseInt(log.blockNumber),
-                      logIndex: parseInt(log.logIndex),
                       txIndex: parseInt(log.transactionIndex),
                       txHash: log.transactionHash,
+                      logIndex: parseInt(log.logIndex),
                       address: log.address,
                       safe: log.address,
                       name: logData.name,
@@ -1387,10 +1387,10 @@
                     records.push({
                       chainId,
                       blockNumber: parseInt(log.blockNumber),
-                      logIndex: parseInt(log.logIndex),
                       txIndex: parseInt(log.transactionIndex),
                     //   txHashIndex,
                       txHash: log.transactionHash,
+                      logIndex: parseInt(log.logIndex),
                       address: log.address,
                     //   safeAddressIndex,
                       safe: log.address,
