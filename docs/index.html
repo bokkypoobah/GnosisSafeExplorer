@@ -1052,10 +1052,18 @@
             // console.log(moment().format("HH:mm:ss") + " loadSafe - safeAddress: " + safeAddress);
             if (safeAddress) {
               await getLogsFromRange(0, latestBlockNumber);
+
+              console.log(moment().format("HH:mm:ss") + " loadSafe - safeEvents: " + JSON.stringify(safeEvents, null, 2).substring(0, 2000) + "...");
+              Vue.set(this, 'safeEvents', safeEvents);
+              await this.saveCacheData("safeEvents_" + safeAddress, safeEvents, db, chainId);
             }
-            console.log(moment().format("HH:mm:ss") + " loadSafe - safeEvents: " + JSON.stringify(safeEvents, null, 2).substring(0, 2000) + "...");
-            Vue.set(this, 'safeEvents', safeEvents);
-            await this.saveCacheData("safeEvents_" + safeAddress, safeEvents, db, chainId);
+
+            if (safeAddress && !this.sync.halt) {
+              console.log(moment().format("HH:mm:ss") + " loadSafe - computeTxs");
+
+            }
+
+            // TODO: Get transactions
             db.close();
             this.sync.section = null;
             this.sync.halt = false;
