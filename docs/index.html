@@ -372,9 +372,10 @@
             <!-- <div class="mt-0 pl-1">
               <b-form-select size="sm" v-model="settings.safesTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
             </div> -->
-            <!-- <div class="mt-0 pl-1">
-              <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safes'">{{ filteredSortedSafes.length + ' / ' + safes.length }}</font>
-            </div> -->
+            <div class="mt-0 pl-1">
+              <!-- <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safes'">{{ filteredSortedSafes.length + ' / ' + safes.length }}</font> -->
+              <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safe Events'">{{ safeEvents.length }}</font>
+            </div>
             <!-- <div class="mt-0 pl-1">
               <b-pagination size="sm" v-model="settings.safesTable.currentPage" @input="saveSettings" :total-rows="safes.length" :per-page="settings.safesTable.pageSize" style="height: 0;"></b-pagination>
             </div> -->
@@ -1198,12 +1199,6 @@
             db.version(this.db.version).stores(this.db.schemaDefinition);
             const chainId = this.chainId;
 
-            for (const name of ['addresses', 'addressesIndex', 'txHashes', 'txHashesIndex', 'owners', 'ownersIndex', 'safes', 'safesIndex'/*, 'timestamps'*/]) {
-              const data = await this.getCachedData(name, db, chainId, name.endsWith("Index") ? {} : []);
-              Vue.set(this, name, data);
-              console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name); // + ": " + JSON.stringify(data).substring(0, 1000) + "...");
-            }
-
             let safeAddress = null;
             try {
               safeAddress = ethers.utils.getAddress(this.settings.safe);
@@ -1214,6 +1209,13 @@
               console.log(moment().format("HH:mm:ss") + " loadCurrentData - safeEvents_*: " + JSON.stringify(data, null, 2));
               Vue.set(this, 'safeEvents', data);
             }
+
+            for (const name of ['addresses', 'addressesIndex', 'txHashes', 'txHashesIndex', 'owners', 'ownersIndex', 'safes', 'safesIndex'/*, 'timestamps'*/]) {
+              const data = await this.getCachedData(name, db, chainId, name.endsWith("Index") ? {} : []);
+              Vue.set(this, name, data);
+              console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name); // + ": " + JSON.stringify(data).substring(0, 1000) + "...");
+            }
+
             // let rows = 0;
             // let done = false;
             // const safes = {};
