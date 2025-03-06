@@ -1529,8 +1529,9 @@
                           owners.push(logData.args[0]);
                         }
                         const ownerIndex = ownersIndex[logData.args[0]];
+                        const before = safes[safeIndex][2];
                         safes[safeIndex][2] = [...safes[safeIndex][2], [ownerIndex, txHashIndex]];
-                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - AddedOwner - ownerIndex: " + ownerIndex + ", to safes[" + safeIndex + "][2]: " + JSON.stringify(safes[safeIndex][2]));
+                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - AddedOwner - safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
                       }
 
                     } else if (logData.name == "RemovedOwner") {
@@ -1538,8 +1539,9 @@
                       const ownerIndex = ownersIndex[logData.args[0]];
                       if (safeIndex && ownerIndex) {
                         // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - RemovedOwner safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex);
+                        const before = safes[safeIndex][2];
                         safes[safeIndex][2] = safes[safeIndex][2].filter(e => e[0] != ownerIndex);
-                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - RemovedOwner - ownerIndex: " + ownerIndex + ", safes[" + safeIndex + "][2]: " + JSON.stringify(safes[safeIndex][2]));
+                        console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents.processLogs - RemovedOwner - safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
                       }
 
                     } else if (logData.name == "ChangedThreshold") {
@@ -1696,8 +1698,8 @@
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            // const startBlock = latestBlockNumber - 100000;
-            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            const startBlock = latestBlockNumber - 100000;
+            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await getLogsFromRange(startBlock, latestBlockNumber);
