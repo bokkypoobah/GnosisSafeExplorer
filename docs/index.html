@@ -396,42 +396,55 @@
 
               </template>
               <template #cell(events)="data">
-                <div v-for="(safeLog, index) of data.item.safeLogs" v-bind:key="index">
-                  <b-badge pill variant="transparent" v-b-popover.hover.bottom="'View in the explorer'">
+                <b-row v-for="(safeLog, index) of data.item.safeLogs" v-bind:key="index">
+                  <b-col cols="3">
                     <b-link :href="'https://etherscan.io/tx/' + data.item.txHash + '#eventlog#' + safeLog.logIndex" target="_blank">
-                      <font size="-1">{{ safeLog.logIndex }}</font>
+                      <b-badge pill variant="transparent" v-b-popover.hover.bottom="'View ' + safeLog.signature + ' in the explorer'">
+                          {{ safeLog.name }}
+                      </b-badge>
                     </b-link>
-                  </b-badge>
-                  <b-badge pill variant="transparent" v-b-popover.hover.bottom="safeLog.signature">
-                    {{ safeLog.name }}
-                  </b-badge>
-                  <span v-for="(parameter, parameterIndex) of safeLog.parameters" v-bind:key="parameterIndex">
-                    <font size="-1" class="text-muted">
-                      {{ parameter.name }}
-                    </font>
-                    <b-badge v-if="parameter.type == 'address'" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + parameter.value + ' in the explorer'">
-                      <b-link :href="'https://etherscan.io/address/' + parameter.value" target="_blank">
-                        <font size="-1">{{ parameter.value }}</font>
-                      </b-link>
-                    </b-badge>
-                    <span v-else-if="parameter.type == 'address[]'">
-                      <span v-for="(address, addressIndex) of parameter.value" v-bind:key="addressIndex">
-                        <font v-if="addressIndex > 0" size="-1" class="text-muted">
-                          ,
-                        </font>
-                        <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + address + ' in the explorer'">
+                    <font size="-2" class="text-muted" v-b-popover.hover.bottom="'Log index'">{{ safeLog.logIndex }}</font>
+                  </b-col>
+                  <b-col cols="9">
+                    <span v-for="(parameter, parameterIndex) of safeLog.parameters" v-bind:key="parameterIndex">
+                      <font size="-1" class="text-muted">
+                        {{ parameter.name }}
+                      </font>
+                      <b-badge v-if="parameter.type == 'address'" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + parameter.value + ' in the explorer'">
+                        <b-link :href="'https://etherscan.io/address/' + parameter.value" target="_blank">
+                          <font size="-1">{{ parameter.value.substring(0, 8) + '...' + parameter.value.slice(-6) }}</font>
+                        </b-link>
+                      </b-badge>
+                      <span v-else-if="parameter.type == 'address[]'">
+                        <span v-for="(address, addressIndex) of parameter.value" v-bind:key="addressIndex">
+                          <font v-if="addressIndex > 0" size="-1" class="text-muted">
+                            ,
+                          </font>
                           <b-link :href="'https://etherscan.io/address/' + address" target="_blank">
-                            <font size="-1">{{ address.substring(0, 8) }}</font>
+                            <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + address + ' in the explorer'">
+                              <font size="-1">{{ address.substring(0, 8) }}</font>
+                            </b-badge>
                           </b-link>
+                        </span>
+                      </span>
+                      <span v-else-if="parameter.name == 'txHash'">
+                        <b-badge variant="transparent" class="px-0" v-b-popover.hover.bottom="parameter.value">
+                          {{ parameter.value.substring(0, 12) + '...' + parameter.value.slice(-10) }}
+                        </b-badge>
+                      </span>
+                      <span v-else-if="parameter.name == 'value'">
+                        <b-badge variant="transparent" class="px-0" v-b-popover.hover.bottom="parameter.type">
+                          {{ formatETH(parameter.value, 0) }}
+                        </b-badge>
+                      </span>
+                      <span v-else>
+                        <b-badge variant="transparent" class="px-0" v-b-popover.hover.bottom="parameter.type">
+                          {{ parameter.value }}
                         </b-badge>
                       </span>
                     </span>
-                    <b-badge v-else variant="transparent" class="px-0" v-b-popover.hover.bottom="parameter.type">
-                      {{ parameter.value }}
-                    </b-badge>
-                  </span>
-                  <br />
-                </div>
+                  </b-col>
+                </b-row>
               </template>
               <template #cell(balance)="data">
                 {{ formatETH(data.item.balance, 0) }}
