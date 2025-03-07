@@ -1251,6 +1251,7 @@
             const chainId = this.chainId;
 
             let safeAddress = null;
+            let safeAddressAsBytes32 = null;
             try {
               safeAddress = ethers.utils.getAddress(this.settings.safe);
             } catch (e) {
@@ -1369,7 +1370,7 @@
               console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeLogsFromRange - section: " + section + ", fromBlock: " + fromBlock + ", toBlock: " + toBlock);
               try {
                 const logs = await provider.getLogs({
-                  address: t.settings.safe,
+                  address: safeAddress,
                   fromBlock,
                   toBlock,
                   topics: [[
@@ -1456,10 +1457,13 @@
             const safeInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].gnosis_safe);
 
             let safeAddress = null;
+            let safeAddressAsBytes32 = null;
             try {
               safeAddress = ethers.utils.getAddress(this.settings.safe);
+              safeAddressAsBytes32 = '0x000000000000000000000000' + safeAddress.substring(2, 42).toLowerCase();
             } catch (e) {
             }
+            console.log(moment().format("HH:mm:ss") + " syncSafe - safeAddress: " + safeAddress + ", safeAddressAsBytes32: " + safeAddressAsBytes32);
 
             const defaultSafeData = {
               address: safeAddress,
