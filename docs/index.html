@@ -1371,16 +1371,25 @@
                     // // ERC-1155 TransferBatch (indexed address operator, indexed address from, indexed address to, uint256[] ids, uint256[] values)
                     // [ '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb', null, accountAs32Bytes, null ],
                     if (log.topics[0] == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef") {
-                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - Transfer - log: " + JSON.stringify(log));
+                      if (log.topics.length == 3) {
+                        // ERC-20
+                        console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-20.Transfer[" + log.topics.length + "] - log: " + JSON.stringify(log));
+
+                      } else if (log.topics.length == 4) {
+                        // ERC-721
+                        console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-721.Transfer[" + log.topics.length + "] - log: " + JSON.stringify(log));
+                      }
 
                     } else if (log.topics[0] == "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62") {
-                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - TransferSingle - log: " + JSON.stringify(log));
+                      // ERC-1155
+                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.TransferSingle[" + log.topics.length + "] - log: " + JSON.stringify(log));
 
                     } else if (log.topics[0] == "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb") {
-                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - TransferBatch - log: " + JSON.stringify(log));
+                      // ERC-1155
+                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.TransferBatch[" + log.topics.length + "] - log: " + JSON.stringify(log));
 
                     } else {
-                      console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - Transfers/No Interface - log: " + JSON.stringify(log));
+                      console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - Transfers/No Interface[" + log.topics.length + "] - log: " + JSON.stringify(log));
                     }
                   }
                 }
