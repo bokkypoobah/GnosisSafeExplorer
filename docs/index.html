@@ -208,7 +208,7 @@
             <div class="mt-0 flex-grow-1">
             </div>
             <div v-if="!sync.section" class="mt-0 pr-1">
-              <b-button size="sm" @click="retrieveSafeEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
+              <b-button size="sm" @click="syncAllSafesEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
             </div>
             <div class="mt-0 flex-grow-1">
             </div>
@@ -295,7 +295,7 @@
 
           <div v-if="settings.tabIndex == 1" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
             <div class="mt-0 pr-1" style="min-width: 24.0rem; max-width: 24.0rem;">
-              <b-form-input type="text" size="sm" v-model.trim="settings.safe" @change="saveSettings(); loadSafe();" debounce="600" v-b-popover.hover.bottom="'Exact safe address'" placeholder="🔍 0xabcd"></b-form-input>
+              <b-form-input type="text" size="sm" v-model.trim="settings.safe" @change="saveSettings(); syncSafe();" debounce="600" v-b-popover.hover.bottom="'Exact safe address'" placeholder="🔍 0xabcd"></b-form-input>
             </div>
             <!-- <div class="mt-0 pr-1">
               <b-dropdown size="sm" right text="" variant="link" class="m-0 p-0">
@@ -308,7 +308,7 @@
             <div class="mt-0 flex-grow-1">
             </div>
             <div v-if="!sync.section" class="mt-0 pr-1">
-              <b-button size="sm" @click="loadSafe()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
+              <b-button size="sm" @click="syncSafe()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
             </div>
             <div v-if="sync.section != null" class="mt-0 pr-1">
               <b-progress height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 18.0rem;">
@@ -900,18 +900,18 @@
               // this.modalSafe.factory = this.addresses[item[0].factoryAddressIndex];
               // this.$bvModal.show('modal-safe');
               this.$refs.safesTable.clearSelected();
-              await this.loadSafe();
+              await this.syncSafe();
             }
           },
 
-          async retrieveSafeEvents() {
+          async syncAllSafesEvents() {
 
-            async function retrieveSafeEvents_processLogs(fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+            async function syncAllSafesEvents_processLogs(fromBlock, toBlock, logs) {
+              console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
               const records = [];
               for (const log of logs) {
                 if (!log.removed) {
-                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - log: " + JSON.stringify(log));
+                  // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - log: " + JSON.stringify(log));
                   let event = null;
                   let abiVersion = null;
                   if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
@@ -919,33 +919,33 @@
                       abiVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
                     }
                   }
-                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - abiVersion: " + abiVersion);
+                  // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - abiVersion: " + abiVersion);
                   let logData = null;
                   // Factory events
                   if (log.topics[0] == '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80' || log.topics[0] == '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235') {
                     if (abiVersion == 111) {
                       logData = safeFactoryInterface111.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - safeFactoryInterface111: " + JSON.stringify(logData, null, 2));
+                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - safeFactoryInterface111: " + JSON.stringify(logData, null, 2));
                     } else if (abiVersion == 130) {
                       logData = safeFactoryInterface130.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - safeFactoryInterface130: " + JSON.stringify(logData, null, 2));
+                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - safeFactoryInterface130: " + JSON.stringify(logData, null, 2));
                     } else if (abiVersion == 141) {
                       logData = safeFactoryInterface141.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - safeFactoryInterface141: " + JSON.stringify(logData, null, 2));
+                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - safeFactoryInterface141: " + JSON.stringify(logData, null, 2));
                     }
                   // Safe events
                   } else if (abiVersion == 130) {
                     logData = safeInterface130.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - logData 130: " + JSON.stringify(logData, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - logData 130: " + JSON.stringify(logData, null, 2));
                   } else if (abiVersion == 141) {
                     logData = safeInterface141.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - logData 141: " + JSON.stringify(logData, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - logData 141: " + JSON.stringify(logData, null, 2));
                   } else {
-                    console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - logData ???: " + JSON.stringify(log));
+                    console.error(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - logData ???: " + JSON.stringify(log));
                   }
                   if (logData) {
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - name: " + logData.name);
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - signature: " + logData.signature + ", abiVersion: " + abiVersion);
+                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - name: " + logData.name);
+                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - signature: " + logData.signature + ", abiVersion: " + abiVersion);
                     const parameters = [];
                     for (let [i, value] of logData.args.entries()) {
                       // console.log(i + " => " + value + " " + logData.eventFragment.inputs[i].name + " " + logData.eventFragment.inputs[i].type);
@@ -961,7 +961,7 @@
                         type,
                       });
                     }
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - parameters: " + JSON.stringify(parameters));
+                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - parameters: " + JSON.stringify(parameters));
                     event = {
                       type: SAFE_EVENT_TYPES[logData.name],
                       name: logData.name,
@@ -974,7 +974,7 @@
                     }
                     const txHashIndex = txHashesIndex[log.transactionHash];
                     if (logData.name == "SafeSetup") {
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
+                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
                       const factoryVersion = logData.args[0] && t.factoriesToVersion[logData.args[0]] || null;
                       if (factoryVersion) {
                         const ownerList = [];
@@ -1003,10 +1003,10 @@
                           ]);
                         }
                       } else {
-                        // console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - SafeSetup not emitted by the configured factories: " + JSON.stringify(log, null, 2));
+                        // console.error(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - SafeSetup not emitted by the configured factories: " + JSON.stringify(log, null, 2));
                       }
                     } else if (logData.name == "ProxyCreation") {
-                      // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - ProxyCreation: " + JSON.stringify(logData.args));
+                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - ProxyCreation: " + JSON.stringify(logData.args));
 
                       const factoryVersion = log.address && t.factoriesToVersion[log.address] || null;
                       if (factoryVersion) {
@@ -1031,7 +1031,7 @@
                           ]);
                         }
                       } else {
-                        // console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - ProxyCreation not emitted by the configured factories: " + JSON.stringify(log, null, 2));
+                        // console.error(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - ProxyCreation not emitted by the configured factories: " + JSON.stringify(log, null, 2));
                       }
                     } else if (logData.name == "AddedOwner") {
                       const safeIndex = safesIndex[log.address];
@@ -1044,18 +1044,18 @@
                         const before = safes[safeIndex][2];
                         safes[safeIndex][2] = [...safes[safeIndex][2].filter(e => e[0] != ownerIndex), [ownerIndex, txHashIndex]];
                         safes[safeIndex][9] = txHashIndex;
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - AddedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
+                        // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - AddedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
                       }
 
                     } else if (logData.name == "RemovedOwner") {
                       const safeIndex = safesIndex[log.address];
                       const ownerIndex = ownersIndex[logData.args[0]];
                       if (safeIndex && ownerIndex) {
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - RemovedOwner safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex);
+                        // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - RemovedOwner safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex);
                         const before = safes[safeIndex][2];
                         safes[safeIndex][2] = safes[safeIndex][2].filter(e => e[0] != ownerIndex);
                         safes[safeIndex][9] = txHashIndex;
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - RemovedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
+                        // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - RemovedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
                       }
 
                     } else if (logData.name == "ChangedThreshold") {
@@ -1063,7 +1063,7 @@
                       if (safeIndex) {
                         const before = safes[safeIndex][3];
                         safes[safeIndex][3] = parseInt(logData.args[0]);
-                        // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - ChangedThreshold - safeIndex: " + safeIndex + ", threshold: " + parseInt(logData.args[0]) + ", before: " + before + ", after: " + safes[safeIndex][3]);
+                        // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - ChangedThreshold - safeIndex: " + safeIndex + ", threshold: " + parseInt(logData.args[0]) + ", before: " + before + ", after: " + safes[safeIndex][3]);
                       }
                     }
                   }
@@ -1086,17 +1086,17 @@
                 }
               }
               if (records.length) {
-                // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - records: " + JSON.stringify(records, null, 2));
+                // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - records: " + JSON.stringify(records, null, 2));
                 await db.safeEvents.bulkAdd(records).then(function(lastKey) {
-                  console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - bulkAdd lastKey: " + JSON.stringify(lastKey));
+                  console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - bulkAdd lastKey: " + JSON.stringify(lastKey));
                   }).catch(Dexie.BulkError, function(e) {
-                    // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_processLogs - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
                   });
               }
             }
 
-            async function retrieveSafeEvents_getLogsFromRange(fromBlock, toBlock) {
-              console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+            async function syncAllSafesEvents_getLogsFromRange(fromBlock, toBlock) {
+              console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
               try {
                 if (!t.sync.halt) {
                   const logs = await provider.getLogs({
@@ -1157,15 +1157,15 @@
                       ],
                     ],
                   });
-                  await retrieveSafeEvents_processLogs(fromBlock, toBlock, logs);
-                  // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents_getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
+                  await syncAllSafesEvents_processLogs(fromBlock, toBlock, logs);
+                  // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
                   t.sync.completed = toBlock;
                 }
               } catch (e) {
-                console.error(moment().format("HH:mm:ss") + " retrieveSafeEvents_getLogsFromRange - Error: " + e.message);
+                console.error(moment().format("HH:mm:ss") + " syncAllSafesEvents_getLogsFromRange - Error: " + e.message);
                 const mid = parseInt((fromBlock + toBlock) / 2);
-                await retrieveSafeEvents_getLogsFromRange(fromBlock, mid);
-                await retrieveSafeEvents_getLogsFromRange(parseInt(mid) + 1, toBlock);
+                await syncAllSafesEvents_getLogsFromRange(fromBlock, mid);
+                await syncAllSafesEvents_getLogsFromRange(parseInt(mid) + 1, toBlock);
               }
             }
 
@@ -1179,7 +1179,7 @@
             localStorage.gnosisSafeExplorerChainId = chainId;
             const block = await provider.getBlock();
             const latestBlockNumber = block && block.number || null;
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latestBlockNumber: " + latestBlockNumber);
+            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - latestBlockNumber: " + latestBlockNumber);
             this.sync.section = "Syncing";
             this.sync.total = latestBlockNumber;
             this.sync.completed = 0;
@@ -1197,28 +1197,28 @@
             const ownersIndex = await this.getCachedData('ownersIndex', db, chainId, {});
             const safes = await this.getCachedData('safes', db, chainId, []);
             const safesIndex = await this.getCachedData('safesIndex', db, chainId, {});
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - versionToFactories: " + JSON.stringify(this.versionToFactories));
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addresses 1: " + JSON.stringify(addresses).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addressesIndex 1: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashes 1: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashesIndex 1: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - owners 1: " + JSON.stringify(owners).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownersIndex 1: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safes 1: " + JSON.stringify(safes).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safesIndex 1: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - versionToFactories: " + JSON.stringify(this.versionToFactories));
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - addresses 1: " + JSON.stringify(addresses).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - addressesIndex 1: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - txHashes 1: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - txHashesIndex 1: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - owners 1: " + JSON.stringify(owners).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - ownersIndex 1: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safes 1: " + JSON.stringify(safes).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safesIndex 1: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
 
             const latest = await db.safeEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - latest: " + JSON.stringify(latest));
+            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - latest: " + JSON.stringify(latest));
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
             // const startBlock = latestBlockNumber - 1000000;
             const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
-            await retrieveSafeEvents_getLogsFromRange(startBlock, latestBlockNumber);
+            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - startBlock: " + startBlock);
+            await syncAllSafesEvents_getLogsFromRange(startBlock, latestBlockNumber);
 
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - saveCacheData BEGIN");
+            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - saveCacheData BEGIN");
             await this.saveCacheData("addresses", addresses, db, chainId);
             await this.saveCacheData("addressesIndex", addressesIndex, db, chainId);
             await this.saveCacheData("txHashes", txHashes, db, chainId);
@@ -1227,16 +1227,16 @@
             await this.saveCacheData("ownersIndex", ownersIndex, db, chainId);
             await this.saveCacheData("safes", safes, db, chainId);
             await this.saveCacheData("safesIndex", safesIndex, db, chainId);
-            console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - saveCacheData END");
+            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - saveCacheData END");
 
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addresses 2: " + JSON.stringify(addresses).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - addressesIndex 2: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashes 2: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - txHashesIndex 2: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - owners 2: " + JSON.stringify(owners).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - ownersIndex 2: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safes 2: " + JSON.stringify(safes).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - safesIndex 2: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - addresses 2: " + JSON.stringify(addresses).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - addressesIndex 2: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - txHashes 2: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - txHashesIndex 2: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - owners 2: " + JSON.stringify(owners).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - ownersIndex 2: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safes 2: " + JSON.stringify(safes).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safesIndex 2: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
             db.close();
             await this.loadCurrentData();
             this.sync.section = null;
@@ -1303,30 +1303,30 @@
             console.log(moment().format("HH:mm:ss") + " loadCurrentData - END");
           },
 
-          async loadSafe() {
+          async syncSafe() {
 
-            async function loadSafe_processLogs(fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
-              // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - logs: " + JSON.stringify(logs, null, 2));
+            async function syncSafe_processLogs(fromBlock, toBlock, logs) {
+              console.log(moment().format("HH:mm:ss") + " syncSafe_processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+              // console.log(moment().format("HH:mm:ss") + " syncSafe_processLogs - logs: " + JSON.stringify(logs, null, 2));
               for (const log of logs) {
                 if (!log.removed) {
-                  // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - log: " + JSON.stringify(log, null, 2));
+                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processLogs - log: " + JSON.stringify(log, null, 2));
                   let abiVersion = null;
                   if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
                     if (log.topics.length in SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]]) {
                       abiVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
                     }
                   }
-                  // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - abiVersion: " + abiVersion);
+                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processLogs - abiVersion: " + abiVersion);
                   let logData = null;
                   if (abiVersion == 130) {
                     logData = safeInterface130.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - logData 130: " + JSON.stringify(logData, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " syncSafe_processLogs - logData 130: " + JSON.stringify(logData, null, 2));
                   } else if (abiVersion == 141) {
                     logData = safeInterface141.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - logData 141: " + JSON.stringify(logData, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " syncSafe_processLogs - logData 141: " + JSON.stringify(logData, null, 2));
                   } else {
-                    console.error(moment().format("HH:mm:ss") + " loadSafe_processLogs - No Interface - log: " + JSON.stringify(log));
+                    console.error(moment().format("HH:mm:ss") + " syncSafe_processLogs - No Interface - log: " + JSON.stringify(log));
                   }
                   if (logData) {
                     const parameters = [];
@@ -1365,8 +1365,8 @@
               }
             }
 
-            async function loadSafe_getLogsFromRange(fromBlock, toBlock) {
-              console.log(moment().format("HH:mm:ss") + " loadSafe_getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+            async function syncSafe_getLogsFromRange(fromBlock, toBlock) {
+              console.log(moment().format("HH:mm:ss") + " syncSafe_getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
               try {
                 const logs = await provider.getLogs({
                   address: t.settings.safe,
@@ -1426,18 +1426,18 @@
                     ],
                   ],
                 });
-                await loadSafe_processLogs(fromBlock, toBlock, logs);
-                // console.log(moment().format("HH:mm:ss") + " loadSafe_getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
+                await syncSafe_processLogs(fromBlock, toBlock, logs);
+                // console.log(moment().format("HH:mm:ss") + " syncSafe_getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
                 t.sync.completed = toBlock;
               } catch (e) {
-                console.error(moment().format("HH:mm:ss") + " loadSafe_getLogsFromRange - Error: " + e.message);
+                console.error(moment().format("HH:mm:ss") + " syncSafe_getLogsFromRange - Error: " + e.message);
                 const mid = parseInt((fromBlock + toBlock) / 2);
-                await loadSafe_getLogsFromRange(fromBlock, mid);
-                await loadSafe_getLogsFromRange(parseInt(mid) + 1, toBlock);
+                await syncSafe_getLogsFromRange(fromBlock, mid);
+                await syncSafe_getLogsFromRange(parseInt(mid) + 1, toBlock);
               }
             }
 
-            console.log(moment().format("HH:mm:ss") + " loadSafe - this.settings.safe: " + this.settings.safe);
+            console.log(moment().format("HH:mm:ss") + " syncSafe - this.settings.safe: " + this.settings.safe);
             const t = this;
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
@@ -1448,7 +1448,7 @@
             localStorage.gnosisSafeExplorerChainId = chainId;
             const block = await provider.getBlock();
             const latestBlockNumber = block && block.number || null;
-            console.log(moment().format("HH:mm:ss") + " loadSafe - latestBlockNumber: " + latestBlockNumber);
+            console.log(moment().format("HH:mm:ss") + " syncSafe - latestBlockNumber: " + latestBlockNumber);
             this.sync.section = "Syncing Events";
             this.sync.total = latestBlockNumber;
             this.sync.completed = 0;
@@ -1472,7 +1472,7 @@
             // TODO:
             // const safeData = defaultSafeData;
             const safeData = safeAddress ? (await this.getCachedData("safeData_" + safeAddress, db, chainId, defaultSafeData)) : defaultSafeData;
-            console.log(moment().format("HH:mm:ss") + " loadSafe - safeData 1: " + JSON.stringify(safeData).substring(0, 1000) + "...");
+            console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 1: " + JSON.stringify(safeData).substring(0, 1000) + "...");
 
             if (safeAddress) {
               const allSafesAbi = [
@@ -1486,40 +1486,40 @@
               if (!safeData.version) {
                 try {
                   safeData.version = await allSafesContract.VERSION();
-                  // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.version: " + safeData.version);
+                  // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.version: " + safeData.version);
                 } catch (e) {
-                  console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.version - error: " + e.message);
+                  console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.version - error: " + e.message);
                 }
               }
               // if (!safeData.implementation) {
                 try {
                   safeData.implementation = ethers.utils.getAddress('0x' + (await allSafesContract.getStorageAt(0, 1)).substring(26, 66));
-                  // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.implementation: " + safeData.implementation);
+                  // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.implementation: " + safeData.implementation);
                 } catch (e) {
-                  console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.implementation - error: " + e.message);
+                  console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.implementation - error: " + e.message);
                 }
               // }
               // if (!safeData.owners) {
                 try {
                   safeData.owners = await allSafesContract.getOwners();
-                  // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.owners: " + JSON.stringify(safeData.owners));
+                  // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.owners: " + JSON.stringify(safeData.owners));
                 } catch (e) {
-                  console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.owners - error: " + e.message);
+                  console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.owners - error: " + e.message);
                 }
               // }
               // if (!safeData.threshold) {
                 try {
                   safeData.threshold = parseInt(await allSafesContract.getThreshold());
-                  // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.threshold: " +  + safeData.threshold);
+                  // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.threshold: " +  + safeData.threshold);
                 } catch (e) {
-                  console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.threshold - error: " + e.message);
+                  console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.threshold - error: " + e.message);
                 }
               // }
             }
 
             if (safeAddress) {
-              await loadSafe_getLogsFromRange(0, latestBlockNumber);
-              // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
+              await syncSafe_getLogsFromRange(0, latestBlockNumber);
+              // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
@@ -1530,22 +1530,22 @@
                   try {
                     const block = await provider.getBlock(parseInt(blockNumber));
                     safeData.blocks[blockNumber].timestamp = parseInt(block.timestamp);
-                    console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.blocks[" + blockNumber + "].timestamp: " + safeData.blocks[blockNumber].timestamp);
+                    console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.blocks[" + blockNumber + "].timestamp: " + safeData.blocks[blockNumber].timestamp);
                   } catch (e) {
-                    console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.getBlock().timestamp - error: " + e.message);
+                    console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.getBlock().timestamp - error: " + e.message);
                   }
                 }
                 if (!blockData.balance) {
                   try {
                     const balance = await provider.getBalance(safeAddress, parseInt(blockNumber));
                     safeData.blocks[blockNumber].balance = ethers.BigNumber.from(balance).toString();
-                    console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.blocks[" + blockNumber + "].balance: " + safeData.blocks[blockNumber].balance);
+                    console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.blocks[" + blockNumber + "].balance: " + safeData.blocks[blockNumber].balance);
                   } catch (e) {
-                    console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.balance - error: " + e.message);
+                    console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.balance - error: " + e.message);
                   }
                 }
               }
-              console.log(moment().format("HH:mm:ss") + " loadSafe - safeData 3: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 3: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
@@ -1568,7 +1568,7 @@
                         gasLimit: parseInt(tx.gasLimit),
                       };
                     } catch (e) {
-                      console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.getTransaction - error: " + e.message);
+                      console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.getTransaction - error: " + e.message);
                     }
                   }
                   if (!txData.txReceipt && !this.sync.halt) {
@@ -1584,12 +1584,12 @@
                         logs: txReceipt.logs,
                       };
                     } catch (e) {
-                      console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.getTransactionReceipt - error: " + e.message);
+                      console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.getTransactionReceipt - error: " + e.message);
                     }
                   }
                 }
               }
-              console.log(moment().format("HH:mm:ss") + " loadSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 10000) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 10000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
