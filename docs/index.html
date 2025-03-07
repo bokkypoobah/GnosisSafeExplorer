@@ -1320,46 +1320,67 @@
                   }
                   // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - abiVersion: " + abiVersion);
                   let logData = null;
-                  if (abiVersion == 130) {
-                    logData = safeInterface130.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logData 130: " + JSON.stringify(logData, null, 2));
-                  } else if (abiVersion == 141) {
-                    logData = safeInterface141.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logData 141: " + JSON.stringify(logData, null, 2));
-                  } else {
-                    console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - No Interface - log: " + JSON.stringify(log));
-                  }
-                  if (logData) {
-                    const parameters = [];
-                    for (let [i, value] of logData.args.entries()) {
-                      const type = logData.eventFragment.inputs[i].type;
-                      if (type == "uint256") {
-                        value = ethers.BigNumber.from(value).toString();
+                  if (abiVersion) {
+                    if (abiVersion == 130) {
+                      logData = safeInterface130.parseLog(log);
+                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logData 130: " + JSON.stringify(logData, null, 2));
+                    } else if (abiVersion == 141) {
+                      logData = safeInterface141.parseLog(log);
+                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logData 141: " + JSON.stringify(logData, null, 2));
+                    } else {
+                      console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - No Interface - log: " + JSON.stringify(log));
+                    }
+                    if (logData) {
+                      const parameters = [];
+                      for (let [i, value] of logData.args.entries()) {
+                        const type = logData.eventFragment.inputs[i].type;
+                        if (type == "uint256") {
+                          value = ethers.BigNumber.from(value).toString();
+                        }
+                        parameters.push({ value, name: logData.eventFragment.inputs[i].name, type });
                       }
-                      parameters.push({ value, name: logData.eventFragment.inputs[i].name, type });
+                      if (!(log.blockNumber in safeData.blocks)) {
+                        safeData.blocks[log.blockNumber] = {
+                          timestamp: null,
+                          balance: null,
+                          txs: {},
+                        };
+                      }
+                      if (!(log.transactionHash in safeData.blocks[log.blockNumber].txs)) {
+                        safeData.blocks[log.blockNumber].txs[log.transactionHash] = {
+                          txIndex: parseInt(log.transactionIndex),
+                          logs: {},
+                          tx: null,
+                          txReceipt: null,
+                        };
+                      }
+                      if (!(log.logIndex in safeData.blocks[log.blockNumber].txs[log.transactionHash].logs)) {
+                        safeData.blocks[log.blockNumber].txs[log.transactionHash].logs[log.logIndex] = {
+                          address: log.address,
+                          name: logData.name,
+                          signature: logData.signature,
+                          parameters,
+                        };
+                      }
                     }
-                    if (!(log.blockNumber in safeData.blocks)) {
-                      safeData.blocks[log.blockNumber] = {
-                        timestamp: null,
-                        balance: null,
-                        txs: {},
-                      };
-                    }
-                    if (!(log.transactionHash in safeData.blocks[log.blockNumber].txs)) {
-                      safeData.blocks[log.blockNumber].txs[log.transactionHash] = {
-                        txIndex: parseInt(log.transactionIndex),
-                        logs: {},
-                        tx: null,
-                        txReceipt: null,
-                      };
-                    }
-                    if (!(log.logIndex in safeData.blocks[log.blockNumber].txs[log.transactionHash].logs)) {
-                      safeData.blocks[log.blockNumber].txs[log.transactionHash].logs[log.logIndex] = {
-                        address: log.address,
-                        name: logData.name,
-                        signature: logData.signature,
-                        parameters,
-                      };
+                  } else {
+                    // ERC-20 & ERC-721 Transfer (indexed address from, indexed address to, indexed uint256 id)
+                    // [ '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', null, accountAs32Bytes ],
+                    // // ERC-1155 TransferSingle (indexed address _operator, indexed address _from, indexed address _to, uint256 _id, uint256 _value)
+                    // [ '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62', null, accountAs32Bytes, null ],
+                    // // ERC-1155 TransferBatch (indexed address operator, indexed address from, indexed address to, uint256[] ids, uint256[] values)
+                    // [ '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb', null, accountAs32Bytes, null ],
+                    if (log.topics[0] == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef") {
+                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - Transfer - log: " + JSON.stringify(log));
+
+                    } else if (log.topics[0] == "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62") {
+                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - TransferSingle - log: " + JSON.stringify(log));
+
+                    } else if (log.topics[0] == "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb") {
+                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - TransferBatch - log: " + JSON.stringify(log));
+
+                    } else {
+                      console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - Transfers/No Interface - log: " + JSON.stringify(log));
                     }
                   }
                 }
