@@ -802,7 +802,7 @@
           },
 
           filteredSortedSafeTxs() {
-            console.log(moment().format("HH:mm:ss") + " filteredSortedSafeTxs - safe: " + this.settings.safe);
+            // console.log(moment().format("HH:mm:ss") + " filteredSortedSafeTxs - safe: " + this.settings.safe);
             const results = [];
             // const filter = this.settings.safeTxsTable.filter != null && this.settings.safeTxsTable.filter.length > 0 ? this.settings.safeTxsTable.filter : null;
             let regex = null;
@@ -820,7 +820,7 @@
                   let include = true;
                   const safeLogs = [];
                   for (const [logIndex, logData] of Object.entries(txData.logs || {})) {
-                    console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData).substring(0, 1000) + "...");
+                    // console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData).substring(0, 1000) + "...");
                     // if (regex) {
                     //   if (!(regex.test(safe[0]))) {
                     //     include = false;
@@ -879,7 +879,7 @@
           },
           pagedFilteredSortedSafeTxs() {
             const results = this.filteredSortedSafeTxs.slice((this.settings.safeTxsTable.currentPage - 1) * this.settings.safeTxsTable.pageSize, this.settings.safeTxsTable.currentPage * this.settings.safeTxsTable.pageSize);
-            console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedSafeTxs - results: " + JSON.stringify(results, null, 2));
+            // console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedSafeTxs - results: " + JSON.stringify(results, null, 2));
             return results;
           },
 
@@ -1305,28 +1305,28 @@
 
           async syncSafe() {
 
-            async function syncSafe_processLogs(fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " syncSafe_processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
-              // console.log(moment().format("HH:mm:ss") + " syncSafe_processLogs - logs: " + JSON.stringify(logs, null, 2));
+            async function syncSafe_processSafeLogs(fromBlock, toBlock, logs) {
+              console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+              // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logs: " + JSON.stringify(logs, null, 2));
               for (const log of logs) {
                 if (!log.removed) {
-                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processLogs - log: " + JSON.stringify(log, null, 2));
+                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - log: " + JSON.stringify(log, null, 2));
                   let abiVersion = null;
                   if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
                     if (log.topics.length in SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]]) {
                       abiVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
                     }
                   }
-                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processLogs - abiVersion: " + abiVersion);
+                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - abiVersion: " + abiVersion);
                   let logData = null;
                   if (abiVersion == 130) {
                     logData = safeInterface130.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " syncSafe_processLogs - logData 130: " + JSON.stringify(logData, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logData 130: " + JSON.stringify(logData, null, 2));
                   } else if (abiVersion == 141) {
                     logData = safeInterface141.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " syncSafe_processLogs - logData 141: " + JSON.stringify(logData, null, 2));
+                    // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logData 141: " + JSON.stringify(logData, null, 2));
                   } else {
-                    console.error(moment().format("HH:mm:ss") + " syncSafe_processLogs - No Interface - log: " + JSON.stringify(log));
+                    console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - No Interface - log: " + JSON.stringify(log));
                   }
                   if (logData) {
                     const parameters = [];
@@ -1365,8 +1365,8 @@
               }
             }
 
-            async function syncSafe_getLogsFromRange(fromBlock, toBlock) {
-              console.log(moment().format("HH:mm:ss") + " syncSafe_getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+            async function syncSafe_getSafeLogsFromRange(fromBlock, toBlock) {
+              console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
               try {
                 const logs = await provider.getLogs({
                   address: t.settings.safe,
@@ -1426,14 +1426,14 @@
                     ],
                   ],
                 });
-                await syncSafe_processLogs(fromBlock, toBlock, logs);
-                // console.log(moment().format("HH:mm:ss") + " syncSafe_getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
+                await syncSafe_processSafeLogs(fromBlock, toBlock, logs);
+                // console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
                 t.sync.completed = toBlock;
               } catch (e) {
-                console.error(moment().format("HH:mm:ss") + " syncSafe_getLogsFromRange - Error: " + e.message);
+                console.error(moment().format("HH:mm:ss") + " syncSafe_getSafeLogsFromRange - Error: " + e.message);
                 const mid = parseInt((fromBlock + toBlock) / 2);
-                await syncSafe_getLogsFromRange(fromBlock, mid);
-                await syncSafe_getLogsFromRange(parseInt(mid) + 1, toBlock);
+                await syncSafe_getSafeLogsFromRange(fromBlock, mid);
+                await syncSafe_getSafeLogsFromRange(parseInt(mid) + 1, toBlock);
               }
             }
 
@@ -1469,10 +1469,10 @@
               threshold: null,
               blocks: {},
             };
-            // TODO:
+            // TODO: Testing
             // const safeData = defaultSafeData;
             const safeData = safeAddress ? (await this.getCachedData("safeData_" + safeAddress, db, chainId, defaultSafeData)) : defaultSafeData;
-            console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 1: " + JSON.stringify(safeData).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 1: " + JSON.stringify(safeData).substring(0, 1000) + "...");
 
             if (safeAddress) {
               const allSafesAbi = [
@@ -1518,7 +1518,7 @@
             }
 
             if (safeAddress) {
-              await syncSafe_getLogsFromRange(0, latestBlockNumber);
+              await syncSafe_getSafeLogsFromRange(0, latestBlockNumber);
               // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
@@ -1545,7 +1545,7 @@
                   }
                 }
               }
-              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 3: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
+              // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 3: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
@@ -1589,7 +1589,7 @@
                   }
                 }
               }
-              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 10000) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
