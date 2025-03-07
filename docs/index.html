@@ -161,7 +161,7 @@
             </div>
           </div>
           <!-- <b-table ref="safeTxsTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve all deployed Safes v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0"> -->
-          <!-- <b-table ref="safeTxsTable" small fixed striped responsive hover :fields="safeTxsFields" :items="pagedFilteredSortedModalSafeTxs" show-empty empty-html="Retrieving..." head-variant="light" class="mx-0 mt-1">
+          <!-- <b-table ref="safeTxsTable" small fixed striped responsive hover :fields="safeTxsFields" :items="pagedFilteredSortedSafeTxs" show-empty empty-html="Retrieving..." head-variant="light" class="mx-0 mt-1">
             <template #cell(index)="data">
               <font size="-1" class="text-muted">
                 {{ parseInt(data.index) + ((settings.safeTxsTable.currentPage - 1) * settings.safeTxsTable.pageSize) + 1 }}
@@ -372,12 +372,26 @@
           </div>
 
           <b-card v-if="settings.tabIndex == 1" no-body class="m-1 p-0 border-0" bg-variant="light">
-            <!-- <b-table ref="safeEvensTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safeEventsFields" :items="pagedFilteredSortedModalSafeTxs" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0"> -->
-            <b-table ref="safeEvensTable" small fixed striped responsive hover :fields="safeEventsFields" :items="pagedFilteredSortedModalSafeTxs" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
+            <!-- <b-table ref="safeEvensTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safeEventsFields" :items="pagedFilteredSortedSafeTxs" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0"> -->
+            <b-table ref="safeTxsTable" small fixed striped responsive hover :fields="safeTxsFields" :items="pagedFilteredSortedSafeTxs" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
               <template #cell(index)="data">
                 <font size="-1" class="text-muted">
                   {{ parseInt(data.index) + ((settings.safeTxsTable.currentPage - 1) * settings.safeTxsTable.pageSize) + 1 }}
                 </font>
+              </template>
+              <template #cell(when)="data">
+                <!-- <b-link :href="'https://etherscan.io/tx/' + data.item.txHash + '#eventlog#' + data.item.logIndex" target="_blank"> -->
+                  <b-badge variant="transparent" class="px-0" v-b-popover.hover.bottom="'Unix timestamp: ' + data.item.timestamp">
+                    {{ data.item.timestamp ? formatTimestamp(data.item.timestamp) : data.item.blockNumber }}
+                  </b-badge>
+                <!-- </b-link> -->
+                <!-- <font size="-2" class="text-muted">
+                  {{ data.item.txIndex }}
+                </font> -->
+
+              </template>
+              <template #cell(info)="data">
+                {{ data.item }}
               </template>
               <template #cell(event)="data">
                 <b-badge variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.signature">
@@ -490,8 +504,8 @@
 
           safeData: [],       // blockNumber => { timestamp, txs: { ..., logs: { logIndex: eventData, ...} } }
 
-          timestamps: {},     // blockNumber => Unix timestamp
-          txData: {}, // Transactions only for the current safe address
+          timestamps: {},     // TODO: Remove? blockNumber => Unix timestamp
+          txData: {},         // TODO: Remove? Transactions only for the current safe address
 
           connected: false,
           chainId: null,
@@ -572,11 +586,6 @@
             { value: 1000, text: '1,000' },
           ],
 
-          safeTxsFields: [
-            { key: 'index', label: '#', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
-            { key: 'info', label: 'Info', sortable: false, thStyle: 'width: 90%;', tdClass: 'text-truncate' },
-          ],
-
           safesFields: [
             { key: 'index', label: '#', sortable: false, thStyle: 'width: 7%;', tdClass: 'text-truncate' },
             { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
@@ -586,12 +595,18 @@
             { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
           ],
 
-          safeEventsFields: [
+          safeTxsFields: [
             { key: 'index', label: '#', sortable: false, thStyle: 'width: 7%;', tdClass: 'text-truncate' },
-            { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
-            { key: 'event', label: 'Event', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
-            { key: 'parameters', label: 'Parameters', sortable: false, thStyle: 'width: 65%;', tdClass: 'text-left' },
+            { key: 'when', label: 'When', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-left' },
+            { key: 'info', label: 'Info', sortable: false, thStyle: 'width: 80%;', tdClass: 'text-left' },
           ],
+
+          // safeEventsFields: [
+          //   { key: 'index', label: '#', sortable: false, thStyle: 'width: 7%;', tdClass: 'text-truncate' },
+          //   { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
+          //   { key: 'event', label: 'Event', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
+          //   { key: 'parameters', label: 'Parameters', sortable: false, thStyle: 'width: 65%;', tdClass: 'text-left' },
+          // ],
 
           db: {
             name: "gnosissafeexplorer088i",
@@ -733,7 +748,7 @@
           },
 
           filteredSortedSafeTxs() {
-            // console.log(moment().format("HH:mm:ss") + " filteredSortedSafeTxs - filter: " + this.settings.safeTxsTable.filter);
+            console.log(moment().format("HH:mm:ss") + " filteredSortedSafeTxs - safe: " + this.settings.safe);
             const results = [];
             // const filter = this.settings.safeTxsTable.filter != null && this.settings.safeTxsTable.filter.length > 0 ? this.settings.safeTxsTable.filter : null;
             let regex = null;
@@ -745,23 +760,48 @@
                 regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
               }
             }
-            // for (const safeEvent of this.safeEvents) {
-            //   let include = true;
-            //   // if (regex) {
-            //   //   if (!(regex.test(safe[0]))) {
-            //   //     include = false;
-            //   //   }
-            //   // }
-            //   // if (filter) {
-            //   //   // const safeAddress = this.addresses[safe.safeAddressIndex];
-            //   //   if (safe[0].indexOf(filter) < 0) {
-            //   //     include = false;
-            //   //   }
-            //   // }
-            //   if (include) {
-            //     results.push(safeEvent);
-            //   }
-            // }
+            for (const [blockNumber, blockData] of Object.entries(this.safeData.blocks || {})) {
+              for (const [txHash, txData] of Object.entries(blockData.txs || {})) {
+                let include = true;
+                const safeLogs = [];
+                for (const [logIndex, logData] of Object.entries(txData.logs || {})) {
+                  console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData).substring(0, 1000) + "...");
+                  // if (regex) {
+                  //   if (!(regex.test(safe[0]))) {
+                  //     include = false;
+                  //   }
+                  // }
+                  // if (filter) {
+                  //   // const safeAddress = this.addresses[safe.safeAddressIndex];
+                  //   if (safe[0].indexOf(filter) < 0) {
+                  //     include = false;
+                  //   }
+                  // }
+                  safeLogs.push({
+                    logIndex,
+                    address: logData.address,
+                    name: logData.name,
+                    signature: logData.signature,
+                    parameters: logData.parameters,
+                  });
+                }
+                if (include) {
+                  safeLogs.sort((a, b) => {
+                    return a.logIndex - b.logIndex;
+                  });
+                  results.push({
+                    blockNumber,
+                    timestamp: blockData.timestamp,
+                    balance: blockData.balance,
+                    txIndex: txData.txIndex,
+                    txHash,
+                    tx: txData.tx,
+                    txReceipt: txData.txReceipt,
+                    safeLogs,
+                  });
+                }
+              }
+            }
             if (this.settings.safeTxsTable.sortOption == 'blocknumberasc') {
               results.sort((a, b) => {
                 if (a.blockNumber == b.blockNumber) {
@@ -781,9 +821,9 @@
             }
             return results;
           },
-          pagedFilteredSortedModalSafeTxs() {
+          pagedFilteredSortedSafeTxs() {
             const results = this.filteredSortedSafeTxs.slice((this.settings.safeTxsTable.currentPage - 1) * this.settings.safeTxsTable.pageSize, this.settings.safeTxsTable.currentPage * this.settings.safeTxsTable.pageSize);
-            // console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedModalSafeTxs - results: " + JSON.stringify(results, null, 2));
+            console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedSafeTxs - results: " + JSON.stringify(results, null, 2));
             return results;
           },
 
@@ -1164,24 +1204,19 @@
             } catch (e) {
             }
 
-            const safeData = safeAddress ? (await this.getCachedData("safeData_" + safeAddress, db, chainId, {})) : {};
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - safeData: " + JSON.stringify(safeData).substring(0, 1000) + "...");
-
-            // if (safeAddress) {
-            //   const data = await this.getCachedData("safeEvents_" + safeAddress, db, chainId, []);
-            //   // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safeEvents_*: " + JSON.stringify(data, null, 2));
-            //   Vue.set(this, 'safeEvents', data);
-            // }
-
             for (const name of ['addresses', 'addressesIndex', 'txHashes', 'txHashesIndex', 'owners', 'ownersIndex', 'safes', 'safesIndex'/*, 'timestamps'*/]) {
               const data = await this.getCachedData(name, db, chainId, name.endsWith("Index") ? {} : []);
               Vue.set(this, name, data);
               // console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name); // + ": " + JSON.stringify(data).substring(0, 1000) + "...");
             }
 
-            const timestamps = await this.getCachedData("timestamps", db, chainId, {});
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - timestamps: " + JSON.stringify(timestamps).substring(0, 1000) + "...");
-            Vue.set(this, "timestamps", timestamps);
+            const safeData = safeAddress ? (await this.getCachedData("safeData_" + safeAddress, db, chainId, {})) : {};
+            Vue.set(this, 'safeData', safeData);
+            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safeData: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
+
+            // const timestamps = await this.getCachedData("timestamps", db, chainId, {});
+            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - timestamps: " + JSON.stringify(timestamps).substring(0, 1000) + "...");
+            // Vue.set(this, "timestamps", timestamps);
 
             // let rows = 0;
             // let done = false;
@@ -1375,6 +1410,7 @@
             }
 
             const defaultSafeData = {
+              address: safeAddress,
               version: null,
               implementation: null,
               owners: null,
@@ -1403,30 +1439,30 @@
                   console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.version - error: " + e.message);
                 }
               }
-              if (!safeData.implementation) {
+              // if (!safeData.implementation) {
                 try {
                   safeData.implementation = ethers.utils.getAddress('0x' + (await allSafesContract.getStorageAt(0, 1)).substring(26, 66));
                   // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.implementation: " + safeData.implementation);
                 } catch (e) {
                   console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.implementation - error: " + e.message);
                 }
-              }
-              if (!safeData.owners) {
+              // }
+              // if (!safeData.owners) {
                 try {
                   safeData.owners = await allSafesContract.getOwners();
                   // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.owners: " + JSON.stringify(safeData.owners));
                 } catch (e) {
                   console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.owners - error: " + e.message);
                 }
-              }
-              if (!safeData.threshold) {
+              // }
+              // if (!safeData.threshold) {
                 try {
                   safeData.threshold = parseInt(await allSafesContract.getThreshold());
                   // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.threshold: " +  + safeData.threshold);
                 } catch (e) {
                   console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.threshold - error: " + e.message);
                 }
-              }
+              // }
             }
 
             if (safeAddress) {
@@ -1444,7 +1480,7 @@
                     safeData.blocks[blockNumber].timestamp = parseInt(block.timestamp);
                     console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.blocks[" + blockNumber + "].timestamp: " + safeData.blocks[blockNumber].timestamp);
                   } catch (e) {
-                    console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.timestamp - error: " + e.message);
+                    console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.getBlock().timestamp - error: " + e.message);
                   }
                 }
                 if (!blockData.balance) {
@@ -1465,8 +1501,7 @@
             if (safeAddress && !this.sync.halt) {
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
                 for (const [txHash, txData] of Object.entries(blockData.txs)) {
-                  console.log(blockNumber + "/" + txHash + " => " + JSON.stringify(txData));
-                  if (!txData.tx) {
+                  if (!txData.tx && !this.sync.halt) {
                     try {
                       const tx = await provider.getTransaction(txHash);
                       safeData.blocks[blockNumber].txs[txHash].tx = {
@@ -1480,12 +1515,11 @@
                         maxPriorityFeePerGas: tx.maxPriorityFeePerGas && ethers.BigNumber.from(tx.maxPriorityFeePerGas).toString() || null,
                         gasLimit: parseInt(tx.gasLimit),
                       };
-                      // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.blocks[" + blockNumber + "].txs: " + JSON.stringify(safeData.blocks[blockNumber].txs[txHash]));
                     } catch (e) {
-                      console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.timestamp - error: " + e.message);
+                      console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.getTransaction - error: " + e.message);
                     }
                   }
-                  if (!txData.txReceipt) {
+                  if (!txData.txReceipt && !this.sync.halt) {
                     try {
                       const txReceipt = await provider.getTransactionReceipt(txHash);
                       safeData.blocks[blockNumber].txs[txHash].txReceipt = {
@@ -1497,9 +1531,8 @@
                         status: parseInt(txReceipt.status),
                         logs: txReceipt.logs,
                       };
-                      // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.blocks[" + blockNumber + "].txs: " + JSON.stringify(safeData.blocks[blockNumber].txs[txHash]));
                     } catch (e) {
-                      console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.timestamp - error: " + e.message);
+                      console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.getTransactionReceipt - error: " + e.message);
                     }
                   }
                 }
@@ -1547,280 +1580,6 @@
               .catch(err => {
                 // An error occurred
               });
-          },
-
-          // TODO: Delete
-          async processSafeEvents141(logs, factoryVersion, safeVersion) {
-            console.log(moment().format("HH:mm:ss") + " processSafeEvents141 - factoryVersion: " + factoryVersion + ", safeVersion:" + safeVersion);
-
-            const safeABI = safeVersion && SAFE_ABIS[safeVersion] && SAFE_ABIS[safeVersion].gnosis_safe || SAFE_ABIS[130].gnosis_safe;
-            // console.log(moment().format("HH:mm:ss") + " processSafeEvents141 - safeABI: " + JSON.stringify(safeABI));
-            const safeInterface = new ethers.utils.Interface(safeABI);
-            for (const log of logs) {
-              if (!log.removed) {
-                // console.log(moment().format("HH:mm:ss") + " processSafeEvents141 - log: " + JSON.stringify(log, null, 2));
-                // 0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8
-                // event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
-                // event ApproveHash(bytes32 indexed approvedHash, address indexed owner);
-                // event SignMsg(bytes32 indexed msgHash);
-                // event ExecutionFailure(bytes32 indexed txHash, uint256 payment);
-                // 0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e
-                // event ExecutionSuccess(bytes32 indexed txHash, uint256 payment);
-
-                // FallbackManager.sol 3/16
-                // event ChangedFallbackHandler(address indexed handler);
-
-                // GuardManager.sol 4/16
-                // event ChangedGuard(address indexed guard);
-
-                // ModuleManager.sol 5/16
-                // event EnabledModule(address indexed module);
-                // event DisabledModule(address indexed module);
-                // event ExecutionFromModuleSuccess(address indexed module);
-                // event ExecutionFromModuleFailure(address indexed module);
-
-                // OwnerManager.sol 6/16
-                // 0x9465fa0c962cc76958e6373a993326400c1c94f8be2fe3a952adfa7f60b2ea26
-                // event AddedOwner(address indexed owner);
-                // 0xf8d49fc529812e9a7c5c50e69c20f0dccc0db8fa95c98bc58cc9a4f1c1299eaf
-                // event RemovedOwner(address indexed owner);
-                // event ChangedThreshold(uint256 threshold);
-
-                // NativeCurrencyPaymentFallback.sol 8/16
-                // 0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d
-                // event SafeReceived(address indexed sender, uint256 value);
-
-                const event = {};
-                try {
-                  const logData = safeInterface.parseLog(log);
-                  // console.log(moment().format("HH:mm:ss") + " processSafeEvents - logData: " + JSON.stringify(logData, null, 2));
-                  event.name = logData.eventFragment.name;
-                  // TODO: Complete extracting all event types
-                  if (event.name == "SafeSetup") {
-                    // event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
-                    const [initiator, owners, threshold, initializer, fallbackHandler] = logData.args;
-                    event.initiator = initiator;
-                    event.owners = owners;
-                    event.threshold = parseInt(threshold);
-                    event.initializer = initializer;
-                    event.fallbackHandler = fallbackHandler;
-                  } else if (event.name == "SafeReceived") {
-                    // event SafeReceived(address indexed sender, uint256 value);
-                    const [sender, value] = logData.args;
-                    event.sender = sender;
-                    event.value = ethers.BigNumber.from(value).toString();
-                  } else if (event.name == "ExecutionSuccess") {
-                    // event ExecutionSuccess(bytes32 indexed txHash, uint256 payment);
-                    const [txHash, payment] = logData.args;
-                    event.txHash = txHash;
-                    event.payment = ethers.BigNumber.from(payment).toString();
-                  } else {
-                    event.parameterNames = logData.eventFragment.inputs.map(({ name, type }) => ({ name, type }));
-                    event.parameters = logData.args;
-                  }
-                } catch (e) {
-                  event.name = "Unknown signature: " + log.topics[0];
-                }
-
-                if (!(log.blockNumber in this.modalSafe.events)) {
-                  Vue.set(this.modalSafe.events, log.blockNumber, {});
-                }
-                if (!(log.logIndex in this.modalSafe.events[log.blockNumber])) {
-                  Vue.set(this.modalSafe.events[log.blockNumber], log.transactionHash, {});
-                }
-                if (!(log.logIndex in this.modalSafe.events[log.blockNumber][log.transactionHash])) {
-                  Vue.set(this.modalSafe.events[log.blockNumber][log.transactionHash], log.logIndex, {
-                    address: log.address,
-                    transactionHash: log.transactionHash,
-                    txIndex: log.transactionIndex,
-                    ...event,
-                    data: log.data,
-                    topics: log.topics,
-                    // parameterNames,
-                    // parameters,
-                  });
-                }
-              }
-            }
-          },
-
-          // TODO: Delete
-          async processSafeTxData(provider, chainId, factoryVersion, safeVersion) {
-            console.log(moment().format("HH:mm:ss") + " processSafeTxData - chainId: " + chainId + ", factoryVersion: " + factoryVersion + ", safeVersion:" + safeVersion);
-            const db = new Dexie(this.db.name);
-            db.version(this.db.version).stores(this.db.schemaDefinition);
-            let timestamps = {};
-            const timestampsDataItems = await db.cache.where("objectName").equals("timestamps").toArray();
-            if (timestampsDataItems.length == 1) {
-              timestamps = timestampsDataItems[0].object;
-            }
-            if (!(chainId in timestamps)) {
-              timestamps[chainId] = {};
-            }
-            // console.log(moment().format("HH:mm:ss") + " processSafeTxData - timestamps 1: " + JSON.stringify(timestamps, null, 2));
-            let txData = {};
-            const txDataItems = await db.cache.where("objectName").equals("txData_" + this.modalSafe.safe).toArray();
-            if (txDataItems.length == 1) {
-              txData = txDataItems[0].object;
-            }
-            if (!(chainId in txData)) {
-              txData[chainId] = {};
-            }
-            // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txData 1: " + JSON.stringify(txData, null, 2));
-            const txHashesIndex = {};
-            for (const [blockNumber, blockData] of Object.entries(this.modalSafe.events)) {
-              for (const [txHash, txData] of Object.entries(blockData)) {
-                if (!(txHash in txHashesIndex)) {
-                  txHashesIndex[txHash] = blockNumber;
-                }
-              }
-            }
-            // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHashesIndex: " + JSON.stringify(txHashesIndex));
-            for (const [txHash, blockNumber] of Object.entries(txHashesIndex)) {
-              // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txHash: " + txHash + ", blockNumber: " + blockNumber);
-              if (!(blockNumber in timestamps[chainId])) {
-                const block = await provider.getBlock(parseInt(blockNumber));
-                const timestamp = block.timestamp;
-                // console.log(moment().format("HH:mm:ss") + " processSafeTxData - blockNumber: " + blockNumber + ", timestamp: " + timestamp + " " + moment.unix(timestamp).format("YYYY-MM-DD HH:mm:ss"));
-                timestamps[chainId][blockNumber] = timestamp;
-              }
-              if (!(txHash in txData[chainId])) {
-                txData[chainId][txHash] = {
-                  tx: null,
-                  txReceipt: null,
-                };
-              }
-              if (!txData[chainId][txHash].tx) {
-                const tx = await provider.getTransaction(txHash);
-                // console.log(moment().format("HH:mm:ss") + " processSafeTxData - tx: " + JSON.stringify(tx));
-                txData[chainId][txHash].tx = {
-                  blockNumber: tx.blockNumber,
-                  type: tx.type || null,
-                  txIndex: tx.transactionIndex,
-                  from: tx.from,
-                  nonce: parseInt(tx.nonce),
-                  to: tx.to,
-                  data: tx.data,
-                  gasPrice: ethers.BigNumber.from(tx.gasPrice).toString(),
-                  maxPriorityFeePerGas: tx.maxPriorityFeePerGas && ethers.BigNumber.from(tx.maxPriorityFeePerGas).toString() || null,
-                  gasLimit: parseInt(tx.gasLimit),
-                }
-              }
-              if (!txData[chainId][txHash].txReceipt) {
-                const txReceipt = await provider.getTransactionReceipt(txHash);
-                // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txReceipt: " + JSON.stringify(txReceipt));
-                txData[chainId][txHash].txReceipt = {
-                  type: parseInt(txReceipt.type),
-                  txIndex: txReceipt.transactionIndex,
-                  from: txReceipt.from,
-                  to: txReceipt.to,
-                  contractAddress: txReceipt.contractAddress,
-                  gasUsed: parseInt(txReceipt.gasUsed),
-                  cumulativeGasUsed: parseInt(txReceipt.cumulativeGasUsed),
-                  effectiveGasPrice: txReceipt.effectiveGasPrice && parseInt(txReceipt.effectiveGasPrice) || null,
-                  status: parseInt(txReceipt.status),
-                  logs: txReceipt.logs,
-                }
-              }
-
-            }
-            // console.log(moment().format("HH:mm:ss") + " processSafeTxData - timestamps 2: " + JSON.stringify(timestamps, null, 2));
-            await db.cache.put({ objectName: "timestamps", object: timestamps }).then (function() {
-            }).catch(function(error) {
-              console.log("error: " + error);
-            });
-            // console.log(moment().format("HH:mm:ss") + " processSafeTxData - txData 1: " + JSON.stringify(txData, null, 2));
-            await db.cache.put({ objectName: "txData_" + this.modalSafe.safe, object: txData }).then (function() {
-            }).catch(function(error) {
-              console.log("error: " + error);
-            });
-            Vue.set(this, "txData", txData);
-            console.log(moment().format("HH:mm:ss") + " processSafeTxData - end");
-          },
-
-          // TODO: Delete
-          // Safe
-          // 1.1.1 0x34CfAC646f301356fAa8B21e94227e3583Fe3F5F
-          // 1.3.0 0xd9Db270c1B5E3Bd161E8c8503c55cEABeE709552
-          // 1.4.1 0x41675C099F32341bf84BFc5382aF534df5C7461a
-          // TODO 1.2.0 0x6851D6fDFAfD08c0295C392436245E5bc78B0185
-          async retrieveModalSafeEvents() {
-            console.log(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - this.modalSafe: " + JSON.stringify(this.modalSafe).substring(0, 1000));
-            const factoryVersion = this.factoriesToVersion[this.modalSafe.factory] || null;
-            // console.log(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - factoryVersion: " + factoryVersion);
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const network = await provider.getNetwork();
-            const chainId = network.chainId;
-            localStorage.gnosisSafeExplorerChainId = chainId;
-            const block = await provider.getBlock();
-            const latestBlockNumber = block && block.number || null;
-            // console.log(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - latestBlockNumber: " + latestBlockNumber);
-
-            const allSafesAbi = [
-              "function VERSION() public view returns (string)",
-              "function getOwners() public view returns (address[] memory)",
-              "function getThreshold() public view returns (uint256)",
-              "function nonce() public view returns (uint256)",
-              "function getStorageAt(uint256 offset, uint256 length) public view returns (bytes memory)",
-            ];
-            const allSafesContract = new ethers.Contract(this.modalSafe.safe, allSafesAbi, provider);
-            let safeVersion = null;
-            try {
-              safeVersion = await allSafesContract.VERSION();
-              console.log(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - safeVersion: " + safeVersion);
-            } catch (e) {
-              console.error(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - safeVersion - error: " + e.message);
-            }
-            Vue.set(this.modalSafe.info, 'factoryVersion', factoryVersion);
-            Vue.set(this.modalSafe.info, 'safeVersion', safeVersion);
-
-            let implementation = null;
-            try {
-              implementation = ethers.utils.getAddress('0x' + (await allSafesContract.getStorageAt(0, 1)).substring(26, 66));
-              console.log(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - implementation: " + JSON.stringify(implementation));
-            } catch (e) {
-              console.error(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - implementation - error: " + e.message);
-            }
-            Vue.set(this.modalSafe.info, 'implementation', implementation);
-
-
-            let owners = null;
-            try {
-              owners = await allSafesContract.getOwners();
-              console.log(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - owners: " + JSON.stringify(owners));
-            } catch (e) {
-              console.error(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - owners - error: " + e.message);
-            }
-            Vue.set(this.modalSafe.info, 'owners', owners);
-            let threshold = null;
-            try {
-              threshold = await allSafesContract.getThreshold();
-              console.log(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - threshold: " + parseInt(threshold));
-            } catch (e) {
-              console.error(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - threshold - error: " + e.message);
-            }
-            Vue.set(this.modalSafe.info, 'threshold', parseInt(threshold));
-            let nonce = null;
-            try {
-              nonce = await allSafesContract.nonce();
-              console.log(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - nonce: " + parseInt(nonce));
-            } catch (e) {
-              console.error(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - nonce - error: " + e.message);
-            }
-            Vue.set(this.modalSafe.info, 'nonce', parseInt(nonce));
-
-            // TODO: 1.1.1 and 1.3.0
-            // if (safeVersion == 141) {
-              const logs = await provider.getLogs({
-                address: this.modalSafe.safe,
-                fromBlock: 0,
-                toBlock: latestBlockNumber,
-                topics: null,
-              });
-              // console.log(moment().format("HH:mm:ss") + " retrieveModalSafeEvents - logs: " + JSON.stringify(logs));
-              await this.processSafeEvents141(logs, factoryVersion, safeVersion);
-              await this.processSafeTxData(provider, chainId, factoryVersion, safeVersion);
-            // }
           },
 
           async syncBlockTimestamps(provider) {
