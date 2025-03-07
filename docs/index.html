@@ -1372,21 +1372,31 @@
                     // [ '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb', null, accountAs32Bytes, null ],
                     if (log.topics[0] == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef") {
                       if (log.topics.length == 3) {
-                        // ERC-20
-                        console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-20.Transfer[" + log.topics.length + "] - log: " + JSON.stringify(log));
+                        // ERC-20 Transfer (indexed address from, indexed address to, uint256 tokens)
+                        const from = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
+                        const to = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
+                        const tokens = ethers.BigNumber.from(log.data).toString();
+                        console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-20.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokens: " + tokens);
 
                       } else if (log.topics.length == 4) {
-                        // ERC-721
-                        console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-721.Transfer[" + log.topics.length + "] - log: " + JSON.stringify(log));
+                        // ERC-721 Transfer (indexed address from, indexed address to, indexed uint256 tokenId)
+                        const from = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
+                        const to = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
+                        const tokenId = ethers.BigNumber.from(log.topics[3]).toString();
+                        console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-721.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId);
                       }
 
                     } else if (log.topics[0] == "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62") {
-                      // ERC-1155
-                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.TransferSingle[" + log.topics.length + "] - log: " + JSON.stringify(log));
+                      // ERC-1155 TransferSingle (indexed address operator, indexed address from, indexed address to, uint256 tokenId, uint256 tokens)
+                      const logData = erc1155Interface.parseLog(log);
+                      const [operator, from, to, tokenId, tokens] = logData.args;
+                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.Transfer[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId + ", tokens: " + tokens);
 
                     } else if (log.topics[0] == "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb") {
-                      // ERC-1155
-                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.TransferBatch[" + log.topics.length + "] - log: " + JSON.stringify(log));
+                      // ERC-1155 TransferBatch (indexed address operator, indexed address from, indexed address to, uint256[] tokenIds, uint256[] tokenss)
+                      const logData = erc1155Interface.parseLog(log);
+                      const [operator, from, to, tokenIds, tokenss] = logData.args;
+                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.TransferBatch[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenIds: " + JSON.stringify(tokenIds) + ", tokenss: " + JSON.stringify(tokenss));
 
                     } else {
                       console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - Transfers/No Interface[" + log.topics.length + "] - log: " + JSON.stringify(log));
@@ -1592,6 +1602,7 @@
             this.sync.completed = 0;
             const safeInterface130 = new ethers.utils.Interface(SAFE_ABIS[130].gnosis_safe);
             const safeInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].gnosis_safe);
+            const erc1155Interface = new ethers.utils.Interface(ERC1155ABI);
 
             let safeAddress = null;
             let safeAddressAsBytes32 = null;
