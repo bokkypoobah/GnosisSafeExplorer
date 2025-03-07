@@ -210,6 +210,9 @@
             <div v-if="!sync.section" class="mt-0 pr-1">
               <b-button size="sm" @click="syncAllSafesEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
             </div>
+            <div v-if="!sync.section" class="mt-1 pr-1">
+              <b-form-checkbox size="sm" v-model="settings.devMode" @input="saveSettings();" v-b-popover.hover="'Dev Mode?'">Dev</b-form-checkbox>
+            </div>
             <div class="mt-0 flex-grow-1">
             </div>
             <div v-if="!sync.section" class="mt-0 pr-1">
@@ -571,6 +574,7 @@
 
           settings: {
             tabIndex: 0,
+            devMode: false,
             safesTable: {
               filter: null,
               currentPage: 1,
@@ -584,7 +588,7 @@
               pageSize: 15,
               sortOption: 'blocknumberdsc',
             },
-            version: 5,
+            version: 6,
           },
 
           modalSafe: {
@@ -1208,12 +1212,8 @@
             // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safesIndex 1: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
 
             const latest = await db.safeEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
-            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - latest: " + JSON.stringify(latest));
-            // const latest = null;
-            // TODO: TEST
-            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            // const startBlock = latestBlockNumber - 1000000;
-            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - latest: " + JSON.stringify(latest).substring(0, 100));
+            const startBlock = this.settings.devMode ? (latestBlockNumber - 1000000) : (latest ? parseInt(latest.blockNumber) + 1: 0);
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - startBlock: " + startBlock);
             await syncAllSafesEvents_getLogsFromRange(startBlock, latestBlockNumber);
