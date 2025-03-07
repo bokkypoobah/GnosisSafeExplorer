@@ -1312,19 +1312,21 @@
               for (const log of logs) {
                 if (!log.removed) {
                   // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - log: " + JSON.stringify(log, null, 2));
-                  let abiVersion = null;
+                  let event = null;
+                  let safeABIVersion = null;
                   if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
                     if (log.topics.length in SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]]) {
-                      abiVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
+                      safeABIVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
                     }
                   }
-                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - abiVersion: " + abiVersion);
+                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - safeABIVersion: " + safeABIVersion);
                   let logData = null;
-                  if (abiVersion) {
-                    if (abiVersion == 130) {
+                  if (safeABIVersion) {
+                    // Safe + Safe Factory events
+                    if (safeABIVersion == 130) {
                       logData = safeInterface130.parseLog(log);
                       // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logData 130: " + JSON.stringify(logData, null, 2));
-                    } else if (abiVersion == 141) {
+                    } else if (safeABIVersion == 141) {
                       logData = safeInterface141.parseLog(log);
                       // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logData 141: " + JSON.stringify(logData, null, 2));
                     } else {
@@ -1364,6 +1366,7 @@
                       }
                     }
                   } else {
+                    // ERC-20, ERC-721 and ERC-1155 Transfer* events
                     // ERC-20 & ERC-721 Transfer (indexed address from, indexed address to, indexed uint256 id)
                     // [ '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', null, accountAs32Bytes ],
                     // // ERC-1155 TransferSingle (indexed address _operator, indexed address _from, indexed address _to, uint256 _id, uint256 _value)
@@ -1376,31 +1379,78 @@
                         const from = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
                         const to = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
                         const tokens = ethers.BigNumber.from(log.data).toString();
-                        console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-20.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokens: " + tokens);
+                        // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-20.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokens: " + tokens);
+                        event = {
+                          name: "Transfer",
+                          signature: "Transfer(address,address,tokens)",
+                          version: 20,
+                          parameters: [
+                            { "name": "from", value: from, type: "address" },
+                            { "name": "to", value: to, type: "address" },
+                            { "name": "tokens", value: tokens, type: "uint256" },
+                          ],
+                        };
 
                       } else if (log.topics.length == 4) {
                         // ERC-721 Transfer (indexed address from, indexed address to, indexed uint256 tokenId)
                         const from = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
                         const to = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
                         const tokenId = ethers.BigNumber.from(log.topics[3]).toString();
-                        console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-721.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId);
+                        // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-721.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId);
+                        event = {
+                          name: "Transfer",
+                          signature: "Transfer(address,address,tokens)",
+                          version: 721,
+                          parameters: [
+                            { "name": "from", value: from, type: "address" },
+                            { "name": "to", value: to, type: "address" },
+                            { "name": "tokenId", value: tokenId, type: "uint256" },
+                          ],
+                        };
                       }
 
                     } else if (log.topics[0] == "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62") {
                       // ERC-1155 TransferSingle (indexed address operator, indexed address from, indexed address to, uint256 tokenId, uint256 tokens)
                       const logData = erc1155Interface.parseLog(log);
                       const [operator, from, to, tokenId, tokens] = logData.args;
-                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.Transfer[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId + ", tokens: " + tokens);
+                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.Transfer[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId + ", tokens: " + tokens);
+                      event = {
+                        name: "TransferSingle",
+                        signature: "TransferSingle(address,address,address,uint256,uint256)",
+                        version: 721,
+                        parameters: [
+                          { "name": "operator", value: operator, type: "address" },
+                          { "name": "from", value: from, type: "address" },
+                          { "name": "to", value: to, type: "address" },
+                          { "name": "tokenId", value: ethers.BigNumber.from(tokenId).toString(), type: "uint256" },
+                          { "name": "tokens", value: ethers.BigNumber.from(tokens).toString(), type: "uint256" },
+                        ],
+                      };
 
                     } else if (log.topics[0] == "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb") {
                       // ERC-1155 TransferBatch (indexed address operator, indexed address from, indexed address to, uint256[] tokenIds, uint256[] tokenss)
                       const logData = erc1155Interface.parseLog(log);
                       const [operator, from, to, tokenIds, tokenss] = logData.args;
-                      console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.TransferBatch[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenIds: " + JSON.stringify(tokenIds) + ", tokenss: " + JSON.stringify(tokenss));
-
+                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.TransferBatch[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenIds: " + JSON.stringify(tokenIds) + ", tokenss: " + JSON.stringify(tokenss));
+                      // TODO: Test, and convert tokenIds and tokenss from BigNumbers to Strings
+                      event = {
+                        name: "TransferBatch",
+                        signature: "TransferBatch(address,address,address,uint256[],uint256[])",
+                        version: 721,
+                        parameters: [
+                          { "name": "operator", value: operator, type: "address" },
+                          { "name": "from", value: from, type: "address" },
+                          { "name": "to", value: to, type: "address" },
+                          { "name": "tokenIds", value: tokenIds, type: "uint256[]" },
+                          { "name": "tokenss", value: tokenss, type: "uint256[]" },
+                        ],
+                      };
                     } else {
                       console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - Transfers/No Interface[" + log.topics.length + "] - log: " + JSON.stringify(log));
                     }
+                  }
+                  if (event) {
+                    console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - event: " + JSON.stringify(event));
                   }
                 }
               }
@@ -1744,7 +1794,7 @@
                   }
                 }
               }
-              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
