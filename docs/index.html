@@ -357,7 +357,7 @@
             <div class="mt-0 flex-grow-1">
             </div>
             <div class="mt-0 pl-1">
-              <b-form-select size="sm" v-model="settings.safeTxsTable.sortOption" @change="saveSettings" :options="safeEventsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+              <b-form-select size="sm" v-model="settings.safeTxsTable.sortOption" @change="saveSettings" :options="safeTxsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
             </div>
             <div class="mt-0 pl-1">
               <!-- <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safes'">{{ filteredSortedSafes.length + ' / ' + safes.length }}</font> -->
@@ -396,7 +396,42 @@
 
               </template>
               <template #cell(events)="data">
-                {{ data.item.safeLogs }}
+                <div v-for="(safeLog, index) of data.item.safeLogs" v-bind:key="index">
+                  <b-badge pill variant="transparent" v-b-popover.hover.bottom="'View in the explorer'">
+                    <b-link :href="'https://etherscan.io/tx/' + data.item.txHash + '#eventlog#' + safeLog.logIndex" target="_blank">
+                      <font size="-1">{{ safeLog.logIndex }}</font>
+                    </b-link>
+                  </b-badge>
+                  <b-badge pill variant="transparent" v-b-popover.hover.bottom="safeLog.signature">
+                    {{ safeLog.name }}
+                  </b-badge>
+                  <span v-for="(parameter, parameterIndex) of safeLog.parameters" v-bind:key="parameterIndex">
+                    <font size="-1" class="text-muted">
+                      {{ parameter.name }}
+                    </font>
+                    <b-badge v-if="parameter.type == 'address'" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + parameter.value + ' in the explorer'">
+                      <b-link :href="'https://etherscan.io/address/' + parameter.value" target="_blank">
+                        <font size="-1">{{ parameter.value }}</font>
+                      </b-link>
+                    </b-badge>
+                    <span v-else-if="parameter.type == 'address[]'">
+                      <span v-for="(address, addressIndex) of parameter.value" v-bind:key="addressIndex">
+                        <font v-if="addressIndex > 0" size="-1" class="text-muted">
+                          ,
+                        </font>
+                        <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + address + ' in the explorer'">
+                          <b-link :href="'https://etherscan.io/address/' + address" target="_blank">
+                            <font size="-1">{{ address.substring(0, 8) }}</font>
+                          </b-link>
+                        </b-badge>
+                      </span>
+                    </span>
+                    <b-badge v-else variant="transparent" class="px-0" v-b-popover.hover.bottom="parameter.type">
+                      {{ parameter.value }}
+                    </b-badge>
+                  </span>
+                  <br />
+                </div>
               </template>
               <template #cell(balance)="data">
                 {{ formatETH(data.item.balance, 0) }}
@@ -762,7 +797,7 @@
                 regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
               }
             }
-            if (this.settings.safe == this.safeData.address) {              
+            if (this.settings.safe == this.safeData.address) {
               for (const [blockNumber, blockData] of Object.entries(this.safeData.blocks || {})) {
                 for (const [txHash, txData] of Object.entries(blockData.txs || {})) {
                   let include = true;
@@ -809,7 +844,7 @@
             if (this.settings.safeTxsTable.sortOption == 'blocknumberasc') {
               results.sort((a, b) => {
                 if (a.blockNumber == b.blockNumber) {
-                  return a.logIndex - b.logIndex;
+                  return a.txIndex - b.txIndex;
                 } else {
                   return a.blockNumber - b.blockNumber;
                 }
@@ -817,7 +852,7 @@
             } else if (this.settings.safeTxsTable.sortOption == 'blocknumberdsc') {
               results.sort((a, b) => {
                 if (a.blockNumber == b.blockNumber) {
-                  return b.logIndex - a.logIndex;
+                  return b.txIndex - a.txIndex;
                 } else {
                   return b.blockNumber - a.blockNumber;
                 }
