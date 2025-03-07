@@ -488,7 +488,6 @@
           safes: [],          // index => [ safeAddress, factoryVersion, [ ownerIndex,... ], threshold, [ removedOwnerIndex, ... ], proxyCreationFromFactoryVersion, txHashIndex, blockNumber, logIndex, latestTxHashIndex ]
           safesIndex: {},     // safeAddress => index
 
-          // safeEvents: [],     // TODO: Delete Safe events
           safeData: [],       // blockNumber => { timestamp, txs: { ..., logs: { logIndex: eventData, ...} } }
 
           timestamps: {},     // blockNumber => Unix timestamp
@@ -576,10 +575,6 @@
           safeTxsFields: [
             { key: 'index', label: '#', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
             { key: 'info', label: 'Info', sortable: false, thStyle: 'width: 90%;', tdClass: 'text-truncate' },
-            // { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
-            // { key: 'safe', label: 'Safe', sortable: false, thStyle: 'width: 35%;', tdClass: 'text-truncate' },
-            // { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 35%;', tdClass: 'text-truncate' },
-            // { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
           ],
 
           safesFields: [
@@ -589,7 +584,6 @@
             { key: 'owners', label: 'Owners', sortable: false, thStyle: 'width: 40%;', tdClass: 'text-left' },
             { key: 'threshold', label: 'Threshold', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
             { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
-            // { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
           ],
 
           safeEventsFields: [
@@ -597,10 +591,6 @@
             { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
             { key: 'event', label: 'Event', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
             { key: 'parameters', label: 'Parameters', sortable: false, thStyle: 'width: 65%;', tdClass: 'text-left' },
-            // { key: 'owners', label: 'Owners', sortable: false, thStyle: 'width: 40%;', tdClass: 'text-left' },
-            // { key: 'threshold', label: 'Threshold', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
-            // { key: 'factory', label: 'Factory', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
-            // { key: 'chain', label: 'Chain', sortable: false, thStyle: 'width: 10%;', tdClass: 'text-truncate' },
           ],
 
           db: {
@@ -662,64 +652,6 @@
             }
             return results;
           },
-
-          // modalSafeTxs() {
-          //   // console.log(moment().format("HH:mm:ss") + " modalSafeTxs - this.modalSafe.events: " + JSON.stringify(this.modalSafe.events));
-          //   const results = [];
-          //   const collator = {};
-          //   for (const [blockNumber, blockData] of Object.entries(this.modalSafe.events)) {
-          //     for (const [txHash, txData] of Object.entries(blockData)) {
-          //       for (const [logIndex, logData] of Object.entries(txData)) {
-          //         // console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData));
-          //         if (!(txHash in collator)) {
-          //           collator[txHash] = {
-          //             blockNumber,
-          //             txIndex: logData.txIndex,
-          //             tx: this.txData[this.chainId] && this.txData[this.chainId][txHash] && this.txData[this.chainId][txHash].tx || null,
-          //             txReceipt: this.txData[this.chainId] && this.txData[this.chainId][txHash] && this.txData[this.chainId][txHash].txReceipt || null,
-          //             events: {},
-          //           };
-          //         }
-          //         if (!(logIndex in collator[txHash].events)) {
-          //           collator[txHash].events[logIndex] = {
-          //             ...logData,
-          //           };
-          //         }
-          //       }
-          //     }
-          //   }
-          //   // console.log(moment().format("HH:mm:ss") + " modalSafeTxs - collator: " + JSON.stringify(collator, null, 2));
-          //   for (const [txHash, txData] of Object.entries(collator)) {
-          //     results.push({ txHash, ...txData });
-          //   }
-          //   return results;
-          // },
-          // filteredSortedModalSafeTxs() {
-          //   const results = this.modalSafeTxs;
-          //   if (this.settings.safeTxsTable.sortOption == 'blocknumberasc') {
-          //     results.sort((a, b) => {
-          //       if (a.blockNumber == b.blockNumber) {
-          //         return a.txIndex - b.txIndex;
-          //       } else {
-          //         return a.blockNumber - b.blockNumber;
-          //       }
-          //     });
-          //   } else if (this.settings.safeTxsTable.sortOption == 'blocknumberdsc') {
-          //     results.sort((a, b) => {
-          //       if (a.blockNumber == b.blockNumber) {
-          //         return b.txIndex - a.txIndex;
-          //       } else {
-          //         return b.blockNumber - a.blockNumber;
-          //       }
-          //     });
-          //   }
-          //   return results;
-          // },
-          // pagedFilteredSortedModalSafeTxs() {
-          //   const results = this.filteredSortedModalSafeTxs.slice((this.settings.safeTxsTable.currentPage - 1) * this.settings.safeTxsTable.pageSize, this.settings.safeTxsTable.currentPage * this.settings.safeTxsTable.pageSize);
-          //   // console.log(moment().format("HH:mm:ss") + " pagedFilteredSortedModalSafeTxs - results: " + JSON.stringify(results, null, 2).substring(0, 1000));
-          //   return results;
-          // },
 
           filteredSortedSafes() {
             // console.log(moment().format("HH:mm:ss") + " filteredSortedSafes - filter: " + this.settings.safesTable.filter);
@@ -873,17 +805,9 @@
               this.settings.safe = item[0][0];
               this.settings.tabIndex = 1;
               this.saveSettings();
-              // this.modalSafe.chainId = item[0].chainId;
-              // this.modalSafe.safeAddressIndex = item[0].safeAddressIndex;
-              // this.modalSafe.safe = this.addresses[item[0].safeAddressIndex];
-              // this.modalSafe.blockNumber = item[0].blockNumber;
-              // this.modalSafe.logIndex = item[0].logIndex;
-              // this.modalSafe.txHashIndex = item[0].txHashIndex;
-              // this.modalSafe.factoryAddressIndex = item[0].factoryAddressIndex;
               // this.modalSafe.factory = this.addresses[item[0].factoryAddressIndex];
               // this.$bvModal.show('modal-safe');
               this.$refs.safesTable.clearSelected();
-              // this.retrieveModalSafeEvents();
               await this.loadSafe();
             }
           },
@@ -1196,8 +1120,8 @@
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            const startBlock = latestBlockNumber - 1000000;
-            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            // const startBlock = latestBlockNumber - 1000000;
+            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await retrieveSafeEvents_getLogsFromRange(startBlock, latestBlockNumber);
@@ -1318,8 +1242,6 @@
                     console.error(moment().format("HH:mm:ss") + " loadSafe_processLogs - No Interface - log: " + JSON.stringify(log));
                   }
                   if (logData) {
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - name: " + logData.name);
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - signature: " + logData.signature + ", abiVersion: " + abiVersion);
                     const parameters = [];
                     for (let [i, value] of logData.args.entries()) {
                       const type = logData.eventFragment.inputs[i].type;
@@ -1328,10 +1250,6 @@
                       }
                       parameters.push({ value, name: logData.eventFragment.inputs[i].name, type });
                     }
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - " + abiVersion + "." + logData.name + ": " + JSON.stringify(parameters));
-                    // const blockNumber = parseInt(log.blockNumber);
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - blockNumber: " + blockNumber);
-
                     if (!(log.blockNumber in safeData.blocks)) {
                       safeData.blocks[log.blockNumber] = {
                         timestamp: null,
@@ -1354,19 +1272,6 @@
                         parameters,
                       };
                     }
-
-                    // safeEvents.push({
-                    //   blockNumber: parseInt(log.blockNumber),
-                    //   txIndex: parseInt(log.transactionIndex),
-                    //   txHash: log.transactionHash,
-                    //   logIndex: parseInt(log.logIndex),
-                    //   address: log.address,
-                    //   safe: log.address,
-                    //   name: logData.name,
-                    //   signature: logData.signature,
-                    //   parameters,
-                    // });
-                    // console.log(moment().format("HH:mm:ss") + " loadSafe_processLogs - records: " + JSON.stringify(records));
                   }
                 }
               }
@@ -1475,6 +1380,8 @@
               threshold: null,
               blocks: {},
             };
+            // TODO:
+            // const safeData = defaultSafeData;
             const safeData = safeAddress ? (await this.getCachedData("safeData_" + safeAddress, db, chainId, defaultSafeData)) : defaultSafeData;
             console.log(moment().format("HH:mm:ss") + " loadSafe - safeData 1: " + JSON.stringify(safeData).substring(0, 1000) + "...");
 
@@ -1490,7 +1397,7 @@
               if (!safeData.version) {
                 try {
                   safeData.version = await allSafesContract.VERSION();
-                  console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.version: " + safeData.version);
+                  // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.version: " + safeData.version);
                 } catch (e) {
                   console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.version - error: " + e.message);
                 }
@@ -1498,7 +1405,7 @@
               if (!safeData.implementation) {
                 try {
                   safeData.implementation = ethers.utils.getAddress('0x' + (await allSafesContract.getStorageAt(0, 1)).substring(26, 66));
-                  console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.implementation: " + safeData.implementation);
+                  // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.implementation: " + safeData.implementation);
                 } catch (e) {
                   console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.implementation - error: " + e.message);
                 }
@@ -1506,7 +1413,7 @@
               if (!safeData.owners) {
                 try {
                   safeData.owners = await allSafesContract.getOwners();
-                  console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.owners: " + JSON.stringify(safeData.owners));
+                  // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.owners: " + JSON.stringify(safeData.owners));
                 } catch (e) {
                   console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.owners - error: " + e.message);
                 }
@@ -1514,7 +1421,7 @@
               if (!safeData.threshold) {
                 try {
                   safeData.threshold = parseInt(await allSafesContract.getThreshold());
-                  console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.threshold: " +  + safeData.threshold);
+                  // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.threshold: " +  + safeData.threshold);
                 } catch (e) {
                   console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.threshold - error: " + e.message);
                 }
@@ -1523,19 +1430,18 @@
 
             if (safeAddress) {
               await loadSafe_getLogsFromRange(0, latestBlockNumber);
-              console.log(moment().format("HH:mm:ss") + " loadSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
+              // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
 
             if (safeAddress && !this.sync.halt) {
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
-                console.log(blockNumber + " => " + JSON.stringify(blockData));
                 if (!blockData.timestamp) {
                   try {
                     const block = await provider.getBlock(parseInt(blockNumber));
                     safeData.blocks[blockNumber].timestamp = parseInt(block.timestamp);
-                    console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.blocks[" + blockNumber + "].timestamp: " +  safeData.blocks[blockNumber].timestamp);
+                    console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.blocks[" + blockNumber + "].timestamp: " + safeData.blocks[blockNumber].timestamp);
                   } catch (e) {
                     console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.timestamp - error: " + e.message);
                   }
@@ -1546,7 +1452,53 @@
               Vue.set(this, 'safeData', safeData);
             }
 
-            // TODO: Get transactions
+            if (safeAddress && !this.sync.halt) {
+              for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
+                for (const [txHash, txData] of Object.entries(blockData.txs)) {
+                  console.log(blockNumber + "/" + txHash + " => " + JSON.stringify(txData));
+                  if (!txData.tx) {
+                    try {
+                      const tx = await provider.getTransaction(txHash);
+                      safeData.blocks[blockNumber].txs[txHash].tx = {
+                        blockNumber: tx.blockNumber,
+                        type: tx.type || null,
+                        from: tx.from,
+                        nonce: parseInt(tx.nonce),
+                        to: tx.to,
+                        data: tx.data,
+                        gasPrice: ethers.BigNumber.from(tx.gasPrice).toString(),
+                        maxPriorityFeePerGas: tx.maxPriorityFeePerGas && ethers.BigNumber.from(tx.maxPriorityFeePerGas).toString() || null,
+                        gasLimit: parseInt(tx.gasLimit),
+                      };
+                      // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.blocks[" + blockNumber + "].txs: " + JSON.stringify(safeData.blocks[blockNumber].txs[txHash]));
+                    } catch (e) {
+                      console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.timestamp - error: " + e.message);
+                    }
+                  }
+                  if (!txData.txReceipt) {
+                    try {
+                      const txReceipt = await provider.getTransactionReceipt(txHash);
+                      safeData.blocks[blockNumber].txs[txHash].txReceipt = {
+                        type: parseInt(txReceipt.type),
+                        contractAddress: txReceipt.contractAddress,
+                        gasUsed: parseInt(txReceipt.gasUsed),
+                        cumulativeGasUsed: parseInt(txReceipt.cumulativeGasUsed),
+                        effectiveGasPrice: txReceipt.effectiveGasPrice && parseInt(txReceipt.effectiveGasPrice) || null,
+                        status: parseInt(txReceipt.status),
+                        logs: txReceipt.logs,
+                      };
+                      // console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.blocks[" + blockNumber + "].txs: " + JSON.stringify(safeData.blocks[blockNumber].txs[txHash]));
+                    } catch (e) {
+                      console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.timestamp - error: " + e.message);
+                    }
+                  }
+                }
+              }
+              console.log(moment().format("HH:mm:ss") + " loadSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 10000) + "...");
+              await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
+              Vue.set(this, 'safeData', safeData);
+            }
+
             db.close();
             this.sync.section = null;
             this.sync.halt = false;
