@@ -359,13 +359,13 @@
             <div class="mt-0 pl-1">
               <b-form-select size="sm" v-model="settings.safeTxsTable.sortOption" @change="saveSettings" :options="safeEventsSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
             </div>
-            <!-- <div class="mt-0 pl-1"> -->
+            <div class="mt-0 pl-1">
               <!-- <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safes'">{{ filteredSortedSafes.length + ' / ' + safes.length }}</font> -->
-              <!-- <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safe Events'">{{ safeEvents.length }}</font> -->
-            <!-- </div> -->
-            <!-- <div class="mt-0 pl-1">
-              <b-pagination size="sm" v-model="settings.safeTxsTable.currentPage" @input="saveSettings" :total-rows="safeEvents.length" :per-page="settings.safeTxsTable.pageSize" style="height: 0;"></b-pagination>
-            </div> -->
+              <font size="-2" v-b-popover.hover.bottom="'# Transaction'">{{ filteredSortedSafeTxs.length }}</font>
+            </div>
+            <div class="mt-0 pl-1">
+              <b-pagination size="sm" v-model="settings.safeTxsTable.currentPage" @input="saveSettings" :total-rows="filteredSortedSafeTxs.length" :per-page="settings.safeTxsTable.pageSize" style="height: 0;"></b-pagination>
+            </div>
             <div class="mt-0 pl-1">
               <b-form-select size="sm" v-model="settings.safeTxsTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
             </div>
@@ -380,18 +380,26 @@
                 </font>
               </template>
               <template #cell(when)="data">
-                <!-- <b-link :href="'https://etherscan.io/tx/' + data.item.txHash + '#eventlog#' + data.item.logIndex" target="_blank"> -->
+                <b-link :href="'https://etherscan.io/tx/' + data.item.txHash" target="_blank">
                   <b-badge variant="transparent" class="px-0" v-b-popover.hover.bottom="'Unix timestamp: ' + data.item.timestamp">
                     {{ data.item.timestamp ? formatTimestamp(data.item.timestamp) : data.item.blockNumber }}
                   </b-badge>
-                <!-- </b-link> -->
-                <!-- <font size="-2" class="text-muted">
-                  {{ data.item.txIndex }}
-                </font> -->
+                </b-link>
+                <br />
+                <font size="-2" class="text-muted" v-b-popover.hover.bottom="'[Block Number:] Transaction index'">
+                  {{ data.item.timestamp ? (data.item.blockNumber + ':' + data.item.txIndex) : data.item.txIndex }}
+                </font>
+                <br />
+                <font size="-2" class="text-muted" v-b-popover.hover.bottom="'Tx Hash'">
+                  {{ data.item.txHash }}
+                </font>
 
               </template>
-              <template #cell(info)="data">
-                {{ data.item }}
+              <template #cell(events)="data">
+                {{ data.item.safeLogs }}
+              </template>
+              <template #cell(balance)="data">
+                {{ formatETH(data.item.balance, 0) }}
               </template>
               <template #cell(event)="data">
                 <b-badge variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.signature">
@@ -597,16 +605,10 @@
 
           safeTxsFields: [
             { key: 'index', label: '#', sortable: false, thStyle: 'width: 7%;', tdClass: 'text-truncate' },
-            { key: 'when', label: 'When', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-left' },
-            { key: 'info', label: 'Info', sortable: false, thStyle: 'width: 80%;', tdClass: 'text-left' },
+            { key: 'when', label: 'When', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
+            { key: 'events', label: 'Events', sortable: false, thStyle: 'width: 65%;', tdClass: 'text-left' },
+            { key: 'balance', label: 'Balance', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-left' },
           ],
-
-          // safeEventsFields: [
-          //   { key: 'index', label: '#', sortable: false, thStyle: 'width: 7%;', tdClass: 'text-truncate' },
-          //   { key: 'blockNumber', label: 'Block # / Log Index', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
-          //   { key: 'event', label: 'Event', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-truncate' },
-          //   { key: 'parameters', label: 'Parameters', sortable: false, thStyle: 'width: 65%;', tdClass: 'text-left' },
-          // ],
 
           db: {
             name: "gnosissafeexplorer088i",
@@ -760,45 +762,47 @@
                 regex = new RegExp(/thequickbrowndogjumpsoverthelazyfox/, 'i');
               }
             }
-            for (const [blockNumber, blockData] of Object.entries(this.safeData.blocks || {})) {
-              for (const [txHash, txData] of Object.entries(blockData.txs || {})) {
-                let include = true;
-                const safeLogs = [];
-                for (const [logIndex, logData] of Object.entries(txData.logs || {})) {
-                  console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData).substring(0, 1000) + "...");
-                  // if (regex) {
-                  //   if (!(regex.test(safe[0]))) {
-                  //     include = false;
-                  //   }
-                  // }
-                  // if (filter) {
-                  //   // const safeAddress = this.addresses[safe.safeAddressIndex];
-                  //   if (safe[0].indexOf(filter) < 0) {
-                  //     include = false;
-                  //   }
-                  // }
-                  safeLogs.push({
-                    logIndex,
-                    address: logData.address,
-                    name: logData.name,
-                    signature: logData.signature,
-                    parameters: logData.parameters,
-                  });
-                }
-                if (include) {
-                  safeLogs.sort((a, b) => {
-                    return a.logIndex - b.logIndex;
-                  });
-                  results.push({
-                    blockNumber,
-                    timestamp: blockData.timestamp,
-                    balance: blockData.balance,
-                    txIndex: txData.txIndex,
-                    txHash,
-                    tx: txData.tx,
-                    txReceipt: txData.txReceipt,
-                    safeLogs,
-                  });
+            if (this.settings.safe == this.safeData.address) {              
+              for (const [blockNumber, blockData] of Object.entries(this.safeData.blocks || {})) {
+                for (const [txHash, txData] of Object.entries(blockData.txs || {})) {
+                  let include = true;
+                  const safeLogs = [];
+                  for (const [logIndex, logData] of Object.entries(txData.logs || {})) {
+                    console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData).substring(0, 1000) + "...");
+                    // if (regex) {
+                    //   if (!(regex.test(safe[0]))) {
+                    //     include = false;
+                    //   }
+                    // }
+                    // if (filter) {
+                    //   // const safeAddress = this.addresses[safe.safeAddressIndex];
+                    //   if (safe[0].indexOf(filter) < 0) {
+                    //     include = false;
+                    //   }
+                    // }
+                    safeLogs.push({
+                      logIndex,
+                      address: logData.address,
+                      name: logData.name,
+                      signature: logData.signature,
+                      parameters: logData.parameters,
+                    });
+                  }
+                  if (include) {
+                    safeLogs.sort((a, b) => {
+                      return a.logIndex - b.logIndex;
+                    });
+                    results.push({
+                      blockNumber,
+                      timestamp: blockData.timestamp,
+                      balance: blockData.balance,
+                      txIndex: txData.txIndex,
+                      txHash,
+                      tx: txData.tx,
+                      txReceipt: txData.txReceipt,
+                      safeLogs,
+                    });
+                  }
                 }
               }
             }
@@ -1658,9 +1662,9 @@
           formatETH(e, precision = 9) {
             try {
               if (precision == 0) {
-                return e ? ethers.utils.formatEther(e) : null;
+                return e ? ethers.utils.formatEther(e).replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",") : null;
               } else {
-                return e ? parseFloat(ethers.utils.formatEther(e)).toFixed(precision) : null;
+                return e ? parseFloat(ethers.utils.formatEther(e)).toFixed(precision).replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",") : null;
               }
             } catch (err) {
             }
