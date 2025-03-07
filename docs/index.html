@@ -1212,7 +1212,7 @@
             // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safesIndex 1: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
 
             const latest = await db.safeEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
-            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - latest: " + JSON.stringify(latest).substring(0, 100));
+            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - latest: " + (latest && JSON.stringify(latest).substring(0, 100) || null));
             const startBlock = this.settings.devMode ? (latestBlockNumber - 1000000) : (latest ? parseInt(latest.blockNumber) + 1: 0);
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - startBlock: " + startBlock);
@@ -1436,10 +1436,32 @@
                 },
                 // ERC-20 & ERC-721 Transfer (indexed address from, indexed address to, indexed uint256 id)
                 // [ '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', null, accountAs32Bytes ],
+                // // ERC-1155 TransferSingle (indexed address _operator, indexed address _from, indexed address _to, uint256 _id, uint256 _value)
+                // [ '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62', null, accountAs32Bytes, null ],
+                // // ERC-1155 TransferBatch (indexed address operator, indexed address from, indexed address to, uint256[] ids, uint256[] values)
+                // [ '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb', null, accountAs32Bytes, null ],
                 {
                   address: null,
-                  topics: [
-                    '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+                  topics: [[
+                      '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+                      '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62',
+                      '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb',
+                    ],
+                    null,
+                    safeAddressAsBytes32,
+                  ],
+                },
+                // // ERC-1155 TransferSingle (indexed address _operator, indexed address _from, indexed address _to, uint256 _id, uint256 _value)
+                // [ '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62', null, null, accountAs32Bytes ],
+                // // ERC-1155 TransferBatch (indexed address operator, indexed address from, indexed address to, uint256[] ids, uint256[] values)
+                // [ '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb', null, null, accountAs32Bytes ],
+                {
+                  address: null,
+                  topics: [[
+                      '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62',
+                      '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb',
+                    ],
+                    null,
                     null,
                     safeAddressAsBytes32,
                   ],
@@ -1610,6 +1632,7 @@
               await syncSafe_getSafeLogsFromRange(0, 0, latestBlockNumber);
               await syncSafe_getSafeLogsFromRange(1, 0, latestBlockNumber);
               await syncSafe_getSafeLogsFromRange(2, 0, latestBlockNumber);
+              await syncSafe_getSafeLogsFromRange(3, 0, latestBlockNumber);
               // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
