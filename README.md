@@ -34,21 +34,29 @@ Web3 dapp: https://bokkypoobah.github.io/GnosisSafeExplorer/ connected to Ethere
 
 ### Sample Screens
 
-Syncing. There will be errors reported in the Developer Pane.
+Fresh screen. If not working as expected, click [Reset Data] or manually remove the IndexedDB database from within your browser's Developer pane.
 
-<kbd><img src="images/SampleScreen01.png" width="800" /></kbd>
+<kbd><img src="images/SampleScreen01.png?" width="800" /></kbd>
 
-251,111 v1.3.0 and v1.4.1 Gnosis Safes have been deployed at this time. Syncing takes ~ 7 minutes
+Click [Sync]. There will be errors reported in the Developer Pane.
 
-<kbd><img src="images/SampleScreen02.png" width="800" /></kbd>
+<kbd><img src="images/SampleScreen02.png?" width="800" /></kbd>
 
-Search by Safe address. The second address in the dropdown is not working at the moment.
+251,905 Safes have been deployed by Gnosis Safe Factories v1.3.0 and v1.4.1 at this time. Syncing takes ~ 7 minutes
 
-<kbd><img src="images/SampleScreen03.png" width="800" /></kbd>
+<kbd><img src="images/SampleScreen03.png?" width="800" /></kbd>
 
-Search by Safe address, or fragment
+Select `EF: DeFi Multisig` at [0x9fC3dc011b461664c835F2527fffb1169b3C213e](https://etherscan.io/address/0x9fC3dc011b461664c835F2527fffb1169b3C213e) in the dropdown
 
-<kbd><img src="images/SampleScreen04.png" width="800" /></kbd>
+<kbd><img src="images/SampleScreen04.png?" width="800" /></kbd>
+
+Click on the row. You may have to refresh the browser page for the row clicking to work due to a UI bug
+
+<kbd><img src="images/SampleScreen05.png" width="800" /></kbd>
+
+View the Safe events
+
+<kbd><img src="images/SampleScreen06.png" width="800" /></kbd>
 
 
 <br />

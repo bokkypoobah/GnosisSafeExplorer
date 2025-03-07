@@ -659,7 +659,7 @@
           ],
 
           db: {
-            name: "gnosissafeexplorer088i",
+            name: "gnosissafeexplorer088j",
             version: 1,
             schemaDefinition: {
               safeFactoryEvents: '[chainId+blockNumber+logIndex],safe,factory',
@@ -1212,8 +1212,8 @@
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            const startBlock = latestBlockNumber - 1000000;
-            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            // const startBlock = latestBlockNumber - 1000000;
+            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await retrieveSafeEvents_getLogsFromRange(startBlock, latestBlockNumber);
