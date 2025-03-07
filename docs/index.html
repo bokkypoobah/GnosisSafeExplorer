@@ -1120,8 +1120,8 @@
             // const latest = null;
             // TODO: TEST
             // const startBlock = latest ? parseInt(latest.blockNumber) + 1: latestBlockNumber - 1000;
-            // const startBlock = latestBlockNumber - 1000000;
-            const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
+            const startBlock = latestBlockNumber - 1000000;
+            // const startBlock = latest ? parseInt(latest.blockNumber) + 1: 0;
             this.sync.completed = startBlock;
             console.log(moment().format("HH:mm:ss") + " retrieveSafeEvents - startBlock: " + startBlock);
             await retrieveSafeEvents_getLogsFromRange(startBlock, latestBlockNumber);
@@ -1253,6 +1253,7 @@
                     if (!(log.blockNumber in safeData.blocks)) {
                       safeData.blocks[log.blockNumber] = {
                         timestamp: null,
+                        balance: null,
                         txs: {},
                       };
                     }
@@ -1444,6 +1445,15 @@
                     console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.blocks[" + blockNumber + "].timestamp: " + safeData.blocks[blockNumber].timestamp);
                   } catch (e) {
                     console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.timestamp - error: " + e.message);
+                  }
+                }
+                if (!blockData.balance) {
+                  try {
+                    const balance = await provider.getBalance(safeAddress, parseInt(blockNumber));
+                    safeData.blocks[blockNumber].balance = ethers.BigNumber.from(balance).toString();
+                    console.log(moment().format("HH:mm:ss") + " loadSafe - safeData.blocks[" + blockNumber + "].balance: " + safeData.blocks[blockNumber].balance);
+                  } catch (e) {
+                    console.error(moment().format("HH:mm:ss") + " loadSafe - safeData.balance - error: " + e.message);
                   }
                 }
               }
