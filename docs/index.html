@@ -1305,8 +1305,8 @@
 
           async syncSafe() {
 
-            async function syncSafe_processSafeLogs(fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+            async function syncSafe_processSafeLogs(section, fromBlock, toBlock, logs) {
+              console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - section: " + section + ", fromBlock: " + fromBlock + ", toBlock: " + toBlock);
               // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logs: " + JSON.stringify(logs, null, 2));
               for (const log of logs) {
                 if (!log.removed) {
@@ -1365,8 +1365,8 @@
               }
             }
 
-            async function syncSafe_getSafeLogsFromRange(fromBlock, toBlock) {
-              console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+            async function syncSafe_getSafeLogsFromRange(section, fromBlock, toBlock) {
+              console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeLogsFromRange - section: " + section + ", fromBlock: " + fromBlock + ", toBlock: " + toBlock);
               try {
                 const logs = await provider.getLogs({
                   address: t.settings.safe,
@@ -1426,14 +1426,14 @@
                     ],
                   ],
                 });
-                await syncSafe_processSafeLogs(fromBlock, toBlock, logs);
+                await syncSafe_processSafeLogs(section, fromBlock, toBlock, logs);
                 // console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
                 t.sync.completed = toBlock;
               } catch (e) {
                 console.error(moment().format("HH:mm:ss") + " syncSafe_getSafeLogsFromRange - Error: " + e.message);
                 const mid = parseInt((fromBlock + toBlock) / 2);
-                await syncSafe_getSafeLogsFromRange(fromBlock, mid);
-                await syncSafe_getSafeLogsFromRange(parseInt(mid) + 1, toBlock);
+                await syncSafe_getSafeLogsFromRange(section, fromBlock, mid);
+                await syncSafe_getSafeLogsFromRange(section, parseInt(mid) + 1, toBlock);
               }
             }
 
@@ -1518,7 +1518,7 @@
             }
 
             if (safeAddress) {
-              await syncSafe_getSafeLogsFromRange(0, latestBlockNumber);
+              await syncSafe_getSafeLogsFromRange(0, 0, latestBlockNumber);
               // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
