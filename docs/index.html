@@ -313,6 +313,9 @@
             <div v-if="!sync.section" class="mt-0 pr-1">
               <b-button size="sm" @click="syncSafe()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
             </div>
+            <div v-if="!sync.section" class="mt-1 pr-1">
+              <b-form-checkbox size="sm" v-model="settings.devMode" @input="saveSettings();" v-b-popover.hover="'Dev Mode?'">Dev</b-form-checkbox>
+            </div>
             <div v-if="sync.section != null" class="mt-0 pr-1">
               <b-progress height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 18.0rem;">
                 <b-progress-bar :value="sync.completed">
@@ -1434,6 +1437,18 @@
                     } else {
                       console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - Transfers/No Interface[" + log.topics.length + "] - log: " + JSON.stringify(log));
                     }
+                    if (event) {
+                      if (!(log.address in safeData.tokens)) {
+                        safeData.tokens[log.address] = {
+                          type: event.version,
+                          symbol: null,
+                          name: null,
+                          decimals: null,
+                          tokens: {},
+                        };
+                        console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - added token: " + log.address + " => " + JSON.stringify(safeData.tokens[log.address], null, 2));
+                      }
+                    }
                   }
                   if (event) {
                     // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - event: " + JSON.stringify(event));
@@ -1621,7 +1636,7 @@
             };
             // TODO: Testing
             // const safeData = defaultSafeData;
-            const safeData = safeAddress ? (await this.getCachedData("safeData_" + safeAddress, db, chainId, defaultSafeData)) : defaultSafeData;
+            const safeData = this.settings.devMode ? defaultSafeData : (safeAddress ? (await this.getCachedData("safeData_" + safeAddress, db, chainId, defaultSafeData)) : defaultSafeData);
             // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 1: " + JSON.stringify(safeData).substring(0, 1000) + "...");
 
             if (safeAddress) {
