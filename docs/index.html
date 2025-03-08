@@ -320,6 +320,9 @@
                 </b-progress-bar>
               </b-progress>
             </div>
+            <div v-if="sync.section != null" class="ml-0 mt-1">
+              <b-button size="sm" @click="halt" variant="link" v-b-popover.hover.top="'Click to stop. This process can be continued later'"><b-icon-stop-fill shift-v="+1" font-scale="1.0"></b-icon-stop-fill></b-button>
+            </div>
             <div class="mt-0 flex-grow-1">
             </div>
             <div v-if="safe[3]" class="mt-0 pr-1">
@@ -1306,12 +1309,12 @@
 
           async syncSafe() {
 
-            async function syncSafe_processSafeLogs(section, fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - section: " + section + ", fromBlock: " + fromBlock + ", toBlock: " + toBlock);
-              // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logs: " + JSON.stringify(logs, null, 2));
+            async function syncSafe_processSafeAndTokenLogs(section, fromBlock, toBlock, logs) {
+              console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - section: " + section + ", fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+              // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - logs: " + JSON.stringify(logs, null, 2));
               for (const log of logs) {
                 if (!log.removed) {
-                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - log: " + JSON.stringify(log, null, 2));
+                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - log: " + JSON.stringify(log, null, 2));
                   let event = null;
                   let safeABIVersion = null;
                   if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
@@ -1319,18 +1322,18 @@
                       safeABIVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
                     }
                   }
-                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - safeABIVersion: " + safeABIVersion);
+                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - safeABIVersion: " + safeABIVersion);
                   let logData = null;
                   if (safeABIVersion) {
                     // Safe + Safe Factory events
                     if (safeABIVersion == 130) {
                       logData = safeInterface130.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logData 130: " + JSON.stringify(logData, null, 2));
+                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - logData 130: " + JSON.stringify(logData, null, 2));
                     } else if (safeABIVersion == 141) {
                       logData = safeInterface141.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - logData 141: " + JSON.stringify(logData, null, 2));
+                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - logData 141: " + JSON.stringify(logData, null, 2));
                     } else {
-                      console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - No Interface - log: " + JSON.stringify(log));
+                      console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - No Interface - log: " + JSON.stringify(log));
                     }
                     if (logData) {
                       const parameters = [];
@@ -1363,7 +1366,7 @@
                         const from = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
                         const to = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
                         const tokens = ethers.BigNumber.from(log.data).toString();
-                        // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-20.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokens: " + tokens);
+                        // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - ERC-20.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokens: " + tokens);
                         event = {
                           address: log.address,
                           version: 20,
@@ -1381,7 +1384,7 @@
                         const from = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
                         const to = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
                         const tokenId = ethers.BigNumber.from(log.topics[3]).toString();
-                        // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-721.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId);
+                        // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - ERC-721.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId);
                         event = {
                           address: log.address,
                           version: 721,
@@ -1399,7 +1402,7 @@
                       // ERC-1155 TransferSingle(indexed address operator, indexed address from, indexed address to, uint256 tokenId, uint256 tokens)
                       const logData = erc1155Interface.parseLog(log);
                       const [operator, from, to, tokenId, tokens] = logData.args;
-                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.Transfer[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId + ", tokens: " + tokens);
+                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - ERC-1155.Transfer[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId + ", tokens: " + tokens);
                       event = {
                         address: log.address,
                         version: 1155,
@@ -1418,7 +1421,7 @@
                       // ERC-1155 TransferBatch(indexed address operator, indexed address from, indexed address to, uint256[] tokenIds, uint256[] tokenss)
                       const logData = erc1155Interface.parseLog(log);
                       const [operator, from, to, tokenIds, tokenss] = logData.args;
-                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.TransferBatch[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenIds: " + JSON.stringify(tokenIds) + ", tokenss: " + JSON.stringify(tokenss));
+                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - ERC-1155.TransferBatch[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenIds: " + JSON.stringify(tokenIds) + ", tokenss: " + JSON.stringify(tokenss));
                       // TODO: Test, and convert tokenIds and tokenss from BigNumbers to Strings
                       event = {
                         address: log.address,
@@ -1434,11 +1437,11 @@
                         ],
                       };
                     } else {
-                      console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - Transfers/No Interface[" + log.topics.length + "] - log: " + JSON.stringify(log));
+                      console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - Transfers/No Interface[" + log.topics.length + "] - log: " + JSON.stringify(log));
                     }
                   }
                   if (event) {
-                    console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - event: " + JSON.stringify(event));
+                    // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - event: " + JSON.stringify(event));
                     if (!(log.blockNumber in safeData.blocks)) {
                       safeData.blocks[log.blockNumber] = {
                         timestamp: null,
@@ -1464,12 +1467,13 @@
                       // };
                     }
                   }
+                  t.sync.completed++;
                 }
               }
             }
 
-            async function syncSafe_getSafeLogsFromRange(section, fromBlock, toBlock) {
-              console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeLogsFromRange - section: " + section + ", fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+            async function syncSafe_getSafeAndTokenLogsFromRange(section, fromBlock, toBlock) {
+              console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeAndTokenLogsFromRange - section: " + section + ", fromBlock: " + fromBlock + ", toBlock: " + toBlock);
               const sections = [
                 // All Safe events
                 // // 1.1.1 event ProxyCreation(Proxy proxy)
@@ -1576,7 +1580,7 @@
                   toBlock,
                   topics: sections[section].topics,
                 });
-                // console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
+                // console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeAndTokenLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
 
                 // const logs = await provider.getLogs({
                 //   address: safeAddress,
@@ -1636,14 +1640,13 @@
                 //     ],
                 //   ],
                 // });
-                await syncSafe_processSafeLogs(section, fromBlock, toBlock, logs);
-                // console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
-                t.sync.completed = toBlock;
+                await syncSafe_processSafeAndTokenLogs(section, fromBlock, toBlock, logs);
+                // console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeAndTokenLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
               } catch (e) {
-                console.error(moment().format("HH:mm:ss") + " syncSafe_getSafeLogsFromRange - Error: " + e.message);
+                console.error(moment().format("HH:mm:ss") + " syncSafe_getSafeAndTokenLogsFromRange - Error: " + e.message);
                 const mid = parseInt((fromBlock + toBlock) / 2);
-                await syncSafe_getSafeLogsFromRange(section, fromBlock, mid);
-                await syncSafe_getSafeLogsFromRange(section, parseInt(mid) + 1, toBlock);
+                await syncSafe_getSafeAndTokenLogsFromRange(section, fromBlock, mid);
+                await syncSafe_getSafeAndTokenLogsFromRange(section, parseInt(mid) + 1, toBlock);
               }
             }
 
@@ -1659,8 +1662,8 @@
             const block = await provider.getBlock();
             const latestBlockNumber = block && block.number || null;
             console.log(moment().format("HH:mm:ss") + " syncSafe - latestBlockNumber: " + latestBlockNumber);
-            this.sync.section = "Syncing Events";
-            this.sync.total = latestBlockNumber;
+            this.sync.section = "Safe";
+            this.sync.total = null;
             this.sync.completed = 0;
             const safeInterface130 = new ethers.utils.Interface(SAFE_ABIS[130].gnosis_safe);
             const safeInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].gnosis_safe);
@@ -1698,51 +1701,55 @@
                 "function getStorageAt(uint256 offset, uint256 length) public view returns (bytes memory)",
               ];
               const allSafesContract = new ethers.Contract(safeAddress, allSafesAbi, provider);
-              if (!safeData.version) {
-                try {
-                  safeData.version = await allSafesContract.VERSION();
-                  // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.version: " + safeData.version);
-                } catch (e) {
-                  console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.version - error: " + e.message);
-                }
+              try {
+                safeData.version = await allSafesContract.VERSION();
+              } catch (e) {
+                console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.version - error: " + e.message);
               }
-              // if (!safeData.implementation) {
-                try {
-                  safeData.implementation = ethers.utils.getAddress('0x' + (await allSafesContract.getStorageAt(0, 1)).substring(26, 66));
-                  // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.implementation: " + safeData.implementation);
-                } catch (e) {
-                  console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.implementation - error: " + e.message);
-                }
-              // }
-              // if (!safeData.owners) {
-                try {
-                  safeData.owners = await allSafesContract.getOwners();
-                  // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.owners: " + JSON.stringify(safeData.owners));
-                } catch (e) {
-                  console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.owners - error: " + e.message);
-                }
-              // }
-              // if (!safeData.threshold) {
-                try {
-                  safeData.threshold = parseInt(await allSafesContract.getThreshold());
-                  // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.threshold: " +  + safeData.threshold);
-                } catch (e) {
-                  console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.threshold - error: " + e.message);
-                }
-              // }
+              this.sync.completed++;
+              try {
+                safeData.implementation = ethers.utils.getAddress('0x' + (await allSafesContract.getStorageAt(0, 1)).substring(26, 66));
+              } catch (e) {
+                console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.implementation - error: " + e.message);
+              }
+              this.sync.completed++;
+              try {
+                safeData.owners = await allSafesContract.getOwners();
+              } catch (e) {
+                console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.owners - error: " + e.message);
+              }
+              this.sync.completed++;
+              try {
+                safeData.threshold = parseInt(await allSafesContract.getThreshold());
+              } catch (e) {
+                console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.threshold - error: " + e.message);
+              }
+              this.sync.completed++;
             }
 
             if (safeAddress) {
-              await syncSafe_getSafeLogsFromRange(0, 0, latestBlockNumber);
-              await syncSafe_getSafeLogsFromRange(1, 0, latestBlockNumber);
-              await syncSafe_getSafeLogsFromRange(2, 0, latestBlockNumber);
-              await syncSafe_getSafeLogsFromRange(3, 0, latestBlockNumber);
+              this.sync.section = "Safe Events";
+              await syncSafe_getSafeAndTokenLogsFromRange(0, 0, latestBlockNumber);
+              this.sync.section = "Token Events #1";
+              await syncSafe_getSafeAndTokenLogsFromRange(1, 0, latestBlockNumber);
+              this.sync.section = "Token Events #2";
+              await syncSafe_getSafeAndTokenLogsFromRange(2, 0, latestBlockNumber);
+              this.sync.section = "Token Events #3";
+              await syncSafe_getSafeAndTokenLogsFromRange(3, 0, latestBlockNumber);
               // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
 
             if (safeAddress && !this.sync.halt) {
+              this.sync.section = "Timestamps And Balances";
+              this.sync.total = 0;
+              for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
+                if (!blockData.timestamp || !blockData.balance) {
+                  this.sync.total++;
+                }
+              }
+              this.sync.completed = 0;
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
                 if (!blockData.timestamp) {
                   try {
@@ -1762,6 +1769,10 @@
                     console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.balance - error: " + e.message);
                   }
                 }
+                t.sync.completed++;
+                if (this.sync.halt) {
+                  break;
+                }
               }
               // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 3: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
@@ -1769,6 +1780,19 @@
             }
 
             if (safeAddress && !this.sync.halt) {
+              this.sync.section = "Transaction Data";
+              this.sync.total = 0;
+              for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
+                for (const [txHash, txData] of Object.entries(blockData.txs)) {
+                  if (!txData.tx) {
+                    this.sync.total++;
+                  }
+                  if (!txData.txReceipt) {
+                    this.sync.total++;
+                  }
+                }
+              }
+              this.sync.completed = 0;
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
                 for (const [txHash, txData] of Object.entries(blockData.txs)) {
                   if (!txData.tx && !this.sync.halt) {
@@ -1788,6 +1812,7 @@
                     } catch (e) {
                       console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.getTransaction - error: " + e.message);
                     }
+                    t.sync.completed++;
                   }
                   if (!txData.txReceipt && !this.sync.halt) {
                     try {
@@ -1804,6 +1829,10 @@
                     } catch (e) {
                       console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.getTransactionReceipt - error: " + e.message);
                     }
+                    t.sync.completed++;
+                  }
+                  if (this.sync.halt) {
+                    break;
                   }
                 }
               }
