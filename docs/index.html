@@ -406,7 +406,20 @@
               </template>
               <template #cell(events)="data">
                 <b-row v-for="(safeLog, index) of data.item.safeLogs" v-bind:key="index">
-                  <b-col cols="3">
+                  <b-col cols="2" class="text-right">
+                    <b-badge pill variant="transparent" v-b-popover.hover.bottom="safeLog.address">
+                      <div v-if="safeLog.address == settings.safe" class="text-muted">
+                          This Safe
+                      </div>
+                      <div v-else-if="safeData.tokens[safeLog.address]">
+                          {{ safeData.tokens[safeLog.address].name}}
+                      </div>
+                      <div v-else>
+                        {{ safeLog.address }}
+                      </div>
+                    </b-badge>
+                  </b-col>
+                  <b-col cols="2">
                     <b-link :href="'https://etherscan.io/tx/' + data.item.txHash + '#eventlog#' + safeLog.logIndex" target="_blank">
                       <b-badge pill variant="transparent" v-b-popover.hover.bottom="'View ' + safeLog.signature + ' in the explorer'">
                           {{ safeLog.name }}
@@ -414,7 +427,7 @@
                     </b-link>
                     <font size="-2" class="text-muted" v-b-popover.hover.bottom="'Log index'">{{ safeLog.logIndex }}</font>
                   </b-col>
-                  <b-col cols="9">
+                  <b-col cols="8">
                     <span v-for="(parameter, parameterIndex) of safeLog.parameters" v-bind:key="parameterIndex">
                       <font size="-1" class="text-muted">
                         {{ parameter.name }}
