@@ -1345,7 +1345,6 @@
                         parameters.push({ value, name: logData.eventFragment.inputs[i].name, type });
                       }
                       event = {
-                        address: log.address,
                         version: safeABIVersion,
                         name: logData.name,
                         signature: logData.signature,
@@ -1368,7 +1367,6 @@
                         const tokens = ethers.BigNumber.from(log.data).toString();
                         // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - ERC-20.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokens: " + tokens);
                         event = {
-                          address: log.address,
                           version: 20,
                           name: "Transfer",
                           signature: "Transfer(address,address,tokens)",
@@ -1386,7 +1384,6 @@
                         const tokenId = ethers.BigNumber.from(log.topics[3]).toString();
                         // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - ERC-721.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId);
                         event = {
-                          address: log.address,
                           version: 721,
                           name: "Transfer",
                           signature: "Transfer(address,address,tokens)",
@@ -1404,7 +1401,6 @@
                       const [operator, from, to, tokenId, tokens] = logData.args;
                       // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - ERC-1155.Transfer[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId + ", tokens: " + tokens);
                       event = {
-                        address: log.address,
                         version: 1155,
                         name: "TransferSingle",
                         signature: "TransferSingle(address,address,address,uint256,uint256)",
@@ -1424,7 +1420,6 @@
                       // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - ERC-1155.TransferBatch[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenIds: " + JSON.stringify(tokenIds) + ", tokenss: " + JSON.stringify(tokenss));
                       // TODO: Test, and convert tokenIds and tokenss from BigNumbers to Strings
                       event = {
-                        address: log.address,
                         version: 1155,
                         name: "TransferBatch",
                         signature: "TransferBatch(address,address,address,uint256[],uint256[])",
@@ -1458,13 +1453,10 @@
                       };
                     }
                     if (!(log.logIndex in safeData.blocks[log.blockNumber].txs[log.transactionHash].logs)) {
-                      safeData.blocks[log.blockNumber].txs[log.transactionHash].logs[log.logIndex] = event;
-                      // safeData.blocks[log.blockNumber].txs[log.transactionHash].logs[log.logIndex] = {
-                      //   address: log.address,
-                      //   name: logData.name,
-                      //   signature: logData.signature,
-                      //   parameters,
-                      // };
+                      safeData.blocks[log.blockNumber].txs[log.transactionHash].logs[log.logIndex] = {
+                        address: log.address,
+                        ...event,
+                      };
                     }
                   }
                   t.sync.completed++;
@@ -1482,8 +1474,8 @@
                 // // 1.4.1 event ProxyCreation(SafeProxy indexed proxy, address singleton)
                 // '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235',
                 //
-                // // // 1.0.0 & 1.1.1 No SafeSetup
-                // // // 1.3.0 & 1.4.1 event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
+                // // 1.0.0 & 1.1.1 No SafeSetup
+                // // 1.3.0 & 1.4.1 event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
                 // '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8',
                 // // 1.3.0 & 1.4.1 event ApproveHash(bytes32 indexed approvedHash, address indexed owner);
                 // '0xf2a0eb156472d1440255b0d7c1e19cc07115d1051fe605b0dce69acfec884d9c',
@@ -1580,66 +1572,6 @@
                   toBlock,
                   topics: sections[section].topics,
                 });
-                // console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeAndTokenLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
-
-                // const logs = await provider.getLogs({
-                //   address: safeAddress,
-                //   fromBlock,
-                //   toBlock,
-                //   topics: [[
-                //       // // 1.1.1 event ProxyCreation(Proxy proxy)
-                //       // '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80',
-                //       // // 1.3.0 event ProxyCreation(GnosisSafeProxy proxy, address singleton)
-                //       // // 1.4.1 event ProxyCreation(SafeProxy indexed proxy, address singleton)
-                //       // '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235',
-                //       //
-                //       // // // 1.0.0 & 1.1.1 No SafeSetup
-                //       // // // 1.3.0 & 1.4.1 event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
-                //       // '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8',
-                //       // // 1.3.0 & 1.4.1 event ApproveHash(bytes32 indexed approvedHash, address indexed owner);
-                //       // '0xf2a0eb156472d1440255b0d7c1e19cc07115d1051fe605b0dce69acfec884d9c',
-                //       // // 1.3.0 & 1.4.1 event SignMsg(bytes32 indexed msgHash)
-                //       // '0xe7f4675038f4f6034dfcbbb24c4dc08e4ebf10eb9d257d3d02c0f38d122ac6e4',
-                //       // // 1.3.0 event ExecutionFailure(bytes32 txHash, uint256 payment)
-                //       // // 1.4.1 event ExecutionFailure(bytes32 indexed txHash, uint256 payment)
-                //       // '0x23428b18acfb3ea64b08dc0c1d296ea9c09702c09083ca5272e64d115b687d23',
-                //       // // 1.3.0 event ExecutionSuccess(bytes32 txHash, uint256 payment)
-                //       // // 1.4.1 event ExecutionSuccess(bytes32 indexed txHash, uint256 payment)
-                //       // '0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e',
-                //       //
-                //       // // 1.3.0 event ChangedFallbackHandler(address handler)
-                //       // // 1.4.1 event ChangedFallbackHandler(address indexed handler)
-                //       // '0x5ac6c46c93c8d0e53714ba3b53db3e7c046da994313d7ed0d192028bc7c228b0',
-                //       //
-                //       // // 1.3.0 event ChangedGuard(address guard)
-                //       // // 1.4.1 event ChangedGuard(address indexed guard)
-                //       // '0x1151116914515bc0891ff9047a6cb32cf902546f83066499bcf8ba33d2353fa2',
-                //       //
-                //       // // 1.3.0 event EnabledModule(address module)
-                //       // // 1.4.1 event EnabledModule(address indexed module)
-                //       // '0xecdf3a3effea5783a3c4c2140e677577666428d44ed9d474a0b3a4c9943f8440',
-                //       // // 1.3.0 event DisabledModule(address module)
-                //       // // 1.4.1 event DisabledModule(address indexed module)
-                //       // '0xaab4fa2b463f581b2b32cb3b7e3b704b9ce37cc209b5fb4d77e593ace4054276',
-                //       // // 1.3.0 & 1.4.1 event ExecutionFromModuleSuccess(address indexed module)
-                //       // '0x6895c13664aa4f67288b25d7a21d7aaa34916e355fb9b6fae0a139a9085becb8',
-                //       // // 1.3.0 & 1.4.1 event ExecutionFromModuleFailure(address indexed module)
-                //       // '0xacd2c8702804128fdb0db2bb49f6d127dd0181c13fd45dbfe16de0930e2bd375',
-                //
-                //       // // 1.3.0 event AddedOwner(address owner)
-                //       // // 1.4.1 event AddedOwner(address indexed owner)
-                //       // '0x9465fa0c962cc76958e6373a993326400c1c94f8be2fe3a952adfa7f60b2ea26',
-                //       // // 1.3.0 event RemovedOwner(address owner)
-                //       // // 1.4.1 event RemovedOwner(address indexed owner)
-                //       // '0xf8d49fc529812e9a7c5c50e69c20f0dccc0db8fa95c98bc58cc9a4f1c1299eaf',
-                //       // // 1.3.0 & 1.4.1 event ChangedThreshold(uint256 threshold)
-                //       // '0x610f7ff2b304ae8903c3de74c60c6ab1f7d6226b3f52c5161905bb5ad4039c93',
-                //
-                //       // // event SafeReceived(address indexed sender, uint256 value);
-                //       // '0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d',
-                //     ],
-                //   ],
-                // });
                 await syncSafe_processSafeAndTokenLogs(section, fromBlock, toBlock, logs);
                 // console.log(moment().format("HH:mm:ss") + " syncSafe_getSafeAndTokenLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
               } catch (e) {
