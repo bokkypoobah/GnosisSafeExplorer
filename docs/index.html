@@ -917,7 +917,7 @@
           async syncAllSafesEvents() {
 
             async function syncAllSafesEvents_processLogs(fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+              console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock + ", logs.length: " + logs.length);
               const records = [];
               for (const log of logs) {
                 if (!log.removed) {
@@ -1313,7 +1313,7 @@
           async syncSafe() {
 
             async function syncSafe_processSafeAndTokenLogs(section, fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - section: " + section + ", fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+              console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - section: " + section + ", fromBlock: " + fromBlock + ", toBlock: " + toBlock + ", logs.length: " + logs.length);
               // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - logs: " + JSON.stringify(logs, null, 2));
               for (const log of logs) {
                 if (!log.removed) {
@@ -1441,12 +1441,43 @@
                       if (!(log.address in safeData.tokens)) {
                         safeData.tokens[log.address] = {
                           type: event.version,
-                          symbol: null,
-                          name: null,
+                          name: null, // ERC-20 symbol; ERC-721 and ERC-1155 name
+                          description: null, // ERC-20 name; ERC-721 and ERC-1155 name
+                          tag: null, // ERC-721 and ERC-1155 tag
                           decimals: null,
                           tokens: {},
+                          junk: null,
                         };
-                        console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - added token: " + log.address + " => " + JSON.stringify(safeData.tokens[log.address], null, 2));
+                        // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - added token: " + log.address + " => " + JSON.stringify(safeData.tokens[log.address], null, 2));
+                      }
+                      if ((event.version == 721 || event.version == 1155) && !(event.tokenId in safeData.tokens[log.address].tokens)) {
+                        let tokenId = null;
+                        if (event.version == 721) {
+                          tokenId = event.parameters[2].value;
+                          safeData.tokens[log.address].tokens[tokenId] = {
+                            name: null,
+                            description: null,
+                            image: null,
+                          };
+                        } else {
+                          if (event.name == "TransferSingle") {
+                            tokenId = event.parameters[3].value;
+                            safeData.tokens[log.address].tokens[tokenId] = {
+                              name: null,
+                              description: null,
+                              image: null,
+                            };
+                          } else {
+                            // TODO: test and refactor
+                            for (const tokenId of event.parameters[3]) {
+                              safeData.tokens[log.address].tokens[tokenId] = {
+                                name: null,
+                                description: null,
+                                image: null,
+                              };
+                            }
+                          }
+                        }
                       }
                     }
                   }
@@ -1597,7 +1628,7 @@
               }
             }
 
-            console.log(moment().format("HH:mm:ss") + " syncSafe - this.settings.safe: " + this.settings.safe);
+            // console.log(moment().format("HH:mm:ss") + " syncSafe - this.settings.safe: " + this.settings.safe);
             const t = this;
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
@@ -1614,6 +1645,8 @@
             this.sync.completed = 0;
             const safeInterface130 = new ethers.utils.Interface(SAFE_ABIS[130].gnosis_safe);
             const safeInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].gnosis_safe);
+            // const erc20Interface = new ethers.utils.Interface(ERC20ABI);
+            // const erc721Interface = new ethers.utils.Interface(ERC721ABI);
             const erc1155Interface = new ethers.utils.Interface(ERC1155ABI);
 
             let safeAddress = null;
@@ -1623,7 +1656,7 @@
               safeAddressAsBytes32 = '0x000000000000000000000000' + safeAddress.substring(2, 42).toLowerCase();
             } catch (e) {
             }
-            console.log(moment().format("HH:mm:ss") + " syncSafe - safeAddress: " + safeAddress + ", safeAddressAsBytes32: " + safeAddressAsBytes32);
+            console.log(moment().format("HH:mm:ss") + " syncSafe - safeAddress: " + safeAddress); // + ", safeAddressAsBytes32: " + safeAddressAsBytes32);
 
             const defaultSafeData = {
               address: safeAddress,
@@ -1634,12 +1667,10 @@
               tokens: {},
               blocks: {},
             };
-            // TODO: Testing
-            // const safeData = defaultSafeData;
             const safeData = this.settings.devMode ? defaultSafeData : (safeAddress ? (await this.getCachedData("safeData_" + safeAddress, db, chainId, defaultSafeData)) : defaultSafeData);
             // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 1: " + JSON.stringify(safeData).substring(0, 1000) + "...");
 
-            if (safeAddress) {
+            if (safeAddress && !this.settings.devMode) {
               const allSafesAbi = [
                 "function VERSION() public view returns (string)",
                 "function getOwners() public view returns (address[] memory)",
@@ -1688,7 +1719,7 @@
               Vue.set(this, 'safeData', safeData);
             }
 
-            if (safeAddress && !this.sync.halt) {
+            if (safeAddress && !this.sync.halt && !this.settings.devMode) {
               this.sync.section = "Timestamps And Balances";
               this.sync.total = 0;
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
@@ -1702,7 +1733,7 @@
                   try {
                     const block = await provider.getBlock(parseInt(blockNumber));
                     safeData.blocks[blockNumber].timestamp = parseInt(block.timestamp);
-                    console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.blocks[" + blockNumber + "].timestamp: " + safeData.blocks[blockNumber].timestamp);
+                    // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.blocks[" + blockNumber + "].timestamp: " + safeData.blocks[blockNumber].timestamp);
                   } catch (e) {
                     console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.getBlock().timestamp - error: " + e.message);
                   }
@@ -1711,7 +1742,7 @@
                   try {
                     const balance = await provider.getBalance(safeAddress, parseInt(blockNumber));
                     safeData.blocks[blockNumber].balance = ethers.BigNumber.from(balance).toString();
-                    console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.blocks[" + blockNumber + "].balance: " + safeData.blocks[blockNumber].balance);
+                    // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.blocks[" + blockNumber + "].balance: " + safeData.blocks[blockNumber].balance);
                   } catch (e) {
                     console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.balance - error: " + e.message);
                   }
@@ -1726,8 +1757,8 @@
               Vue.set(this, 'safeData', safeData);
             }
 
-            if (safeAddress && !this.sync.halt) {
-              this.sync.section = "Transaction Data";
+            if (safeAddress && !this.sync.halt && !this.settings.devMode) {
+              this.sync.section = "Transactions & Receipts";
               this.sync.total = 0;
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
                 for (const [txHash, txData] of Object.entries(blockData.txs)) {
@@ -1784,6 +1815,54 @@
                 }
               }
               console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
+              await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
+              Vue.set(this, 'safeData', safeData);
+            }
+
+            if (safeAddress && !this.sync.halt /*&& this.settings.devMode*/) {
+              this.sync.section = "ERC-20/721/1155 Token Contract";
+              this.sync.total = 0;
+              for (const [token, tokenData] of Object.entries(safeData.tokens)) {
+                if (!tokenData.name) {
+                  this.sync.total++;
+                }
+              }
+              this.sync.completed = 0;
+              const ERC_TOKENS_ABI = [
+                "function symbol() public view returns (string)",
+                "function name() public view returns (string)",
+                "function decimals() public view returns (uint8)",
+              ];
+              for (const [token, tokenData] of Object.entries(safeData.tokens)) {
+                const ercTokensContract = new ethers.Contract(token, ERC_TOKENS_ABI, provider);
+                if (!tokenData.name) {
+                  try {
+                    safeData.tokens[token].name = tokenData.type == 20 ? (await ercTokensContract.symbol()) : (await ercTokensContract.name());
+                  } catch (e) {
+                    console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.ercTokens.name() - error: " + e.message);
+                  }
+                }
+                if (!tokenData.description) {
+                  try {
+                    safeData.tokens[token].description = tokenData.type == 20 ? (await ercTokensContract.name()) : safeData.tokens[token].name;
+                  } catch (e) {
+                    console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.ercTokens.description() - error: " + e.message);
+                  }
+                }
+                if (tokenData.type == 20 && !tokenData.decimals) {
+                  try {
+                    safeData.tokens[token].decimals = parseInt(await ercTokensContract.decimals());
+                  } catch (e) {
+                    console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.ercTokens.decimals() - error: " + e.message);
+                  }
+                }
+                console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.tokens[" + token + "]: " + JSON.stringify(safeData.tokens[token]));
+                t.sync.completed++;
+                if (this.sync.halt) {
+                  break;
+                }
+              }
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 3: " + JSON.stringify(safeData, null, 2).substring(0, 10000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
