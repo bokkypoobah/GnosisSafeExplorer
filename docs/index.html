@@ -1341,49 +1341,34 @@
                         }
                         parameters.push({ value, name: logData.eventFragment.inputs[i].name, type });
                       }
-                      if (!(log.blockNumber in safeData.blocks)) {
-                        safeData.blocks[log.blockNumber] = {
-                          timestamp: null,
-                          balance: null,
-                          txs: {},
-                        };
-                      }
-                      if (!(log.transactionHash in safeData.blocks[log.blockNumber].txs)) {
-                        safeData.blocks[log.blockNumber].txs[log.transactionHash] = {
-                          txIndex: parseInt(log.transactionIndex),
-                          logs: {},
-                          tx: null,
-                          txReceipt: null,
-                        };
-                      }
-                      if (!(log.logIndex in safeData.blocks[log.blockNumber].txs[log.transactionHash].logs)) {
-                        safeData.blocks[log.blockNumber].txs[log.transactionHash].logs[log.logIndex] = {
-                          address: log.address,
-                          name: logData.name,
-                          signature: logData.signature,
-                          parameters,
-                        };
-                      }
+                      event = {
+                        address: log.address,
+                        version: safeABIVersion,
+                        name: logData.name,
+                        signature: logData.signature,
+                        parameters,
+                      };
                     }
                   } else {
                     // ERC-20, ERC-721 and ERC-1155 Transfer* events
-                    // ERC-20 & ERC-721 Transfer (indexed address from, indexed address to, indexed uint256 id)
+                    // ERC-20 & ERC-721 Transfer(indexed address from, indexed address to, indexed uint256 id)
                     // [ '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', null, accountAs32Bytes ],
-                    // // ERC-1155 TransferSingle (indexed address _operator, indexed address _from, indexed address _to, uint256 _id, uint256 _value)
+                    // // ERC-1155 TransferSingle(indexed address _operator, indexed address _from, indexed address _to, uint256 _id, uint256 _value)
                     // [ '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62', null, accountAs32Bytes, null ],
-                    // // ERC-1155 TransferBatch (indexed address operator, indexed address from, indexed address to, uint256[] ids, uint256[] values)
+                    // // ERC-1155 TransferBatch(indexed address operator, indexed address from, indexed address to, uint256[] ids, uint256[] values)
                     // [ '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb', null, accountAs32Bytes, null ],
                     if (log.topics[0] == "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef") {
                       if (log.topics.length == 3) {
-                        // ERC-20 Transfer (indexed address from, indexed address to, uint256 tokens)
+                        // ERC-20 Transfer(indexed address from, indexed address to, uint256 tokens)
                         const from = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
                         const to = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
                         const tokens = ethers.BigNumber.from(log.data).toString();
                         // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-20.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokens: " + tokens);
                         event = {
+                          address: log.address,
+                          version: 20,
                           name: "Transfer",
                           signature: "Transfer(address,address,tokens)",
-                          version: 20,
                           parameters: [
                             { "name": "from", value: from, type: "address" },
                             { "name": "to", value: to, type: "address" },
@@ -1392,15 +1377,16 @@
                         };
 
                       } else if (log.topics.length == 4) {
-                        // ERC-721 Transfer (indexed address from, indexed address to, indexed uint256 tokenId)
+                        // ERC-721 Transfer(indexed address from, indexed address to, indexed uint256 tokenId)
                         const from = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
                         const to = ethers.utils.getAddress('0x' + log.topics[2].substring(26));
                         const tokenId = ethers.BigNumber.from(log.topics[3]).toString();
                         // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-721.Transfer[" + log.topics.length + "] - from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId);
                         event = {
+                          address: log.address,
+                          version: 721,
                           name: "Transfer",
                           signature: "Transfer(address,address,tokens)",
-                          version: 721,
                           parameters: [
                             { "name": "from", value: from, type: "address" },
                             { "name": "to", value: to, type: "address" },
@@ -1410,14 +1396,15 @@
                       }
 
                     } else if (log.topics[0] == "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62") {
-                      // ERC-1155 TransferSingle (indexed address operator, indexed address from, indexed address to, uint256 tokenId, uint256 tokens)
+                      // ERC-1155 TransferSingle(indexed address operator, indexed address from, indexed address to, uint256 tokenId, uint256 tokens)
                       const logData = erc1155Interface.parseLog(log);
                       const [operator, from, to, tokenId, tokens] = logData.args;
                       // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.Transfer[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenId: " + tokenId + ", tokens: " + tokens);
                       event = {
+                        address: log.address,
+                        version: 1155,
                         name: "TransferSingle",
                         signature: "TransferSingle(address,address,address,uint256,uint256)",
-                        version: 721,
                         parameters: [
                           { "name": "operator", value: operator, type: "address" },
                           { "name": "from", value: from, type: "address" },
@@ -1428,15 +1415,16 @@
                       };
 
                     } else if (log.topics[0] == "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb") {
-                      // ERC-1155 TransferBatch (indexed address operator, indexed address from, indexed address to, uint256[] tokenIds, uint256[] tokenss)
+                      // ERC-1155 TransferBatch(indexed address operator, indexed address from, indexed address to, uint256[] tokenIds, uint256[] tokenss)
                       const logData = erc1155Interface.parseLog(log);
                       const [operator, from, to, tokenIds, tokenss] = logData.args;
                       // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - ERC-1155.TransferBatch[" + log.topics.length + "] - operator: " + operator + ", from: " + from.substring(0, 12) + ", to: " + to.substring(0, 12) + ", tokenIds: " + JSON.stringify(tokenIds) + ", tokenss: " + JSON.stringify(tokenss));
                       // TODO: Test, and convert tokenIds and tokenss from BigNumbers to Strings
                       event = {
+                        address: log.address,
+                        version: 1155,
                         name: "TransferBatch",
                         signature: "TransferBatch(address,address,address,uint256[],uint256[])",
-                        version: 721,
                         parameters: [
                           { "name": "operator", value: operator, type: "address" },
                           { "name": "from", value: from, type: "address" },
@@ -1451,6 +1439,30 @@
                   }
                   if (event) {
                     console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeLogs - event: " + JSON.stringify(event));
+                    if (!(log.blockNumber in safeData.blocks)) {
+                      safeData.blocks[log.blockNumber] = {
+                        timestamp: null,
+                        balance: null,
+                        txs: {},
+                      };
+                    }
+                    if (!(log.transactionHash in safeData.blocks[log.blockNumber].txs)) {
+                      safeData.blocks[log.blockNumber].txs[log.transactionHash] = {
+                        txIndex: parseInt(log.transactionIndex),
+                        logs: {},
+                        tx: null,
+                        txReceipt: null,
+                      };
+                    }
+                    if (!(log.logIndex in safeData.blocks[log.blockNumber].txs[log.transactionHash].logs)) {
+                      safeData.blocks[log.blockNumber].txs[log.transactionHash].logs[log.logIndex] = event;
+                      // safeData.blocks[log.blockNumber].txs[log.transactionHash].logs[log.logIndex] = {
+                      //   address: log.address,
+                      //   name: logData.name,
+                      //   signature: logData.signature,
+                      //   parameters,
+                      // };
+                    }
                   }
                 }
               }
@@ -1514,7 +1526,7 @@
                   address: safeAddress,
                   topics: null,
                 },
-                // ERC-20 & ERC-721 Transfer (indexed address from, indexed address to, indexed uint256 id)
+                // ERC-20 & ERC-721 Transfer(indexed address from, indexed address to, indexed uint256 id)
                 // [ '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', safeAddressAsBytes32, null ],
                 {
                   address: null,
@@ -1524,11 +1536,11 @@
                     null,
                   ],
                 },
-                // ERC-20 & ERC-721 Transfer (indexed address from, indexed address to, indexed uint256 id)
+                // ERC-20 & ERC-721 Transfer(indexed address from, indexed address to, indexed uint256 id)
                 // [ '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', null, accountAs32Bytes ],
-                // // ERC-1155 TransferSingle (indexed address _operator, indexed address _from, indexed address _to, uint256 _id, uint256 _value)
+                // // ERC-1155 TransferSingle(indexed address _operator, indexed address _from, indexed address _to, uint256 _id, uint256 _value)
                 // [ '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62', null, accountAs32Bytes, null ],
-                // // ERC-1155 TransferBatch (indexed address operator, indexed address from, indexed address to, uint256[] ids, uint256[] values)
+                // // ERC-1155 TransferBatch(indexed address operator, indexed address from, indexed address to, uint256[] ids, uint256[] values)
                 // [ '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb', null, accountAs32Bytes, null ],
                 {
                   address: null,
@@ -1541,9 +1553,9 @@
                     safeAddressAsBytes32,
                   ],
                 },
-                // // ERC-1155 TransferSingle (indexed address _operator, indexed address _from, indexed address _to, uint256 _id, uint256 _value)
+                // // ERC-1155 TransferSingle(indexed address _operator, indexed address _from, indexed address _to, uint256 _id, uint256 _value)
                 // [ '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62', null, null, accountAs32Bytes ],
-                // // ERC-1155 TransferBatch (indexed address operator, indexed address from, indexed address to, uint256[] ids, uint256[] values)
+                // // ERC-1155 TransferBatch(indexed address operator, indexed address from, indexed address to, uint256[] ids, uint256[] values)
                 // [ '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb', null, null, accountAs32Bytes ],
                 {
                   address: null,
