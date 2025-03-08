@@ -404,7 +404,37 @@
                 </font>
 
               </template>
-              <template #cell(events)="data">
+              <template #cell(tx)="data">
+                <font size="-1" class="text-muted">
+                  from
+                </font>
+                <b-badge v-if="data.item.tx && data.item.tx.from" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.from + ' in the explorer'">
+                  <b-link :href="'https://etherscan.io/address/' + data.item.tx.from" target="_blank">
+                    <font size="-1">{{ data.item.tx.from.substring(0, 8) + '...' + data.item.tx.from.slice(-6) }}</font>
+                  </b-link>
+                </b-badge>
+                <font size="-1" class="text-muted">
+                  to
+                </font>
+                <b-badge v-if="data.item.tx && data.item.tx.to" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.to + ' in the explorer'">
+                  <b-link :href="'https://etherscan.io/address/' + data.item.tx.to" target="_blank">
+                    <font size="-1">{{ data.item.tx.to.substring(0, 8) + '...' + data.item.tx.to.slice(-6) }}</font>
+                  </b-link>
+                </b-badge>
+                <font size="-1" class="text-muted">
+                  value
+                </font>
+                <b-badge v-if="data.item.tx && data.item.tx.value" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.tx.value">
+                  {{ formatETH(data.item.tx.value, 0) }}
+                </b-badge>
+                <font v-if="data.item.tx && data.item.tx.data.length > 2" size="-1" class="text-muted">
+                  functionSig
+                </font>
+                <b-badge v-if="data.item.tx && data.item.tx.data.length > 2" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.tx.value">
+                  {{ data.item.tx.data.substring(0, 10) }}
+                </b-badge>
+
+                <br />
                 <b-row v-for="(safeLog, index) of data.item.safeLogs" v-bind:key="index">
                   <b-col cols="2" class="text-right">
                     <b-badge pill variant="transparent" v-b-popover.hover.bottom="safeLog.address">
@@ -677,7 +707,7 @@
           safeTxsFields: [
             { key: 'index', label: '#', sortable: false, thStyle: 'width: 7%;', tdClass: 'text-truncate' },
             { key: 'when', label: 'When', sortable: false, thStyle: 'width: 13%;', tdClass: 'text-truncate' },
-            { key: 'events', label: 'Events', sortable: false, thStyle: 'width: 65%;', tdClass: 'text-left' },
+            { key: 'tx', label: 'Transaction & Events', sortable: false, thStyle: 'width: 65%;', tdClass: 'text-left' },
             { key: 'balance', label: 'Balance', sortable: false, thStyle: 'width: 15%;', tdClass: 'text-left' },
           ],
 
@@ -1772,7 +1802,7 @@
               Vue.set(this, 'safeData', safeData);
             }
 
-            if (safeAddress && !this.sync.halt && !this.settings.devMode) {
+            if (safeAddress && !this.sync.halt /*&& !this.settings.devMode*/) {
               this.sync.section = "Transactions & Receipts";
               this.sync.total = 0;
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
@@ -1791,16 +1821,18 @@
                   if (!txData.tx && !this.sync.halt) {
                     try {
                       const tx = await provider.getTransaction(txHash);
+                      console.log("tx: " + JSON.stringify(tx, null, 2));
                       safeData.blocks[blockNumber].txs[txHash].tx = {
                         blockNumber: tx.blockNumber,
                         type: tx.type || null,
                         from: tx.from,
                         nonce: parseInt(tx.nonce),
                         to: tx.to,
-                        data: tx.data,
+                        value: ethers.BigNumber.from(tx.value).toString(),
                         gasPrice: ethers.BigNumber.from(tx.gasPrice).toString(),
                         maxPriorityFeePerGas: tx.maxPriorityFeePerGas && ethers.BigNumber.from(tx.maxPriorityFeePerGas).toString() || null,
                         gasLimit: parseInt(tx.gasLimit),
+                        data: tx.data,
                       };
                     } catch (e) {
                       console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.getTransaction - error: " + e.message);
@@ -1877,12 +1909,12 @@
                   break;
                 }
               }
-              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 5: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
+              // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 5: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
 
-            if (safeAddress && !this.sync.halt && this.settings.devMode) {
+            if (safeAddress && !this.sync.halt /*&& this.settings.devMode*/) {
               this.sync.section = "ERC-721/1155 Token Metadata";
 
               this.sync.total = 0;
