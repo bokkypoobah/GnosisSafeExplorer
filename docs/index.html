@@ -1821,7 +1821,6 @@
                   if (!txData.tx && !this.sync.halt) {
                     try {
                       const tx = await provider.getTransaction(txHash);
-                      console.log("tx: " + JSON.stringify(tx, null, 2));
                       safeData.blocks[blockNumber].txs[txHash].tx = {
                         blockNumber: tx.blockNumber,
                         type: tx.type || null,
