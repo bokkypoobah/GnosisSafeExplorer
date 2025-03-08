@@ -10,11 +10,13 @@ function parseReservoirData(data, reservoirData) {
     const type = token.kind;
     const collectionName = token.collection.name;
     const collectionSlug = token.collection.slug;
+    const collectionImageUrl = token.collection.imageUrl;
     if (!(contract in reservoirData[chainId])) {
       reservoirData[chainId][contract] = {
         type,
         name: collectionName,
         slug: collectionSlug,
+        image: collectionImageUrl,
         tokens: {},
       };
     }

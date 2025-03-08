@@ -1443,7 +1443,8 @@
                           type: event.version,
                           name: null, // ERC-20 symbol; ERC-721 and ERC-1155 name
                           description: null, // ERC-20 name; ERC-721 and ERC-1155 name
-                          tag: null, // ERC-721 and ERC-1155 tag
+                          slug: null, // ERC-721 and ERC-1155 collection slug
+                          image: null, // ERC-721 and ERC-1155 collection image
                           decimals: null,
                           tokens: {},
                           junk: null,
@@ -1458,6 +1459,7 @@
                             name: null,
                             description: null,
                             image: null,
+                            junk: null,
                           };
                         } else {
                           if (event.name == "TransferSingle") {
@@ -1714,7 +1716,7 @@
               await syncSafe_getSafeAndTokenLogsFromRange(2, 0, latestBlockNumber);
               this.sync.section = "Token Events #3";
               await syncSafe_getSafeAndTokenLogsFromRange(3, 0, latestBlockNumber);
-              // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
@@ -1752,7 +1754,7 @@
                   break;
                 }
               }
-              // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 3: " + JSON.stringify(safeData, null, 2).substring(0, 1000) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 3: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
@@ -1814,16 +1816,16 @@
                   }
                 }
               }
-              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
 
-            if (safeAddress && !this.sync.halt /*&& this.settings.devMode*/) {
+            if (safeAddress && !this.sync.halt && !this.settings.devMode) {
               this.sync.section = "ERC-20/721/1155 Token Contract";
               this.sync.total = 0;
-              for (const [token, tokenData] of Object.entries(safeData.tokens)) {
-                if (!tokenData.name) {
+              for (const [token, tokenContractData] of Object.entries(safeData.tokens)) {
+                if (!tokenContractData.name) {
                   this.sync.total++;
                 }
               }
@@ -1833,36 +1835,90 @@
                 "function name() public view returns (string)",
                 "function decimals() public view returns (uint8)",
               ];
-              for (const [token, tokenData] of Object.entries(safeData.tokens)) {
+              for (const [token, tokenContractData] of Object.entries(safeData.tokens)) {
                 const ercTokensContract = new ethers.Contract(token, ERC_TOKENS_ABI, provider);
-                if (!tokenData.name) {
+                if (!tokenContractData.name) {
                   try {
-                    safeData.tokens[token].name = tokenData.type == 20 ? (await ercTokensContract.symbol()) : (await ercTokensContract.name());
+                    safeData.tokens[token].name = tokenContractData.type == 20 ? (await ercTokensContract.symbol()) : (await ercTokensContract.name());
                   } catch (e) {
                     console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.ercTokens.name() - error: " + e.message);
                   }
                 }
-                if (!tokenData.description) {
+                if (!tokenContractData.description) {
                   try {
-                    safeData.tokens[token].description = tokenData.type == 20 ? (await ercTokensContract.name()) : safeData.tokens[token].name;
+                    safeData.tokens[token].description = tokenContractData.type == 20 ? (await ercTokensContract.name()) : safeData.tokens[token].name;
                   } catch (e) {
                     console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.ercTokens.description() - error: " + e.message);
                   }
                 }
-                if (tokenData.type == 20 && !tokenData.decimals) {
+                if (tokenContractData.type == 20 && !tokenContractData.decimals) {
                   try {
                     safeData.tokens[token].decimals = parseInt(await ercTokensContract.decimals());
                   } catch (e) {
                     console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.ercTokens.decimals() - error: " + e.message);
                   }
                 }
-                console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.tokens[" + token + "]: " + JSON.stringify(safeData.tokens[token]));
+                // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.tokens[" + token + "]: " + JSON.stringify(safeData.tokens[token]));
                 t.sync.completed++;
                 if (this.sync.halt) {
                   break;
                 }
               }
-              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 3: " + JSON.stringify(safeData, null, 2).substring(0, 10000) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 5: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
+              await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
+              Vue.set(this, 'safeData', safeData);
+            }
+
+            if (safeAddress && !this.sync.halt && this.settings.devMode) {
+              this.sync.section = "ERC-721/1155 Token Metadata";
+
+              this.sync.total = 0;
+              for (const [token, tokenContractData] of Object.entries(safeData.tokens)) {
+                if (tokenContractData.type == 721 || tokenContractData.type == 1155) {
+                  for (const [tokenId, tokenData] of Object.entries(tokenContractData.tokens)) {
+                    console.log(token + "/" + tokenId + " => " + JSON.stringify(tokenData));
+                    if (!tokenContractData.name) {
+                      this.sync.total++;
+                    }
+                  }
+                }
+              }
+              this.sync.completed = 0;
+
+              const reservoirData = {};
+              let continuation = null;
+              do {
+                let url = "https://api.reservoir.tools/users/" + safeAddress + "/tokens/v10?limit=200&includeTopBid=true&includeAttributes=true&includeLastSale=true";
+                url = url + (continuation != null ? "&continuation=" + continuation : "");
+                console.log(moment().format("HH:mm:ss") + " syncSafe - downloadFromReservoir - url: " + url);
+                const data = await fetch(url)
+                  .then(handleErrors)
+                  .then(response => response.json())
+                  .catch(function(error) {
+                    console.log(moment().format("HH:mm:ss") + " syncSafe - downloadFromReservoir - ERROR: " + error);
+                    return {};
+                  });
+                continuation = data.continuation;
+                parseReservoirData(data, reservoirData);
+                // TODO: Only works for ETH mainnet
+                for (const [reservoirTokenContractAddress, reservoirTokenContractData] of Object.entries(reservoirData[1] || {})) {
+                  if (safeData.tokens[reservoirTokenContractAddress]) {
+                    safeData.tokens[reservoirTokenContractAddress].slug = reservoirTokenContractData.slug;
+                    safeData.tokens[reservoirTokenContractAddress].image = reservoirTokenContractData.image;
+                    for (const [reservoirTokenId, reservoirTokenData] of Object.entries(reservoirTokenContractData.tokens)) {
+                      if (safeData.tokens[reservoirTokenContractAddress].tokens[reservoirTokenId]) {
+                        safeData.tokens[reservoirTokenContractAddress].tokens[reservoirTokenId].name = reservoirTokenData.name;
+                        safeData.tokens[reservoirTokenContractAddress].tokens[reservoirTokenId].description = reservoirTokenData.description;
+                        safeData.tokens[reservoirTokenContractAddress].tokens[reservoirTokenId].image = reservoirTokenData.image;
+                      }
+                    }
+                  }
+                }
+                if (continuation != null) {
+                  await delay(1000);
+                }
+              } while (continuation != null);
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 6: " + JSON.stringify(safeData, null, 2).substring(0, 10000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
