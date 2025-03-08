@@ -489,6 +489,11 @@
                           {{ formatETH(parameter.value, 0) }}
                         </b-badge>
                       </span>
+                      <span v-else-if="parameter.name == 'tokens'">
+                        <b-badge variant="transparent" class="px-0" v-b-popover.hover.bottom="parameter.type">
+                          {{ formatDecimals(parameter.value, safeData.tokens[safeLog.address] && safeData.tokens[safeLog.address].decimals || 0) }}
+                        </b-badge>
+                      </span>
                       <span v-else>
                         <b-badge variant="transparent" class="px-0" v-b-popover.hover.bottom="parameter.type">
                           {{ parameter.value }}
