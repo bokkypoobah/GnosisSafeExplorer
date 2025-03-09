@@ -882,7 +882,8 @@
               for (const [chainId, chainData] of Object.entries(versionData)) {
                 for (const [contractName, address] of Object.entries(chainData)) {
                   // console.log(version + "/" + chainId + "/" + contractName + " => " + address);
-                  results[address] = contractName + " v" + version + "/" + chainId + " " + address.substring(0, 8) + '...' + address.slice(-6);
+                  // results[address] = contractName + " v" + version + "/" + chainId + " " + address.substring(0, 8) + '...' + address.slice(-6);
+                  results[address] = contractName + ":" + version;
                 }
               }
             }
@@ -2247,8 +2248,8 @@
                 return "This Safe";
               } else if (a in this.safeData.tokens) {
                 return this.safeData.tokens[a] && this.safeData.tokens[a].name || (a.substring(0, 8) + '...' + a.slice(-6));
-              // } else if (a in this.safeContractNames) {
-              //   return this.safeContractNames[a];
+              } else if (a in this.safeContractNames) {
+                return this.safeContractNames[a];
               } else if (a in this.safeData.owners) {
                 return "Owner #" + this.safeData.owners[a] + " " + a.substring(2, 6).toUpperCase();
               } else {
