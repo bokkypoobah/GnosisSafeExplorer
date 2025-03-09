@@ -410,7 +410,7 @@
                 </font>
                 <b-badge v-if="data.item.tx && data.item.tx.from" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.from + ' in the explorer'">
                   <b-link :href="'https://etherscan.io/address/' + data.item.tx.from" target="_blank">
-                    <font size="-1">{{ data.item.tx.from.substring(0, 8) + '...' + data.item.tx.from.slice(-6) }}</font>
+                    <font size="-1">{{ safe_lookupName(data.item.tx.from) }}</font>
                   </b-link>
                 </b-badge>
                 <font size="-1" class="text-muted">
@@ -424,7 +424,7 @@
                 </font>
                 <b-badge v-if="data.item.tx && data.item.tx.to" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.to + ' in the explorer'">
                   <b-link :href="'https://etherscan.io/address/' + data.item.tx.to" target="_blank">
-                    <font size="-1">{{ data.item.tx.to.substring(0, 8) + '...' + data.item.tx.to.slice(-6) }}</font>
+                    <font size="-1">{{ safe_lookupName(data.item.tx.to) }}</font>
                   </b-link>
                 </b-badge>
                 <font size="-1" class="text-muted">
@@ -453,7 +453,7 @@
                   <b-col cols="3">
                     <b-link :href="'https://etherscan.io/tx/' + data.item.txHash + '#eventlog#' + safeLog.logIndex" target="_blank">
                       <b-badge pill variant="transparent" v-b-popover.hover.bottom="'View ' + safeLog.signature + ' in the explorer'">
-                          {{ safeLog.name }}
+                        {{ safeLog.name }}
                       </b-badge>
                     </b-link>
                     <font size="-2" class="text-muted" v-b-popover.hover.bottom="'Log index'">{{ safeLog.logIndex }}</font>
@@ -465,7 +465,7 @@
                       </font>
                       <b-badge v-if="parameter.type == 'address'" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + parameter.value + ' in the explorer'">
                         <b-link :href="'https://etherscan.io/address/' + parameter.value" target="_blank">
-                          <font size="-1">{{ parameter.value.substring(0, 8) + '...' + parameter.value.slice(-6) }}</font>
+                          <font size="-1">{{ safe_lookupName(parameter.value) }}</font>
                         </b-link>
                       </b-badge>
                       <span v-else-if="parameter.type == 'address[]'">
@@ -475,7 +475,7 @@
                           </font>
                           <b-link :href="'https://etherscan.io/address/' + address" target="_blank">
                             <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + address + ' in the explorer'">
-                              <font size="-1">{{ address.substring(0, 8) }}</font>
+                              <font size="-1">{{ safe_lookupName(address) }}</font>
                             </b-badge>
                           </b-link>
                         </span>
@@ -1727,7 +1727,7 @@
               address: safeAddress,
               version: null,
               implementation: null,
-              owners: null,
+              owners: {},
               threshold: null,
               tokens: {},
               blocks: {},
@@ -1757,7 +1757,12 @@
               }
               this.sync.completed++;
               try {
-                safeData.owners = await allSafesContract.getOwners();
+                const owners = await allSafesContract.getOwners();
+                safeData.owners = {};
+                for (const [index, owner] of owners.entries()) {
+                  safeData.owners[owner] = index;
+                }
+                // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.owners: " + JSON.stringify(safeData.owners));
               } catch (e) {
                 console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.owners - error: " + e.message);
               }
@@ -1798,7 +1803,6 @@
                   try {
                     const block = await provider.getBlock(parseInt(blockNumber));
                     safeData.blocks[blockNumber].timestamp = parseInt(block.timestamp);
-                    // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.blocks[" + blockNumber + "].timestamp: " + safeData.blocks[blockNumber].timestamp);
                   } catch (e) {
                     console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.getBlock().timestamp - error: " + e.message);
                   }
@@ -1807,7 +1811,6 @@
                   try {
                     const balance = await provider.getBalance(safeAddress, parseInt(blockNumber));
                     safeData.blocks[blockNumber].balance = ethers.BigNumber.from(balance).toString();
-                    // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.blocks[" + blockNumber + "].balance: " + safeData.blocks[blockNumber].balance);
                   } catch (e) {
                     console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.balance - error: " + e.message);
                   }
@@ -1922,7 +1925,6 @@
                     console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.ercTokens.decimals() - error: " + e.message);
                   }
                 }
-                // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.tokens[" + token + "]: " + JSON.stringify(safeData.tokens[token]));
                 t.sync.completed++;
                 if (this.sync.halt) {
                   break;
@@ -1935,7 +1937,6 @@
 
             if (safeAddress && !this.sync.halt /*&& this.settings.devMode*/) {
               this.sync.section = "ERC-721/1155 Token Metadata";
-
               this.sync.total = 0;
               for (const [token, tokenContractData] of Object.entries(safeData.tokens)) {
                 if (tokenContractData.type == 721 || tokenContractData.type == 1155) {
@@ -1948,7 +1949,6 @@
                 }
               }
               this.sync.completed = 0;
-
               const reservoirData = {};
               let continuation = null;
               do {
@@ -2133,12 +2133,16 @@
           },
 
           safe_lookupName(a) {
-            if ((a in this.settings.names)) {
+            if (((a + 'a') in this.settings.names)) {
               return this.settings.names[a];
+            } else if (a == this.settings.safe) {
+              return "This Safe";
             } else if (a in this.safeData.tokens) {
               return this.safeData.tokens[a] && this.safeData.tokens[a].name || a;
+            } else if (a in this.safeData.owners) {
+              return "Owner #" + this.safeData.owners[a] + " " + a.substring(2, 6).toUpperCase();
             } else {
-              return a;
+              return a.substring(0, 8) + '...' + a.slice(-6);
             }
           },
           safe_lookupNameType(a) {
@@ -2146,6 +2150,8 @@
               return "safe";
             } else if (a in this.safeData.tokens) {
               return "erc" + this.safeData.tokens[a].type;
+            } else if (a in this.safeData.owners) {
+              return "owner";
             }
             return "?";
           },
