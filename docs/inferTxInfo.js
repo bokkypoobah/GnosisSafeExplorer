@@ -1,5 +1,9 @@
 function inferTxInfo(tx) {
   // console.log(moment().format("HH:mm:ss") + " inferTxInfo - tx: " + JSON.stringify(tx, null, 2).substring(0, 200));
+}
+
+function inferTxInfoOld(tx) {
+  // console.log(moment().format("HH:mm:ss") + " inferTxInfo - tx: " + JSON.stringify(tx, null, 2).substring(0, 200));
   const result = {};
   const methodId = tx.tx && tx.tx.methodId || null;
   if (methodId == "0xa22cb465") {

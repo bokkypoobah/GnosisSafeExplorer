@@ -414,6 +414,12 @@
                   </b-link>
                 </b-badge>
                 <font size="-1" class="text-muted">
+                  nonce
+                </font>
+                <b-badge v-if="data.item.tx && data.item.tx.nonce" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'From account nonce'">
+                  <font size="-1">{{ data.item.tx.nonce }}</font>
+                </b-badge>
+                <font size="-1" class="text-muted">
                   to
                 </font>
                 <b-badge v-if="data.item.tx && data.item.tx.to" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.to + ' in the explorer'">
@@ -447,6 +453,13 @@
                       <div v-else>
                         {{ safeLog.address }}
                       </div>
+                      <!-- <div v-else v-for="(a, aIndex) of [safe_lookupAddress(safeLog.address)]">
+                        {{ a.name }}
+                        <br />
+                        {{ a.description }}
+                        <br />
+                        {{ a }}
+                      </div> -->
                     </b-badge>
                   </b-col>
                   <b-col cols="2">
@@ -2115,6 +2128,21 @@
             } else {
               return moment.unix(unixtime).fromNow();
             }
+          },
+
+          safe_lookupAddress(a) {
+            console.log(moment().format("HH:mm:ss") + " safe_lookupAddress: " + a);
+            if ((a in this.safeData.tokens)) {
+              const token = this.safeData.tokens[a];
+              return {
+                address: a,
+                type: token.type,
+                name: token.name,
+                description: token.description,
+                decimals: token.decimals,
+              };
+            }
+            return { address: a };
           },
 
           lookupAddress(a) {
