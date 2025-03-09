@@ -350,6 +350,50 @@
                 <b-dropdown-item @click="settings.safe = '0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4'; saveSettings(); syncSafe();">Hacked Bybit: Cold Wallet 1 - Originally Safe 1.3.0; now Non-Safe Contract</b-dropdown-item>
               </b-dropdown>
             </div>
+            <div class="mt-0 pr-1">
+              <b-dropdown size="sm" variant="link" v-b-popover.hover.ds500="'Junk filter'">
+                <template #button-content>
+                  <span v-if="settings.safeTxsTable.junkFilter == 'excludejunk'">
+                    <b-iconstack font-scale="1">
+                      <b-icon stacked icon="trash" variant="info" scale="0.75"></b-icon>
+                      <b-icon stacked icon="slash-circle" variant="danger"></b-icon>
+                    </b-iconstack>
+                  </span>
+                  <span v-else-if="settings.safeTxsTable.junkFilter == null">
+                    <b-iconstack font-scale="1">
+                      <b-icon stacked icon="circle-fill" variant="warning"></b-icon>
+                      <b-icon stacked icon="trash" variant="info" scale="0.75"></b-icon>
+                    </b-iconstack>
+                  </span>
+                  <span v-else>
+                    <b-iconstack font-scale="1">
+                      <b-icon stacked icon="trash" variant="info" scale="0.75"></b-icon>
+                    </b-iconstack>
+                  </span>
+                </template>
+                <b-dropdown-item href="#" @click="settings.safeTxsTable.junkFilter = 'excludejunk'; saveSettings()">
+                  <b-iconstack font-scale="1">
+                    <b-icon stacked icon="trash" variant="info" scale="0.75"></b-icon>
+                    <b-icon stacked icon="slash-circle" variant="danger"></b-icon>
+                  </b-iconstack>
+                  Exclude Junk
+                </b-dropdown-item>
+                <b-dropdown-item href="#" @click="settings.safeTxsTable.junkFilter = null; saveSettings()">
+                  <b-iconstack font-scale="1">
+                    <b-icon stacked icon="circle-fill" variant="warning"></b-icon>
+                    <b-icon stacked icon="trash" variant="info" scale="0.75"></b-icon>
+                  </b-iconstack>
+                  Include Junk
+                </b-dropdown-item>
+                <b-dropdown-item href="#" @click="settings.safeTxsTable.junkFilter = 'junk'; saveSettings()">
+                  <b-iconstack font-scale="1">
+                    <b-icon stacked icon="trash" variant="info" scale="0.75"></b-icon>
+                  </b-iconstack>
+                  Junk
+                </b-dropdown-item>
+              </b-dropdown>
+            </div>
+
             <div class="mt-0 flex-grow-1">
             </div>
             <div v-if="!sync.section" class="mt-0 pr-1">
