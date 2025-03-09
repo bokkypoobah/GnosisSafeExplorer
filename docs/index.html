@@ -72,13 +72,35 @@
         <!-- :MODALSAFEADDRESS -->
         <b-modal id="modal-safeaddress" hide-footer size="lg" body-class="m-0 p-1 pt-2" body-bg-variant="light">
           <template #modal-title>
-            Safe Address
+            Address {{ modalSafeAddress.address }}
+            <font size="-1" class="text-muted ml-2">{{ safe_lookupNameType(modalSafeAddress.address) }}</font>
+            <!-- <b-badge pill variant="transparent" class="px-0">
+            {{ safe_lookupNameType(modalSafeAddress.address) }}
+            </b-badge> -->
           </template>
-          <font size="-2">
+          <b-form-group label="Address:" label-cols="4" label-align="right" class="m-0 p-0">
+            <b-input-group>
+              <b-button v-if="modalSafeAddress.address" :href="'https://etherscan.io/address/' + lookupAddress(modalSafeAddress.address)" variant="link" target="_blank" class="m-0 p-0 pt-1">
+                {{ modalSafeAddress.address }}
+              </b-button>
+              <b-input-group-append>
+                <b-button size="sm" @click="copyToClipboard(lookupAddress(modalSafeAddress.address));" variant="link">
+                  <b-icon-clipboard shift-v="-1" font-scale="1.1"></b-icon-clipboard>
+                </b-button>
+                <b-button v-if="modalSafeAddress.address && safe_lookupNameType(modalSafeAddress.address) == 'safe'" size="sm" :href="'https://app.safe.global/transactions/history?safe=eth:' + lookupAddress(modalSafeAddress.address)" v-b-popover.hover.bottom="'View in app.safe.global'" variant="link" target="_blank">
+                  <b-icon-wallet shift-v="-1" font-scale="1.1"></b-icon-wallet>
+                </b-button>
+              </b-input-group-append>
+            </b-input-group>
+          </b-form-group>
+          <b-form-group label="Type:" label-cols="4" label-align="right" class="m-0 p-0">
+            <b-form-select disabled size="sm" :value="safe_lookupNameType(modalSafeAddress.address)" :options="addressTypeOptions" class="w-50"></b-form-select>
+          </b-form-group>
+          <!-- <font size="-2">
             <pre>
 {{ modalSafeAddress }}
             </pre>
-          </font>
+          </font> -->
         </b-modal>
 
         <!-- :MODALSAFETX -->
@@ -737,6 +759,15 @@
             { value: 250, text: '250' },
             { value: 500, text: '500' },
             { value: 1000, text: '1,000' },
+          ],
+
+          addressTypeOptions: [
+            { value: null, text: 'Unknown' },
+            { value: 'safe', text: 'Gnosis Safe' },
+            { value: 'owner', text: 'Gnosis Safe Owner' },
+            { value: 'erc20', text: 'ERC-20' },
+            { value: 'erc721', text: 'ERC-721' },
+            { value: 'erc1155', text: 'ERC-1155' },
           ],
 
           safesFields: [
@@ -2185,7 +2216,7 @@
             } else if (a in this.safeData.owners) {
               return "owner";
             }
-            return "?";
+            return null;
           },
 
           safe_lookupAddress(a) {
