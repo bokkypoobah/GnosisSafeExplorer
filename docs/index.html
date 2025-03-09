@@ -522,7 +522,6 @@
                 <b-badge v-if="data.item.tx && data.item.tx.data.length > 2" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.tx.value">
                   {{ data.item.tx.data.substring(0, 10) }}
                 </b-badge>
-                <br />
                 <b-row v-for="(safeLog, index) of data.item.safeLogs" v-bind:key="index">
                   <b-col cols="3" class="text-right">
                     <b-badge pill variant="transparent" v-b-popover.hover.bottom="safeLog.address" class="m-0 p-0">
@@ -590,6 +589,11 @@
                     </span>
                   </b-col>
                 </b-row>
+                <font v-if="Object.keys(data.item.info).length > 0" size="-2">
+                  <pre>
+{{ data.item.info }}
+                  </pre>
+                </font>
               </template>
               <template #cell(balance)="data">
                 {{ formatETH(data.item.balance, 0) }}
@@ -744,12 +748,12 @@
               "0x5b755c8b7B6eD28b3441121965cebdDE6266c4B6:0": "pooledether.com:0",
             },
             functionSigs: {
-              "0x6a761202": "execTransaction(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,bytes signatures)",
-              "0x1688f0b9": "createProxyWithNonce(address _singleton,bytes initializer,uint256 saltNonce)",
-              "0xa9059cbb": "transfer(address recipient,uint256 amount)", // ERC-20
-              "0x4666fc80": "swapTokensSingleV3ERC20ToERC20(bytes32 _transactionId,string _integrator,string _referrer,address _receiver,uint256 _minAmountOut,tuple _swapData)",
-              "0xfe029156": "swap(address fromToken, address toToken, uint256 amount, uint256 minReturn)",
-              "0xb88d4fde": "safeTransferFrom(address from, address to, uint256 tokenId, bytes _data)", // ERC-721
+              "0x6a761202": "function execTransaction(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,bytes signatures)",
+              "0x1688f0b9": "function createProxyWithNonce(address _singleton,bytes initializer,uint256 saltNonce)",
+              "0xa9059cbb": "function transfer(address recipient,uint256 amount)", // ERC-20
+              // "0x4666fc80": "function swapTokensSingleV3ERC20ToERC20(bytes32 _transactionId,string _integrator,string _referrer,address _receiver,uint256 _minAmountOut,tuple _swapData)",
+              "0xfe029156": "function swap(address fromToken, address toToken, uint256 amount, uint256 minReturn)",
+              "0xb88d4fde": "function safeTransferFrom(address from, address to, uint256 tokenId, bytes _data)", // ERC-721
             },
             version: 9,
           },
@@ -1058,6 +1062,8 @@
                     safeLogs.sort((a, b) => {
                       return a.logIndex - b.logIndex;
                     });
+                    const info = inferTxInfo(txData, this.settings.functionSigs);
+                    console.log(moment().format("HH:mm:ss") + " filteredSortedSafeTxs - info: " + JSON.stringify(info, null, 2));
                     results.push({
                       blockNumber,
                       timestamp: blockData.timestamp,
@@ -1068,6 +1074,7 @@
                       txReceipt: txData.txReceipt,
                       safeLogs,
                       junk,
+                      info,
                     });
                   }
                 }

@@ -1,5 +1,35 @@
-function inferTxInfo(tx) {
-  // console.log(moment().format("HH:mm:ss") + " inferTxInfo - tx: " + JSON.stringify(tx, null, 2).substring(0, 200));
+function inferTxInfo(txData, functionSigs) {
+  const results = {};
+  console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2).substring(0, 200));
+  if (txData.tx) {
+    if (!txData.tx.data || txData.tx.data.length <= 2) {
+      results.action = "Transfer";
+      results.parameters = [
+        { name: "from", value: txData.tx.from, type: "address" },
+        { name: "to", value: txData.tx.to, type: "address" },
+        { name: "token", value: null, type: "address" }, // ETH
+        { name: "value", value: txData.tx.value, type: "uint256" },
+      ];
+    } else {
+      const functionSig = txData.tx.data.substring(0, 10);
+      const functionDefinition = functionSigs[functionSig] || null;
+      if (functionDefinition) {
+        console.log(moment().format("HH:mm:ss") + " inferTxInfo - functionSig: " + functionSig + " => " + functionDefinition);
+        let decodedData = null
+        try {
+          const interface = new ethers.utils.Interface([functionDefinition]);
+          decodedData = interface.parseTransaction({ data: txData.tx.data, value: txData.tx.value });
+          console.log(moment().format("HH:mm:ss") + " inferTxInfo - decodedData: " + JSON.stringify(decodedData, null, 2));
+        } catch (e) {
+          console.error(moment().format("HH:mm:ss") + " inferTxInfo - decodedData - error: " + e.message);
+        }
+        // if (decodedData.functionFragment.name == "commit") {
+
+      }
+    }
+  }
+  console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
+  return results;
 }
 
 function inferTxInfoOld(tx) {
