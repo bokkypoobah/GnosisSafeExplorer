@@ -100,8 +100,7 @@
           <b-form-group label="Type:" label-cols="4" label-align="right" class="m-0 p-0">
             <b-form-select disabled size="sm" :value="safe_lookupNameType(modalSafeAddress.address)" :options="addressTypeOptions" class="w-50"></b-form-select>
             <b-button size="sm" @click="safe_toggleJunk(modalSafeAddress.address);" variant="transparent" v-b-popover.hover.ds500="settings.junk[modalSafeAddress.address] ? 'Junk' : 'Not junk'" class="m-0 ml-1 p-0">
-              <b-icon :icon="settings.junk[modalSafeAddress.address] ? 'trash-fill' : 'trash'" font-scale="1.2" :variant="settings.junk[modalSafeAddress.address] ? 'primary' : 'secondary'">
-              </b-icon>
+              <b-icon :icon="settings.junk[modalSafeAddress.address] ? 'trash-fill' : 'trash'" font-scale="1.2" :variant="settings.junk[modalSafeAddress.address] ? 'primary' : 'secondary'"></b-icon>
             </b-button>
           </b-form-group>
           <b-form-group v-if="safe_lookupNameType(modalSafeAddress.address) == 'erc20'" label="Decimals:" label-cols="4" label-align="right" class="m-0 p-0" description="Delete to use the default decimals">
@@ -453,13 +452,13 @@
                     <font size="-1">{{ safe_lookupName(data.item.tx.from) }}</font>
                   </b-link>
                 </b-badge>
-                <font size="-1" class="text-muted">
+                <font v-if="data.item.tx && data.item.tx.nonce" size="-1" class="text-muted">
                   nonce
                 </font>
                 <b-badge v-if="data.item.tx && data.item.tx.nonce" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'From account nonce'">
                   <font size="-1">{{ data.item.tx.nonce }}</font>
                 </b-badge>
-                <font size="-1" class="text-muted">
+                <font v-if="data.item.tx && data.item.tx.to" size="-1" class="text-muted">
                   to
                 </font>
                 <b-badge v-if="data.item.tx && data.item.tx.to" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.to + ' in the explorer'">
@@ -467,7 +466,7 @@
                     <font size="-1">{{ safe_lookupName(data.item.tx.to) }}</font>
                   </b-link>
                 </b-badge>
-                <font size="-1" class="text-muted">
+                <font v-if="data.item.tx && data.item.tx.value" size="-1" class="text-muted">
                   value
                 </font>
                 <b-badge v-if="data.item.tx && data.item.tx.value" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.tx.value">
@@ -482,18 +481,17 @@
                 <br />
                 <b-row v-for="(safeLog, index) of data.item.safeLogs" v-bind:key="index">
                   <b-col cols="3" class="text-right">
-                    <b-badge pill variant="transparent" v-b-popover.hover.bottom="safeLog.address">
+                    <b-badge pill variant="transparent" v-b-popover.hover.bottom="safeLog.address" class="m-0 p-0">
                       <b-link @click="viewAddress(safeLog.address)">
-                      {{ safe_lookupName(safeLog.address) }}
+                        {{ safe_lookupName(safeLog.address) }}
                       </b-link>
                     </b-badge>
-                    <font size="-1" class="text-muted">
+                    <b-button size="sm" @click="safe_toggleJunk(safeLog.address);" variant="transparent" v-b-popover.hover.ds500="settings.junk[safeLog.address] ? 'Junk' : 'Not junk'" class="m-0 p-0">
+                      <b-icon :icon="settings.junk[safeLog.address] ? 'trash-fill' : 'trash'" font-scale="0.9" shift-v="+1" :variant="settings.junk[safeLog.address] ? 'primary' : 'secondary'" class="m-0 p-0"></b-icon>
+                    </b-button>
+                    <font size="-1" class="m-0 p-0 text-muted">
                       {{ safe_lookupNameType(safeLog.address) }}
                     </font>
-                    <b-button size="sm" @click="safe_toggleJunk(safeLog.address);" variant="transparent" v-b-popover.hover.ds500="settings.junk[safeLog.address] ? 'Junk' : 'Not junk'" class="m-0 ml-1 p-0">
-                      <b-icon :icon="settings.junk[safeLog.address] ? 'trash-fill' : 'trash'" font-scale="0.9" shift-v="+1" :variant="settings.junk[safeLog.address] ? 'primary' : 'secondary'">
-                      </b-icon>
-                    </b-button>
                   </b-col>
                   <b-col cols="3">
                     <b-link :href="'https://etherscan.io/tx/' + data.item.txHash + '#eventlog#' + safeLog.logIndex" target="_blank">
@@ -684,6 +682,7 @@
             safe: null,
             safeTxsTable: {
               filter: null,
+              junkFilter: null,
               currentPage: 1,
               pageSize: 15,
               sortOption: 'blocknumberdsc',
@@ -691,9 +690,7 @@
             names: {
               "0x9fC3dc011b461664c835F2527fffb1169b3C213e": "EF DeFi Multisig",
             },
-            decimals: {
-
-            },
+            decimals: {},
             junk: {
               "0xE1ffdc4437992373809Fd7479F4B058E83A600a0": "HELLO",
               "0x1F316e894307285B2C503c677B75FB0B19560Df2": "ETHFNDN",
@@ -710,7 +707,7 @@
               "0xfe029156": "swap(address fromToken, address toToken, uint256 amount, uint256 minReturn)",
               "0xb88d4fde": "safeTransferFrom(address from, address to, uint256 tokenId, bytes _data)", // ERC-721
             },
-            version: 8,
+            version: 9,
           },
 
           modalSafeAddress: {
@@ -2167,7 +2164,7 @@
               } else if (a == this.settings.safe) {
                 return "This Safe";
               } else if (a in this.safeData.tokens) {
-                return this.safeData.tokens[a] && this.safeData.tokens[a].name || a;
+                return this.safeData.tokens[a] && this.safeData.tokens[a].name || (a.substring(0, 8) + '...' + a.slice(-6));
               } else if (a in this.safeData.owners) {
                 return "Owner #" + this.safeData.owners[a] + " " + a.substring(2, 6).toUpperCase();
               } else {
