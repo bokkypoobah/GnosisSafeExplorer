@@ -93,17 +93,16 @@
               </b-input-group-append>
             </b-input-group>
           </b-form-group>
-          <b-form-group label="Name:" label-cols="4" label-align="right" class="m-0 p-0" description="Delete to use the system generated name">
+          <b-form-group label="Name:" label-cols="4" label-align="right" class="m-0 p-0" description="Delete to use the default name">
             <b-form-input size="sm" :value="safe_lookupName(modalSafeAddress.address)" @change="safe_updateName(modalSafeAddress.address, $event);" class="w-50"></b-form-input>
           </b-form-group>
           <b-form-group label="Type:" label-cols="4" label-align="right" class="m-0 p-0">
             <b-form-select disabled size="sm" :value="safe_lookupNameType(modalSafeAddress.address)" :options="addressTypeOptions" class="w-50"></b-form-select>
+            <b-button size="sm" @click="safe_toggleJunk(modalSafeAddress.address);" variant="transparent" v-b-popover.hover.ds500="settings.junk[modalSafeAddress.address] ? 'Junk' : 'Not junk'" class="m-0 ml-1 p-0">
+              <b-icon :icon="settings.junk[modalSafeAddress.address] ? 'trash-fill' : 'trash'" font-scale="1.2" variant="primary">
+              </b-icon>
+            </b-button>
           </b-form-group>
-          <!-- <font size="-2">
-            <pre>
-{{ modalSafeAddress }}
-            </pre>
-          </font> -->
         </b-modal>
 
         <!-- :MODALSAFETX -->
@@ -2205,6 +2204,16 @@
             } else {
               Vue.delete(this.settings.names, address);
             }
+            this.saveSettings();
+          },
+
+          safe_toggleJunk(item) {
+            if (item && this.settings.junk[item]) {
+              Vue.delete(this.settings.junk, item);
+            } else {
+              Vue.set(this.settings.junk, item, true);
+            }
+            // console.log(moment().format("HH:mm:ss") + " safe_toggleJunk - item: " + item + ", junk: " + this.settings.junk[item]);
             this.saveSettings();
           },
 
