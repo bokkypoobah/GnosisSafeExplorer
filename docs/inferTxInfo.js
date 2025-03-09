@@ -3,12 +3,12 @@ function inferTxInfo(txData, functionSigs) {
   console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2).substring(0, 200));
   if (txData.tx) {
     if (!txData.tx.data || txData.tx.data.length <= 2) {
-      results.action = "Transfer";
+      results.action = "transfer";
       results.parameters = [
-        { name: "from", value: txData.tx.from, type: "address" },
-        { name: "to", value: txData.tx.to, type: "address" },
-        { name: "token", value: null, type: "address" }, // ETH
-        { name: "value", value: txData.tx.value, type: "uint256" },
+        { name: "from", type: "address", value: txData.tx.from },
+        { name: "to", type: "address", value: txData.tx.to },
+        { name: "token", type: "address", value: "eth" }, // TODO
+        { name: "value", type: "uint256", value: txData.tx.value },
       ];
     } else {
       const functionSig = txData.tx.data.substring(0, 10);
@@ -19,12 +19,21 @@ function inferTxInfo(txData, functionSigs) {
         try {
           const interface = new ethers.utils.Interface([functionDefinition]);
           decodedData = interface.parseTransaction({ data: txData.tx.data, value: txData.tx.value });
-          console.log(moment().format("HH:mm:ss") + " inferTxInfo - decodedData: " + JSON.stringify(decodedData, null, 2));
+          results.action = decodedData.functionFragment.name;
+          results.parameters = [];
+          for (const [index, parameter] of decodedData.functionFragment.inputs.entries()) {
+            console.log(index + " => " + JSON.stringify(parameter));
+            let value = null;
+            if (parameter.type == "uint256") {
+              value = ethers.BigNumber.from(decodedData.args[index]).toString();
+            } else {
+              value = decodedData.args[index];
+            }
+            results.parameters.push({ name: parameter.name, type: parameter.type, value });
+          }
         } catch (e) {
           console.error(moment().format("HH:mm:ss") + " inferTxInfo - decodedData - error: " + e.message);
         }
-        // if (decodedData.functionFragment.name == "commit") {
-
       }
     }
   }
