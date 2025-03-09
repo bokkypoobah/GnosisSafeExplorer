@@ -432,7 +432,7 @@
                   from
                 </font>
                 <b-badge v-if="data.item.tx && data.item.tx.from" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.from + ' in the explorer'">
-                  <b-link  @click="viewAddress(data.item.tx.from)" target="_blank">
+                  <b-link @click="viewAddress(data.item.tx.from)">
                     <font size="-1">{{ safe_lookupName(data.item.tx.from) }}</font>
                   </b-link>
                 </b-badge>
@@ -446,7 +446,7 @@
                   to
                 </font>
                 <b-badge v-if="data.item.tx && data.item.tx.to" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.to + ' in the explorer'">
-                  <b-link :href="'https://etherscan.io/address/' + data.item.tx.to" target="_blank">
+                  <b-link @click="viewAddress(data.item.tx.to)">
                     <font size="-1">{{ safe_lookupName(data.item.tx.to) }}</font>
                   </b-link>
                 </b-badge>
@@ -487,7 +487,7 @@
                         {{ parameter.name }}
                       </font>
                       <b-badge v-if="parameter.type == 'address'" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + parameter.value + ' in the explorer'">
-                        <b-link :href="'https://etherscan.io/address/' + parameter.value" target="_blank">
+                        <b-link @click="viewAddress(parameter.value)">
                           <font size="-1">{{ safe_lookupName(parameter.value) }}</font>
                         </b-link>
                       </b-badge>
@@ -496,7 +496,7 @@
                           <font v-if="addressIndex > 0" size="-1" class="text-muted">
                             ,
                           </font>
-                          <b-link :href="'https://etherscan.io/address/' + address" target="_blank">
+                          <b-link @click="viewAddress(address)">
                             <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + address + ' in the explorer'">
                               <font size="-1">{{ safe_lookupName(address) }}</font>
                             </b-badge>
