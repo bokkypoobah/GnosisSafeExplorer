@@ -93,6 +93,9 @@
               </b-input-group-append>
             </b-input-group>
           </b-form-group>
+          <b-form-group label="Name:" label-cols="4" label-align="right" class="m-0 p-0" description="Delete to use the system generated name">
+            <b-form-input size="sm" :value="safe_lookupName(modalSafeAddress.address)" @change="safe_updateName(modalSafeAddress.address, $event);" class="w-50"></b-form-input>
+          </b-form-group>
           <b-form-group label="Type:" label-cols="4" label-align="right" class="m-0 p-0">
             <b-form-select disabled size="sm" :value="safe_lookupNameType(modalSafeAddress.address)" :options="addressTypeOptions" class="w-50"></b-form-select>
           </b-form-group>
@@ -2195,26 +2198,41 @@
             }
           },
 
-          safe_lookupName(a) {
-            if ((a in this.settings.names)) {
-              return this.settings.names[a];
-            } else if (a == this.settings.safe) {
-              return "This Safe";
-            } else if (a in this.safeData.tokens) {
-              return this.safeData.tokens[a] && this.safeData.tokens[a].name || a;
-            } else if (a in this.safeData.owners) {
-              return "Owner #" + this.safeData.owners[a] + " " + a.substring(2, 6).toUpperCase();
+          safe_updateName(address, name) {
+            console.log(moment().format("HH:mm:ss") + " safe_updateName - address: " + address + ", name: " + name);
+            if (name && name.length > 0) {
+              Vue.set(this.settings.names, address, name);
             } else {
-              return a.substring(0, 8) + '...' + a.slice(-6);
+              Vue.delete(this.settings.names, address);
             }
+            this.saveSettings();
+          },
+
+          safe_lookupName(a) {
+            if (a) {
+              if ((a in this.settings.names) && this.settings.names[a].length > 0) {
+                return this.settings.names[a];
+              } else if (a == this.settings.safe) {
+                return "This Safe";
+              } else if (a in this.safeData.tokens) {
+                return this.safeData.tokens[a] && this.safeData.tokens[a].name || a;
+              } else if (a in this.safeData.owners) {
+                return "Owner #" + this.safeData.owners[a] + " " + a.substring(2, 6).toUpperCase();
+              } else {
+                return a.substring(0, 8) + '...' + a.slice(-6);
+              }
+            }
+            return null;
           },
           safe_lookupNameType(a) {
-            if (a == this.settings.safe) {
-              return "safe";
-            } else if (a in this.safeData.tokens) {
-              return "erc" + this.safeData.tokens[a].type;
-            } else if (a in this.safeData.owners) {
-              return "owner";
+            if (a) {
+              if (a == this.settings.safe) {
+                return "safe";
+              } else if (a in this.safeData.tokens) {
+                return "erc" + this.safeData.tokens[a].type;
+              } else if (a in this.safeData.owners) {
+                return "owner";
+              }
             }
             return null;
           },
