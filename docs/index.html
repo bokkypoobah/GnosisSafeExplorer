@@ -69,6 +69,18 @@
           </b-card-text>
         </b-card> -->
 
+        <!-- :MODALSAFEADDRESS -->
+        <b-modal id="modal-safeaddress" hide-footer size="lg" body-class="m-0 p-1 pt-2" body-bg-variant="light">
+          <template #modal-title>
+            Safe Address
+          </template>
+          <font size="-2">
+            <pre>
+{{ modalSafeAddress }}
+            </pre>
+          </font>
+        </b-modal>
+
         <!-- :MODALSAFETX -->
         <b-modal id="modal-safetx" hide-footer size="lg" body-class="m-0 p-1 pt-2" body-bg-variant="light">
           <template #modal-title>
@@ -416,11 +428,11 @@
 
               </template>
               <template #cell(tx)="data">
-                <font size="-1" class="text-muted">
+                <font v-if="data.item.tx && data.item.tx.from" size="-1" class="text-muted">
                   from
                 </font>
                 <b-badge v-if="data.item.tx && data.item.tx.from" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.from + ' in the explorer'">
-                  <b-link :href="'https://etherscan.io/address/' + data.item.tx.from" target="_blank">
+                  <b-link  @click="viewAddress(data.item.tx.from)" target="_blank">
                     <font size="-1">{{ safe_lookupName(data.item.tx.from) }}</font>
                   </b-link>
                 </b-badge>
@@ -667,8 +679,17 @@
             },
             functionSigs: {
               "0x6a761202": "execTransaction(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,bytes signatures)",
+              "0x1688f0b9": "createProxyWithNonce(address _singleton,bytes initializer,uint256 saltNonce)",
+              "0xa9059cbb": "transfer(address recipient,uint256 amount)", // ERC-20
+              "0x4666fc80": "swapTokensSingleV3ERC20ToERC20(bytes32 _transactionId,string _integrator,string _referrer,address _receiver,uint256 _minAmountOut,tuple _swapData)",
+              "0xfe029156": "swap(address fromToken, address toToken, uint256 amount, uint256 minReturn)",
+              "0xb88d4fde": "safeTransferFrom(address from, address to, uint256 tokenId, bytes _data)", // ERC-721
             },
             version: 7,
+          },
+
+          modalSafeAddress: {
+            address: null,
           },
 
           modalSafeTx: {
@@ -979,25 +1000,27 @@
         // --- METHODS ---
         methods: {
 
+          viewAddress(address) {
+            this.modalSafeAddress.address = address;
+            this.$bvModal.show('modal-safeaddress');
+          },
+
+          safeTxsRowSelected(item) {
+            if (item && item.length > 0) {
+              this.modalSafeTx.item = item[0];
+              this.$bvModal.show('modal-safetx');
+              this.$refs.safeTxsTable.clearSelected();
+            }
+          },
+
           async safesRowSelected(item) {
             if (item && item.length > 0) {
               console.log(moment().format("HH:mm:ss") + " safesRowSelected - item: " + JSON.stringify(item));
               this.settings.safe = item[0][0];
               this.settings.tabIndex = 1;
               this.saveSettings();
-              // this.modalSafe.factory = this.addresses[item[0].factoryAddressIndex];
-              // this.$bvModal.show('modal-safe');
               this.$refs.safesTable.clearSelected();
               await this.syncSafe();
-            }
-          },
-
-          safeTxsRowSelected(item) {
-            if (item && item.length > 0) {
-              // console.log(moment().format("HH:mm:ss") + " safeTxsRowSelected - item: " + JSON.stringify(item));
-              this.modalSafeTx.item = item[0];
-              this.$bvModal.show('modal-safetx');
-              this.$refs.safeTxsTable.clearSelected();
             }
           },
 
@@ -1401,7 +1424,6 @@
 
             async function syncSafe_processSafeAndTokenLogs(section, fromBlock, toBlock, logs) {
               console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - section: " + section + ", fromBlock: " + fromBlock + ", toBlock: " + toBlock + ", logs.length: " + logs.length);
-              // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - logs: " + JSON.stringify(logs, null, 2));
               for (const log of logs) {
                 if (!log.removed) {
                   // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - log: " + JSON.stringify(log, null, 2));
@@ -1534,7 +1556,6 @@
                           image: null, // ERC-721 and ERC-1155 collection image
                           decimals: null,
                           tokens: {},
-                          junk: null,
                         };
                         // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - added token: " + log.address + " => " + JSON.stringify(safeData.tokens[log.address], null, 2));
                       }
@@ -1546,7 +1567,6 @@
                             name: null,
                             description: null,
                             image: null,
-                            junk: null,
                           };
                         } else {
                           if (event.name == "TransferSingle") {
