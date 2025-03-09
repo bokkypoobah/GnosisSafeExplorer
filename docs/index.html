@@ -530,7 +530,7 @@
                         {{ safe_lookupName(safeLog.address) }}
                       </b-link>
                     </b-badge>
-                    <b-button size="sm" @click="safe_toggleJunk(safeLog.address);" variant="transparent" v-b-popover.hover.ds500="settings.junk[safeLog.address] ? 'Junk' : 'Not junk'" class="m-0 p-0">
+                    <b-button v-if="safeLog.address != safeData.address" size="sm" @click="safe_toggleJunk(safeLog.address);" variant="transparent" v-b-popover.hover.ds500="settings.junk[safeLog.address] ? 'Junk' : 'Not junk'" class="m-0 p-0">
                       <b-icon :icon="settings.junk[safeLog.address] ? 'trash-fill' : 'trash'" font-scale="0.9" shift-v="+1" :variant="settings.junk[safeLog.address] ? 'primary' : 'secondary'" class="m-0 p-0"></b-icon>
                     </b-button>
                     <font size="-1" class="m-0 p-0 text-muted">
