@@ -70,6 +70,7 @@
         </b-card> -->
 
         <!-- :MODALSAFEADDRESS -->
+        <!-- TODO: Delete -->
         <b-modal id="modal-safeaddress" hide-footer size="lg" body-class="m-0 p-1 pt-2" body-bg-variant="light">
           <template #modal-title>
             Address {{ modalSafeAddress.address }}
@@ -99,9 +100,12 @@
           <b-form-group label="Type:" label-cols="4" label-align="right" class="m-0 p-0">
             <b-form-select disabled size="sm" :value="safe_lookupNameType(modalSafeAddress.address)" :options="addressTypeOptions" class="w-50"></b-form-select>
             <b-button size="sm" @click="safe_toggleJunk(modalSafeAddress.address);" variant="transparent" v-b-popover.hover.ds500="settings.junk[modalSafeAddress.address] ? 'Junk' : 'Not junk'" class="m-0 ml-1 p-0">
-              <b-icon :icon="settings.junk[modalSafeAddress.address] ? 'trash-fill' : 'trash'" font-scale="1.2" variant="primary">
+              <b-icon :icon="settings.junk[modalSafeAddress.address] ? 'trash-fill' : 'trash'" font-scale="1.2" :variant="settings.junk[modalSafeAddress.address] ? 'primary' : 'secondary'">
               </b-icon>
             </b-button>
+          </b-form-group>
+          <b-form-group v-if="safe_lookupNameType(modalSafeAddress.address) == 'erc20'" label="Decimals:" label-cols="4" label-align="right" class="m-0 p-0" description="Delete to use the default decimals">
+            <b-form-input size="sm" :value="safe_lookupDecimals(modalSafeAddress.address)" @change="safe_updateDecimals(modalSafeAddress.address, $event);" class="w-25"></b-form-input>
           </b-form-group>
         </b-modal>
 
@@ -479,11 +483,17 @@
                 <b-row v-for="(safeLog, index) of data.item.safeLogs" v-bind:key="index">
                   <b-col cols="3" class="text-right">
                     <b-badge pill variant="transparent" v-b-popover.hover.bottom="safeLog.address">
+                      <b-link @click="viewAddress(safeLog.address)">
                       {{ safe_lookupName(safeLog.address) }}
+                      </b-link>
                     </b-badge>
                     <font size="-1" class="text-muted">
                       {{ safe_lookupNameType(safeLog.address) }}
                     </font>
+                    <b-button size="sm" @click="safe_toggleJunk(safeLog.address);" variant="transparent" v-b-popover.hover.ds500="settings.junk[safeLog.address] ? 'Junk' : 'Not junk'" class="m-0 ml-1 p-0">
+                      <b-icon :icon="settings.junk[safeLog.address] ? 'trash-fill' : 'trash'" font-scale="0.9" shift-v="+1" :variant="settings.junk[safeLog.address] ? 'primary' : 'secondary'">
+                      </b-icon>
+                    </b-button>
                   </b-col>
                   <b-col cols="3">
                     <b-link :href="'https://etherscan.io/tx/' + data.item.txHash + '#eventlog#' + safeLog.logIndex" target="_blank">
@@ -681,6 +691,9 @@
             names: {
               "0x9fC3dc011b461664c835F2527fffb1169b3C213e": "EF DeFi Multisig",
             },
+            decimals: {
+
+            },
             junk: {
               "0xE1ffdc4437992373809Fd7479F4B058E83A600a0": "HELLO",
               "0x1F316e894307285B2C503c677B75FB0B19560Df2": "ETHFNDN",
@@ -697,7 +710,7 @@
               "0xfe029156": "swap(address fromToken, address toToken, uint256 amount, uint256 minReturn)",
               "0xb88d4fde": "safeTransferFrom(address from, address to, uint256 tokenId, bytes _data)", // ERC-721
             },
-            version: 7,
+            version: 8,
           },
 
           modalSafeAddress: {
@@ -708,6 +721,7 @@
             item: null,
           },
 
+          // TODO: Delete
           modalSafe: {
             chainId: null,
             safeAddressIndex: null,
@@ -729,7 +743,6 @@
             halt: false,
           },
 
-
           safeTxsSortOptions: [
             // { value: 'addressasc', text: '▲ Addr' },
             // { value: 'addressdsc', text: '▼ Addr' },
@@ -737,16 +750,12 @@
             { value: 'blocknumberdsc', text: '▼ BlockNumber, ▼ TxIndex' },
           ],
           safesSortOptions: [
-            // { value: 'addressasc', text: '▲ Addr' },
-            // { value: 'addressdsc', text: '▼ Addr' },
             { value: 'blocknumberasc', text: '▲ BlockNumber, ▲ LogIndex' },
             { value: 'blocknumberdsc', text: '▼ BlockNumber, ▼ LogIndex' },
             { value: 'updatedasc', text: '▲ Updated' },
             { value: 'updateddsc', text: '▼ Updated' },
           ],
           safeEventsSortOptions: [
-            // { value: 'addressasc', text: '▲ Addr' },
-            // { value: 'addressdsc', text: '▼ Addr' },
             { value: 'blocknumberasc', text: '▲ BlockNumber, ▲ LogIndex' },
             { value: 'blocknumberdsc', text: '▼ BlockNumber, ▼ LogIndex' },
           ],
@@ -1455,16 +1464,13 @@
                       safeABIVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
                     }
                   }
-                  // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - safeABIVersion: " + safeABIVersion);
                   let logData = null;
                   if (safeABIVersion) {
                     // Safe + Safe Factory events
                     if (safeABIVersion == 130) {
                       logData = safeInterface130.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - logData 130: " + JSON.stringify(logData, null, 2));
                     } else if (safeABIVersion == 141) {
                       logData = safeInterface141.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - logData 141: " + JSON.stringify(logData, null, 2));
                     } else {
                       console.error(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - No Interface - log: " + JSON.stringify(log));
                     }
@@ -1509,7 +1515,6 @@
                             { "name": "tokens", value: tokens, type: "uint256" },
                           ],
                         };
-
                       } else if (log.topics.length == 4) {
                         // ERC-721 Transfer(indexed address from, indexed address to, indexed uint256 tokenId)
                         const from = ethers.utils.getAddress('0x' + log.topics[1].substring(26));
@@ -1612,7 +1617,6 @@
                     }
                   }
                   if (event) {
-                    // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - event: " + JSON.stringify(event));
                     if (!(log.blockNumber in safeData.blocks)) {
                       safeData.blocks[log.blockNumber] = {
                         timestamp: null,
@@ -1775,8 +1779,6 @@
             this.sync.completed = 0;
             const safeInterface130 = new ethers.utils.Interface(SAFE_ABIS[130].gnosis_safe);
             const safeInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].gnosis_safe);
-            // const erc20Interface = new ethers.utils.Interface(ERC20ABI);
-            // const erc721Interface = new ethers.utils.Interface(ERC721ABI);
             const erc1155Interface = new ethers.utils.Interface(ERC1155ABI);
 
             let safeAddress = null;
@@ -1827,7 +1829,6 @@
                 for (const [index, owner] of owners.entries()) {
                   safeData.owners[owner] = index;
                 }
-                // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.owners: " + JSON.stringify(safeData.owners));
               } catch (e) {
                 console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.owners - error: " + e.message);
               }
@@ -2057,70 +2058,6 @@
             this.sync.halt = false;
           },
 
-          async resetData() {
-            this.$bvModal.msgBoxConfirm('Reset all data?', {
-                title: 'Please Confirm',
-                size: 'sm',
-                buttonSize: 'sm',
-                okVariant: 'danger',
-                okTitle: 'Yes',
-                cancelTitle: 'No',
-                footerClass: 'p-2',
-                hideHeaderClose: false,
-                // centered: true
-              })
-              .then(async value1 => {
-                if (value1) {
-                  event.preventDefault();
-                  delete localStorage.gnosisSafeExplorerChainId;
-                  delete localStorage.gnosisSafeExplorerSettings;
-                  const db = new Dexie(this.db.name);
-                  db.version(this.db.version).stores(this.db.schemaDefinition);
-                  // let status = await db.safeFactoryEvents.clear();
-                  // status = await db.safeEvents.clear();
-                  // status = await db.cache.clear();
-                  const status = await db.delete();
-                  db.close();
-                  alert('This page will reload 5 seconds after you click OK.')
-                  setTimeout(function() {
-                    window.location.reload();
-                  }, 5000);
-                }
-              })
-              .catch(err => {
-                // An error occurred
-              });
-          },
-
-          async syncBlockTimestamps(provider) {
-            console.log(moment().format("HH:mm:ss") + " syncBlockTimestamps BEGIN");
-            const blockTimestamps = this.blockTimestamps;
-            if (!(this.chainId in blockTimestamps)) {
-              blockTimestamps[this.chainId] = {};
-            }
-            const events = this.events[this.chainId] || {};
-            const newBlockNumbersMap = {};
-            for (const blockNumber of Object.keys(events)) {
-              if (!(blockNumber in blockTimestamps[this.chainId]) && !(blockNumber in newBlockNumbersMap)) {
-                newBlockNumbersMap[blockNumber] = true;
-              }
-            }
-            const newBlockNumbers = Object.keys(newBlockNumbersMap);
-            this.sync.completed = 0;
-            this.sync.total = newBlockNumbers.length;
-            this.sync.section = 'Block Timestamps';
-            for (let i = 0; i < newBlockNumbers.length && !this.sync.halt; i++) {
-              const block = await provider.getBlock(parseInt(newBlockNumbers[i]));
-              blockTimestamps[this.chainId][newBlockNumbers[i]] = parseInt(block.timestamp);
-              this.sync.completed++;
-            }
-            if (!this.sync.halt) {
-              localStorage.approvalBlockTimestamps = JSON.stringify(blockTimestamps);
-              Vue.set(this, 'blockTimestamps', blockTimestamps);
-            }
-            console.log(moment().format("HH:mm:ss") + " syncBlockTimestamps END");
-          },
-
           saveSettings() {
             // console.log(moment().format("HH:mm:ss") + " saveSettings: " + JSON.stringify(this.settings, null, 2));
             localStorage.gnosisSafeExplorerSettings = JSON.stringify(this.settings);
@@ -2198,7 +2135,6 @@
           },
 
           safe_updateName(address, name) {
-            console.log(moment().format("HH:mm:ss") + " safe_updateName - address: " + address + ", name: " + name);
             if (name && name.length > 0) {
               Vue.set(this.settings.names, address, name);
             } else {
@@ -2206,17 +2142,24 @@
             }
             this.saveSettings();
           },
-
+          safe_updateDecimals(address, decimals) {
+            if (!decimals || decimals.length == 0) {
+              Vue.delete(this.settings.decimals, address);
+            } else {
+              if (parseInt(decimals) >= 0 && parseInt(decimals) <= 18) {
+                Vue.set(this.settings.decimals, address, parseInt(decimals));
+              }
+            }
+            this.saveSettings();
+          },
           safe_toggleJunk(item) {
             if (item && this.settings.junk[item]) {
               Vue.delete(this.settings.junk, item);
             } else {
               Vue.set(this.settings.junk, item, true);
             }
-            // console.log(moment().format("HH:mm:ss") + " safe_toggleJunk - item: " + item + ", junk: " + this.settings.junk[item]);
             this.saveSettings();
           },
-
           safe_lookupName(a) {
             if (a) {
               if ((a in this.settings.names) && this.settings.names[a].length > 0) {
@@ -2245,7 +2188,17 @@
             }
             return null;
           },
-
+          safe_lookupDecimals(a) {
+            if (a && (a in this.safeData.tokens) && this.safeData.tokens[a].type == 20) {
+              if (this.settings.decimals[a]) {
+                return this.settings.decimals[a];
+              } else {
+                return this.safeData.tokens[a].decimals;
+              }
+            }
+            return 0;
+          },
+          // TODO: Delete
           safe_lookupAddress(a) {
             console.log(moment().format("HH:mm:ss") + " safe_lookupAddress: " + a);
             if ((a in this.safeData.tokens)) {
@@ -2259,6 +2212,41 @@
               };
             }
             return { address: a };
+          },
+
+          async resetData() {
+            this.$bvModal.msgBoxConfirm('Reset all data?', {
+                title: 'Please Confirm',
+                size: 'sm',
+                buttonSize: 'sm',
+                okVariant: 'danger',
+                okTitle: 'Yes',
+                cancelTitle: 'No',
+                footerClass: 'p-2',
+                hideHeaderClose: false,
+                // centered: true
+              })
+              .then(async value1 => {
+                if (value1) {
+                  event.preventDefault();
+                  delete localStorage.gnosisSafeExplorerChainId;
+                  delete localStorage.gnosisSafeExplorerSettings;
+                  const db = new Dexie(this.db.name);
+                  db.version(this.db.version).stores(this.db.schemaDefinition);
+                  // let status = await db.safeFactoryEvents.clear();
+                  // status = await db.safeEvents.clear();
+                  // status = await db.cache.clear();
+                  const status = await db.delete();
+                  db.close();
+                  alert('This page will reload 5 seconds after you click OK.')
+                  setTimeout(function() {
+                    window.location.reload();
+                  }, 5000);
+                }
+              })
+              .catch(err => {
+                // An error occurred
+              });
           },
 
           lookupAddress(a) {
