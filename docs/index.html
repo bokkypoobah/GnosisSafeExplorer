@@ -995,19 +995,17 @@
                 for (const [txHash, txData] of Object.entries(blockData.txs || {})) {
                   let include = true;
                   const safeLogs = [];
+                  const addresses = {};
+                  if (txData.tx && txData.tx.from && !(txData.tx.from in addresses)) {
+                    addresses[txData.tx.from] = 1;
+                  }
+                  if (txData.tx && txData.tx.to && !(txData.tx.to in addresses)) {
+                    addresses[txData.tx.to] = 1;
+                  }
                   for (const [logIndex, logData] of Object.entries(txData.logs || {})) {
-                    // console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData).substring(0, 1000) + "...");
-                    // if (regex) {
-                    //   if (!(regex.test(safe[0]))) {
-                    //     include = false;
-                    //   }
-                    // }
-                    // if (filter) {
-                    //   // const safeAddress = this.addresses[safe.safeAddressIndex];
-                    //   if (safe[0].indexOf(filter) < 0) {
-                    //     include = false;
-                    //   }
-                    // }
+                    if (!(logData.address in addresses)) {
+                      addresses[logData.address] = 1;
+                    }
                     safeLogs.push({
                       logIndex,
                       address: logData.address,
@@ -1015,7 +1013,46 @@
                       signature: logData.signature,
                       parameters: logData.parameters,
                     });
+                    for (const [index, parameter] of logData.parameters.entries()) {
+                      if (parameter.type == "address") {
+                        if (!(parameter.value in addresses)) {
+                          addresses[parameter.value] = 1;
+                        }
+                      } else if (parameter.type == "address[]") {
+                        for (const a of parameter.value) {
+                          if (!(a in addresses)) {
+                            addresses[a] = 1;
+                          }
+                        }
+                      }
+                    }
                   }
+                  let junk = false;
+                  for (const address of Object.keys(addresses)) {
+                    if (address in this.settings.junk) {
+                      junk = true;
+                      break;
+                    }
+                  }
+                  if (this.settings.safeTxsTable.junkFilter) {
+                    if (this.settings.safeTxsTable.junkFilter == 'junk' && !junk) {
+                      include = false;
+                    } else if (this.settings.safeTxsTable.junkFilter == 'excludejunk' && junk) {
+                      include = false;
+                    }
+                  }
+                  // console.log(blockNumber + "/" + txHash + "/" + logIndex + " => " + JSON.stringify(logData).substring(0, 1000) + "...");
+                  // if (regex) {
+                  //   if (!(regex.test(safe[0]))) {
+                  //     include = false;
+                  //   }
+                  // }
+                  // if (filter) {
+                  //   // const safeAddress = this.addresses[safe.safeAddressIndex];
+                  //   if (safe[0].indexOf(filter) < 0) {
+                  //     include = false;
+                  //   }
+                  // }
                   if (include) {
                     safeLogs.sort((a, b) => {
                       return a.logIndex - b.logIndex;
@@ -1029,6 +1066,7 @@
                       tx: txData.tx,
                       txReceipt: txData.txReceipt,
                       safeLogs,
+                      junk,
                     });
                   }
                 }
