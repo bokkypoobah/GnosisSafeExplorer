@@ -1,68 +1,11 @@
-// keccak256(
-//     "EIP712Domain(uint256 chainId,address verifyingContract)"
-// );
-// bytes32 private constant DOMAIN_SEPARATOR_TYPEHASH = 0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218;
+// Safe 1.4.1 - keccak256("EIP712Domain(uint256 chainId,address verifyingContract)");
 const DOMAIN_SEPARATOR_TYPEHASH = "0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218";
-
-// keccak256(
-//     "SafeTx(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)"
-// );
-// bytes32 private constant SAFE_TX_TYPEHASH = 0xbb8310d486368db6bd6f849402fdd73ad53d316b5a4b2644ad6efe0f941286d8;
+// Safe 1.4.1 - keccak256("SafeTx(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)");
 const SAFE_TX_TYPEHASH = "0xbb8310d486368db6bd6f849402fdd73ad53d316b5a4b2644ad6efe0f941286d8";
-
-// function domainSeparator() public view returns (bytes32) {
-//     return keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, getChainId(), this));
-// }
-
-// function encodeTransactionData(
-//     address to,
-//     uint256 value,
-//     bytes calldata data,
-//     Enum.Operation operation,
-//     uint256 safeTxGas,
-//     uint256 baseGas,
-//     uint256 gasPrice,
-//     address gasToken,
-//     address refundReceiver,
-//     uint256 _nonce
-// ) public view returns (bytes memory) {
-//     bytes32 safeTxHash = keccak256(
-//         abi.encode(
-//             SAFE_TX_TYPEHASH,
-//             to,
-//             value,
-//             keccak256(data),
-//             operation,
-//             safeTxGas,
-//             baseGas,
-//             gasPrice,
-//             gasToken,
-//             refundReceiver,
-//             _nonce
-//         )
-//     );
-//     return abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator(), safeTxHash);
-// }
-
-// function getTransactionHash(
-//     address to,
-//     uint256 value,
-//     bytes calldata data,
-//     Enum.Operation operation,
-//     uint256 safeTxGas,
-//     uint256 baseGas,
-//     uint256 gasPrice,
-//     address gasToken,
-//     address refundReceiver,
-//     uint256 _nonce
-// ) public view returns (bytes32) {
-//     return keccak256(encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, _nonce));
-// }
 
 function safeDomainSeparator(chain, safe) {
   return ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode([ "bytes32", "uint256", "address" ], [ DOMAIN_SEPARATOR_TYPEHASH, chain, safe ]));
 }
-
 function safeEncodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe) {
   const encoded = ethers.utils.defaultAbiCoder.encode(
     [ "bytes32", "address", "uint256", "bytes32", "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256" ],
@@ -70,13 +13,12 @@ function safeEncodeTransactionData(to, value, data, operation, safeTxGas, baseGa
   );
   return ethers.utils.solidityPack([ "bytes1", "bytes1", "bytes32", "bytes32" ], [ "0x19", "0x01", safeDomainSeparator(chain, safe), ethers.utils.keccak256(encoded) ]);
 }
-
 function safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe) {
   return ethers.utils.keccak256(safeEncodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe));
 }
 
 // function testIt() {
-//   console.log("Testing Hashing");
+//   console.log("Testing Safe Hashing");
 //   const TEST_SAFE = "0x9fC3dc011b461664c835F2527fffb1169b3C213e";
 //   const TEST_SAFE_RESULT1 = "0x628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f";
 //   const result1 = safeDomainSeparator(1, TEST_SAFE);
@@ -93,10 +35,15 @@ function safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, 
 //
 // testIt();
 
+function parseTx(from, to, value, data, functionSigs) {
+  console.log(moment().format("HH:mm:ss") + " parseTx - from: " + from + ", to: " + to + ", value: " + value + ", data: " + data);
+}
+
 function inferTxInfo(txData, safe, functionSigs) {
   const results = {};
-  // console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2).substring(0, 200));
+  console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2).substring(0, 200));
   if (txData.tx) {
+    parseTx(txData.tx.from, txData.tx.to, txData.tx.value, txData.tx.data, functionSigs);
     if (!txData.tx.data || txData.tx.data.length <= 2) {
       results.action = "transfer";
       results.parameters = [
@@ -148,6 +95,9 @@ function inferTxInfo(txData, safe, functionSigs) {
     const refundReceiver = results.parameters.filter(e => e.name == "refundReceiver")[0].value;
     const nonce = txData.nonce;
     const chain = 1; // TODO
+
+    parseTx(safe, to, value, data, functionSigs);
+
     const signaturesString = results.parameters.filter(e => e.name == "signatures")[0].value;
     const signatures = signaturesString.substring(2,).match(/.{1,130}/g).map(e => ("0x" + e));
     const safeTxHash = safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe);
