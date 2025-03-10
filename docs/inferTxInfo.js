@@ -60,11 +60,7 @@ const SAFE_TX_TYPEHASH = "0xbb8310d486368db6bd6f849402fdd73ad53d316b5a4b2644ad6e
 // }
 
 function safeDomainSeparator(chain, safe) {
-  const encoded = ethers.utils.defaultAbiCoder.encode(
-    [ "bytes32", "uint256", "address" ],
-    [ DOMAIN_SEPARATOR_TYPEHASH, chain, safe ]
-  );
-  return ethers.utils.keccak256(encoded);
+  return ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode([ "bytes32", "uint256", "address" ], [ DOMAIN_SEPARATOR_TYPEHASH, chain, safe ]));
 }
 
 function safeEncodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe) {
@@ -72,11 +68,7 @@ function safeEncodeTransactionData(to, value, data, operation, safeTxGas, baseGa
     [ "bytes32", "address", "uint256", "bytes32", "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256" ],
     [ SAFE_TX_TYPEHASH, to, value, ethers.utils.keccak256(data), operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce ]
   );
-  const digest = ethers.utils.keccak256(encoded);
-  return ethers.utils.solidityPack(
-    ["bytes1", "bytes1", "bytes32", "bytes32"],
-    ["0x19", "0x01", safeDomainSeparator(chain, safe), digest]
-  );
+  return ethers.utils.solidityPack([ "bytes1", "bytes1", "bytes32", "bytes32" ], [ "0x19", "0x01", safeDomainSeparator(chain, safe), ethers.utils.keccak256(encoded) ]);
 }
 
 function safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe) {
