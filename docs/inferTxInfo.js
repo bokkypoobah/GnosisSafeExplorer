@@ -1,6 +1,6 @@
 function inferTxInfo(txData, functionSigs) {
   const results = {};
-  console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2).substring(0, 200));
+  // console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2).substring(0, 200));
   if (txData.tx) {
     if (!txData.tx.data || txData.tx.data.length <= 2) {
       results.action = "transfer";
@@ -14,15 +14,16 @@ function inferTxInfo(txData, functionSigs) {
       const functionSig = txData.tx.data.substring(0, 10);
       const functionDefinition = functionSigs[functionSig] || null;
       if (functionDefinition) {
-        console.log(moment().format("HH:mm:ss") + " inferTxInfo - functionSig: " + functionSig + " => " + functionDefinition);
+        // console.log(moment().format("HH:mm:ss") + " inferTxInfo - functionSig: " + functionSig + " => " + functionDefinition);
         let decodedData = null
         try {
           const interface = new ethers.utils.Interface([functionDefinition]);
           decodedData = interface.parseTransaction({ data: txData.tx.data, value: txData.tx.value });
           results.action = decodedData.functionFragment.name;
+          results.function = functionDefinition;
           results.parameters = [];
           for (const [index, parameter] of decodedData.functionFragment.inputs.entries()) {
-            console.log(index + " => " + JSON.stringify(parameter));
+            // console.log(index + " => " + JSON.stringify(parameter));
             let value = null;
             if (parameter.type == "uint256") {
               value = ethers.BigNumber.from(decodedData.args[index]).toString();
@@ -37,7 +38,28 @@ function inferTxInfo(txData, functionSigs) {
       }
     }
   }
-  console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
+  // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
+  if (results.action == "execTransaction") {
+    console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2));
+    console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
+    const to = results.parameters.filter(e => e.name == "to")[0].value;
+    console.log(moment().format("HH:mm:ss") + " inferTxInfo - to: " + to);
+    const value = results.parameters.filter(e => e.name == "value")[0].value;
+    console.log(moment().format("HH:mm:ss") + " inferTxInfo - value: " + value);
+    const data = results.parameters.filter(e => e.name == "data")[0].value;
+    console.log(moment().format("HH:mm:ss") + " inferTxInfo - data: " + data);
+    const operation = results.parameters.filter(e => e.name == "operation")[0].value;
+    console.log(moment().format("HH:mm:ss") + " inferTxInfo - operation: " + operation);
+    const signatures = results.parameters.filter(e => e.name == "signatures")[0].value;
+    console.log(moment().format("HH:mm:ss") + " inferTxInfo - signatures: " + signatures);
+    results.multisigAction = {
+      to,
+      value,
+      data,
+      operation,
+      signatures,
+    };
+  }
   return results;
 }
 
