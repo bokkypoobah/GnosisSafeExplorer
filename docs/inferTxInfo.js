@@ -152,7 +152,6 @@ function inferTxInfo(txData, safe, functionSigs) {
   if (results.action == "execTransaction") {
     // console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2));
     // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - results.parameters: " + JSON.stringify(results.parameters, null, 2));
     const to = results.parameters.filter(e => e.name == "to")[0].value;
     const value = results.parameters.filter(e => e.name == "value")[0].value;
     const data = results.parameters.filter(e => e.name == "data")[0].value;
@@ -165,20 +164,30 @@ function inferTxInfo(txData, safe, functionSigs) {
     const nonce = txData.nonce;
     const chain = 1; // TODO
     const signaturesString = results.parameters.filter(e => e.name == "signatures")[0].value;
-    const signatures = signaturesString.substring(2,).match(/.{1,131}/g).map(e => ("0x" + e));
-
+    const signatures = signaturesString.substring(2,).match(/.{1,130}/g).map(e => ("0x" + e));
     const safeTxHash = safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe);
-
+    const signers = [];
+    for (const signature of signatures) {
+      if (signature.substring(0, 10) != "0x00000000") {
+        const pubKey = ethers.utils.recoverPublicKey(ethers.utils.arrayify(safeTxHash), signature);
+        const signer = ethers.utils.computeAddress(pubKey);
+        signers.push(signer);
+      } else {
+        const signer = ethers.utils.getAddress('0x' + signature.substring(26, 66));
+        signers.push(signer);
+      }
+    }
     results.multisig = {
       to,
       value,
       data,
       operation,
+      nonce,
       signatures,
+      signers,
       safeTxHash,
     };
     console.log(moment().format("HH:mm:ss") + " inferTxInfo - results.multisig: " + JSON.stringify(results.multisig, null, 2));
-    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2));
   }
   return results;
 }
