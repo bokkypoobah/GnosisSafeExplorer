@@ -861,7 +861,7 @@
           ],
 
           db: {
-            name: "gnosissafeexplorer088j",
+            name: "gnosissafeexplorer088k",
             version: 1,
             schemaDefinition: {
               safeFactoryEvents: '[chainId+blockNumber+logIndex],safe,factory',
@@ -1015,7 +1015,7 @@
             }
             if (this.settings.safe == this.safeData.address) {
               for (const [blockNumber, blockData] of Object.entries(this.safeData.blocks || {})) {
-                for (const [txHash, txData] of Object.entries(blockData.txs || {})) {
+                for (const [txIndex, txData] of Object.entries(blockData.txs || {})) {
                   let include = true;
                   const safeLogs = [];
                   const addresses = {};
@@ -1086,8 +1086,8 @@
                       blockNumber,
                       timestamp: blockData.timestamp,
                       balance: blockData.balance,
-                      txIndex: txData.txIndex,
-                      txHash,
+                      txIndex,
+                      txHash: txData.txHash,
                       tx: txData.tx,
                       txReceipt: txData.txReceipt,
                       safeLogs,
@@ -1729,16 +1729,16 @@
                         txs: {},
                       };
                     }
-                    if (!(log.transactionHash in safeData.blocks[log.blockNumber].txs)) {
-                      safeData.blocks[log.blockNumber].txs[log.transactionHash] = {
-                        txIndex: parseInt(log.transactionIndex),
+                    if (!(log.transactionIndex in safeData.blocks[log.blockNumber].txs)) {
+                      safeData.blocks[log.blockNumber].txs[log.transactionIndex] = {
+                        txHash: log.transactionHash,
                         logs: {},
                         tx: null,
                         txReceipt: null,
                       };
                     }
-                    if (!(log.logIndex in safeData.blocks[log.blockNumber].txs[log.transactionHash].logs)) {
-                      safeData.blocks[log.blockNumber].txs[log.transactionHash].logs[log.logIndex] = {
+                    if (!(log.logIndex in safeData.blocks[log.blockNumber].txs[log.transactionIndex].logs)) {
+                      safeData.blocks[log.blockNumber].txs[log.transactionIndex].logs[log.logIndex] = {
                         address: log.address,
                         ...event,
                       };
@@ -2011,11 +2011,11 @@
               }
               this.sync.completed = 0;
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
-                for (const [txHash, txData] of Object.entries(blockData.txs)) {
+                for (const [txIndex, txData] of Object.entries(blockData.txs)) {
                   if (!txData.tx && !this.sync.halt) {
                     try {
-                      const tx = await provider.getTransaction(txHash);
-                      safeData.blocks[blockNumber].txs[txHash].tx = {
+                      const tx = await provider.getTransaction(txData.txHash);
+                      safeData.blocks[blockNumber].txs[txIndex].tx = {
                         blockNumber: tx.blockNumber,
                         type: tx.type || null,
                         from: tx.from,
@@ -2034,15 +2034,15 @@
                   }
                   if (!txData.txReceipt && !this.sync.halt) {
                     try {
-                      const txReceipt = await provider.getTransactionReceipt(txHash);
-                      safeData.blocks[blockNumber].txs[txHash].txReceipt = {
-                        type: parseInt(txReceipt.type),
+                      const txReceipt = await provider.getTransactionReceipt(txData.txHash);
+                      safeData.blocks[blockNumber].txs[txIndex].txReceipt = {
+                        // type: parseInt(txReceipt.type),
                         contractAddress: txReceipt.contractAddress,
                         gasUsed: parseInt(txReceipt.gasUsed),
                         cumulativeGasUsed: parseInt(txReceipt.cumulativeGasUsed),
                         effectiveGasPrice: txReceipt.effectiveGasPrice && parseInt(txReceipt.effectiveGasPrice) || null,
                         status: parseInt(txReceipt.status),
-                        logs: txReceipt.logs,
+                        logs: txReceipt.logs, // TODO: Remove unnecessary fields
                       };
                     } catch (e) {
                       console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.getTransactionReceipt - error: " + e.message);
