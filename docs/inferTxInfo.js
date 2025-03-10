@@ -59,7 +59,7 @@ const SAFE_TX_TYPEHASH = "0xbb8310d486368db6bd6f849402fdd73ad53d316b5a4b2644ad6e
 //     return keccak256(encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, _nonce));
 // }
 
-function domainSeparator(chain, safe) {
+function safeDomainSeparator(chain, safe) {
   const encoded = ethers.utils.defaultAbiCoder.encode(
     [ "bytes32", "uint256", "address" ],
     [ DOMAIN_SEPARATOR_TYPEHASH, chain, safe ]
@@ -67,7 +67,7 @@ function domainSeparator(chain, safe) {
   return ethers.utils.keccak256(encoded);
 }
 
-function encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe) {
+function safeEncodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe) {
   const encoded = ethers.utils.defaultAbiCoder.encode(
     [ "bytes32", "address", "uint256", "bytes32", "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256" ],
     [ SAFE_TX_TYPEHASH, to, value, ethers.utils.keccak256(data), operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce ]
@@ -75,12 +75,12 @@ function encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, g
   const digest = ethers.utils.keccak256(encoded);
   return ethers.utils.solidityPack(
     ["bytes1", "bytes1", "bytes32", "bytes32"],
-    ["0x19", "0x01", domainSeparator(chain, safe), digest]
+    ["0x19", "0x01", safeDomainSeparator(chain, safe), digest]
   );
 }
 
-function getTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe) {
-  return ethers.utils.keccak256(encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe));
+function safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe) {
+  return ethers.utils.keccak256(safeEncodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe));
 }
 
 
@@ -88,20 +88,20 @@ function testIt() {
   console.log("Testing Hashing");
   const TEST_SAFE = "0x9fC3dc011b461664c835F2527fffb1169b3C213e";
   const TEST_SAFE_RESULT1 = "0x628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f";
-  const result1 = domainSeparator(1, TEST_SAFE);
-  console.log(moment().format("HH:mm:ss") + " domainSeparator - result1: " + result1 + " vs expected: " + TEST_SAFE_RESULT1);
+  const result1 = safeDomainSeparator(1, TEST_SAFE);
+  console.log(moment().format("HH:mm:ss") + " safeDomainSeparator - result1: " + result1 + " vs expected: " + TEST_SAFE_RESULT1);
   // 0x628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f
 
   const TEST_SAFE_RESULT2 = "0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fb920110910bff2cc4723e08ab24811f6ed50ca3dcc5a6b00591fa0a2b7529790";
-  const result2 = encodeTransactionData(TEST_SAFE, 123, "0x1234", 1, 12, 34, 56, TEST_SAFE, TEST_SAFE, 123, 1, TEST_SAFE);
-  console.log(moment().format("HH:mm:ss") + " encodeTransactionData - result2: " + result2 + " vs expected: " + TEST_SAFE_RESULT2);
+  const result2 = safeEncodeTransactionData(TEST_SAFE, 123, "0x1234", 1, 12, 34, 56, TEST_SAFE, TEST_SAFE, 123, 1, TEST_SAFE);
+  console.log(moment().format("HH:mm:ss") + " safeEncodeTransactionData - result2: " + result2 + " vs expected: " + TEST_SAFE_RESULT2);
 
   // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fb920110910bff2cc4723e08ab24811f6ed50ca3dcc5a6b00591fa0a2b7529790
   // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fb920110910bff2cc4723e08ab24811f6ed50ca3dcc5a6b00591fa0a2b7529790
 
   const TEST_SAFE_RESULT3 = "0xd88fcf8dedf935400142836a2693b601803ea32b6919bbdfa0e5532cad932e06";
-  const result3 = getTransactionData(TEST_SAFE, 123, "0x1234", 1, 12, 34, 56, TEST_SAFE, TEST_SAFE, 123, 1, TEST_SAFE);
-  console.log(moment().format("HH:mm:ss") + " getTransactionData - result3: " + result3 + " vs expected: " + TEST_SAFE_RESULT3);
+  const result3 = safeGetTransactionHash(TEST_SAFE, 123, "0x1234", 1, 12, 34, 56, TEST_SAFE, TEST_SAFE, 123, 1, TEST_SAFE);
+  console.log(moment().format("HH:mm:ss") + " safeGetTransactionHash - result3: " + result3 + " vs expected: " + TEST_SAFE_RESULT3);
 
   // 0xd88fcf8dedf935400142836a2693b601803ea32b6919bbdfa0e5532cad932e06
   // 0xd88fcf8dedf935400142836a2693b601803ea32b6919bbdfa0e5532cad932e06
