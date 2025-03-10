@@ -108,7 +108,7 @@ function testIt() {
 
 testIt();
 
-function inferTxInfo(txData, functionSigs) {
+function inferTxInfo(txData, safe, functionSigs) {
   const results = {};
   // console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2).substring(0, 200));
   if (txData.tx) {
@@ -152,20 +152,33 @@ function inferTxInfo(txData, functionSigs) {
   if (results.action == "execTransaction") {
     // console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2));
     // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
+    console.log(moment().format("HH:mm:ss") + " inferTxInfo - results.parameters: " + JSON.stringify(results.parameters, null, 2));
     const to = results.parameters.filter(e => e.name == "to")[0].value;
     const value = results.parameters.filter(e => e.name == "value")[0].value;
     const data = results.parameters.filter(e => e.name == "data")[0].value;
     const operation = results.parameters.filter(e => e.name == "operation")[0].value;
+    const safeTxGas = results.parameters.filter(e => e.name == "safeTxGas")[0].value;
+    const baseGas = results.parameters.filter(e => e.name == "baseGas")[0].value;
+    const gasPrice = results.parameters.filter(e => e.name == "gasPrice")[0].value;
+    const gasToken = results.parameters.filter(e => e.name == "gasToken")[0].value;
+    const refundReceiver = results.parameters.filter(e => e.name == "refundReceiver")[0].value;
+    const nonce = txData.nonce;
+    const chain = 1; // TODO
     const signaturesString = results.parameters.filter(e => e.name == "signatures")[0].value;
     const signatures = signaturesString.substring(2,).match(/.{1,131}/g).map(e => ("0x" + e));
+
+    const safeTxHash = safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe);
+
     results.multisig = {
       to,
       value,
       data,
       operation,
       signatures,
+      safeTxHash,
     };
-    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results.multisig: " + JSON.stringify(results.multisig, null, 2));
+    console.log(moment().format("HH:mm:ss") + " inferTxInfo - results.multisig: " + JSON.stringify(results.multisig, null, 2));
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2));
   }
   return results;
 }

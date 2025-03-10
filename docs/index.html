@@ -1080,7 +1080,7 @@
                     safeLogs.sort((a, b) => {
                       return a.logIndex - b.logIndex;
                     });
-                    const info = inferTxInfo(txData, this.settings.functionSigs);
+                    const info = inferTxInfo(txData, this.safeData.address, this.settings.functionSigs);
                     // console.log(moment().format("HH:mm:ss") + " filteredSortedSafeTxs - info: " + JSON.stringify(info, null, 2));
                     results.push({
                       blockNumber,
