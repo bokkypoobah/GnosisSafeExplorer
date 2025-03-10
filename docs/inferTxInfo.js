@@ -1,3 +1,131 @@
+// // keccak256(
+// //     "EIP712Domain(uint256 chainId,address verifyingContract)"
+// // );
+// bytes32 private constant DOMAIN_SEPARATOR_TYPEHASH = 0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218;
+const DOMAIN_SEPARATOR_TYPEHASH = "0x47e79534a245952e8b16893a336b85a3d9ea9fa8c573f3d803afb92a79469218";
+//
+// // keccak256(
+// //     "SafeTx(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,uint256 nonce)"
+// // );
+// bytes32 private constant SAFE_TX_TYPEHASH = 0xbb8310d486368db6bd6f849402fdd73ad53d316b5a4b2644ad6efe0f941286d8;
+const SAFE_TX_TYPEHASH = "0xbb8310d486368db6bd6f849402fdd73ad53d316b5a4b2644ad6efe0f941286d8";
+
+// function domainSeparator() public view returns (bytes32) {
+//     // return keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, getChainId(), this));
+//     return keccak256(abi.encode(DOMAIN_SEPARATOR_TYPEHASH, getChainId(), 0x9fC3dc011b461664c835F2527fffb1169b3C213e));
+// }
+
+// function encodeTransactionData(
+//     address to,
+//     uint256 value,
+//     bytes calldata data,
+//     Enum.Operation operation,
+//     uint256 safeTxGas,
+//     uint256 baseGas,
+//     uint256 gasPrice,
+//     address gasToken,
+//     address refundReceiver,
+//     uint256 _nonce
+// ) public view returns (bytes memory) {
+//     bytes32 safeTxHash = keccak256(
+//         abi.encode(
+//             SAFE_TX_TYPEHASH,
+//             to,
+//             value,
+//             keccak256(data),
+//             operation,
+//             safeTxGas,
+//             baseGas,
+//             gasPrice,
+//             gasToken,
+//             refundReceiver,
+//             _nonce
+//         )
+//     );
+//     return abi.encodePacked(bytes1(0x19), bytes1(0x01), domainSeparator(), safeTxHash);
+// }
+
+// function getTransactionHash(
+//     address to,
+//     uint256 value,
+//     bytes calldata data,
+//     Enum.Operation operation,
+//     uint256 safeTxGas,
+//     uint256 baseGas,
+//     uint256 gasPrice,
+//     address gasToken,
+//     address refundReceiver,
+//     uint256 _nonce
+// ) public view returns (bytes32) {
+//     return keccak256(encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, _nonce));
+// }
+
+function domainSeparator(chain, safe) {
+  const abiCoder = ethers.utils.defaultAbiCoder;
+  const encoded = abiCoder.encode([ "bytes32", "uint256", "address" ], [ DOMAIN_SEPARATOR_TYPEHASH, chain, safe ]);
+  // console.log(moment().format("HH:mm:ss") + " domainSeparator - encoded: " + encoded);
+  const digest = ethers.utils.keccak256(encoded);
+  // console.log(moment().format("HH:mm:ss") + " domainSeparator - digest: " + digest);
+  return digest;
+}
+
+function encodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe) {
+  const abiCoder = ethers.utils.defaultAbiCoder;
+  const encoded = abiCoder.encode(
+    [ "bytes32", "address", "uint256", "bytes32", "uint8", "uint256", "uint256", "uint256", "address", "address", "uint256" ],
+    [ SAFE_TX_TYPEHASH, to, value, ethers.utils.keccak256(data), operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce ]
+  );
+  // console.log(moment().format("HH:mm:ss") + " encodeTransactionData - encoded: " + encoded);
+  const digest = ethers.utils.keccak256(encoded);
+  // console.log(moment().format("HH:mm:ss") + " encodeTransactionData - digest: " + digest);
+  const encodedMessage = ethers.utils.solidityPack(
+    ["bytes1", "bytes1", "bytes32", "bytes32"],
+    ["0x19", "0x01", domainSeparator(chain, safe), digest]
+  );
+  // console.log(moment().format("HH:mm:ss") + " encodeTransactionData - encodedMessage: " + encodedMessage);
+  return encodedMessage;
+}
+
+function testIt() {
+  console.log("Hi 1");
+  const TEST_SAFE = "0x9fC3dc011b461664c835F2527fffb1169b3C213e";
+  const TEST_SAFE_RESULT = "0x628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f";
+  const result1 = domainSeparator(1, TEST_SAFE);
+  console.log(moment().format("HH:mm:ss") + " domainSeparator - result1: " + result1 + " vs expected: " + TEST_SAFE_RESULT);
+
+  const result2 = encodeTransactionData(TEST_SAFE, 123, "0x1234", 1, 12, 34, 56, TEST_SAFE, TEST_SAFE, 123, 1, TEST_SAFE);
+  console.log(moment().format("HH:mm:ss") + " encodeTransactionData - result2: " + result2);
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f38c9e265183b9a7d86910466cffae63e290bcc5b9a1c0fe34edcd442e3b3fd00
+  // Remix 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f38c9e265183b9a7d86910466cffae63e290bcc5b9a1c0fe34edcd442e3b3fd00
+
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fc6cd836deae00cd5d52caac43df8b70594b62d540bb0beb4d53e6cc7fe73dbf0
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fc6cd836deae00cd5d52caac43df8b70594b62d540bb0beb4d53e6cc7fe73dbf0
+
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f310d3888a6c28b652a1e5c2aa14e6e6b7b44d3f5a75fd0f00425efb655cf9980
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f310d3888a6c28b652a1e5c2aa14e6e6b7b44d3f5a75fd0f00425efb655cf9980
+
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fd6df04c3390342e2bbbe6604c8b45f2c77cb0cf9d1365be251e4d397b9a7fc81
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fd6df04c3390342e2bbbe6604c8b45f2c77cb0cf9d1365be251e4d397b9a7fc81
+
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f3de74c60a9cceadfaa93d72685774d19ae3bdec8def6772dd90fdd3827e6b1b9
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f3de74c60a9cceadfaa93d72685774d19ae3bdec8def6772dd90fdd3827e6b1b9
+
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fb11aab45a2001d35976ce8d9ddce05faca3c140617af178bbf9ead84d96bac8e
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fb11aab45a2001d35976ce8d9ddce05faca3c140617af178bbf9ead84d96bac8e
+
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fb920110910bff2cc4723e08ab24811f6ed50ca3dcc5a6b00591fa0a2b7529790
+  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fb920110910bff2cc4723e08ab24811f6ed50ca3dcc5a6b00591fa0a2b7529790
+
+  // const abiCoder = ethers.utils.defaultAbiCoder;
+  // const encoded = abiCoder.encode(["uint", "string"], [1234, "Hello World"]);
+  // console.log("encoded: " + encoded);
+  // const digest = ethers.utils.keccak256(encoded);
+  // console.log("digest: " + digest);
+
+}
+
+testIt();
+
 function inferTxInfo(txData, functionSigs) {
   const results = {};
   // console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2).substring(0, 200));
@@ -55,7 +183,7 @@ function inferTxInfo(txData, functionSigs) {
       operation,
       signatures,
     };
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - results.multisig: " + JSON.stringify(results.multisig, null, 2));
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results.multisig: " + JSON.stringify(results.multisig, null, 2));
   }
   return results;
 }
