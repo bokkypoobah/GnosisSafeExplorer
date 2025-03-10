@@ -1088,6 +1088,7 @@
                       balance: blockData.balance,
                       txIndex,
                       txHash: txData.txHash,
+                      nonce: txData.nonce,
                       tx: txData.tx,
                       txReceipt: txData.txReceipt,
                       safeLogs,
@@ -1564,6 +1565,7 @@
                   // console.log(moment().format("HH:mm:ss") + " syncSafe_processSafeAndTokenLogs - log: " + JSON.stringify(log, null, 2));
                   let event = null;
                   let safeABIVersion = null;
+                  const nonce = safeData.nonce;
                   if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
                     if (log.topics.length in SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]]) {
                       safeABIVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
@@ -1594,6 +1596,9 @@
                         signature: logData.signature,
                         parameters,
                       };
+                      if (logData.name == "ExecutionSuccess" || logData.name == "ExecutionFailure") {
+                        safeData.nonce++;
+                      }
                     }
                   } else {
                     // ERC-20, ERC-721 and ERC-1155 Transfer* events
@@ -1733,6 +1738,7 @@
                       safeData.blocks[log.blockNumber].txs[log.transactionIndex] = {
                         txHash: log.transactionHash,
                         logs: {},
+                        nonce,
                         tx: null,
                         txReceipt: null,
                       };
@@ -1901,6 +1907,7 @@
               implementation: null,
               owners: {},
               threshold: null,
+              nonce: 0,
               tokens: {},
               blocks: {},
             };
@@ -1948,6 +1955,7 @@
 
             if (safeAddress) {
               this.sync.section = "Safe Events";
+              safeData.nonce = 0;
               await syncSafe_getSafeAndTokenLogsFromRange(0, 0, latestBlockNumber);
               this.sync.section = "Token Events #1";
               await syncSafe_getSafeAndTokenLogsFromRange(1, 0, latestBlockNumber);
