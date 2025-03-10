@@ -40,18 +40,20 @@ function inferTxInfo(txData, functionSigs) {
   }
   // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
   if (results.action == "execTransaction") {
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2));
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2));
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
     const to = results.parameters.filter(e => e.name == "to")[0].value;
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - to: " + to);
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - to: " + to);
     const value = results.parameters.filter(e => e.name == "value")[0].value;
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - value: " + value);
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - value: " + value);
     const data = results.parameters.filter(e => e.name == "data")[0].value;
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - data: " + data);
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - data: " + data);
     const operation = results.parameters.filter(e => e.name == "operation")[0].value;
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - operation: " + operation);
-    const signatures = results.parameters.filter(e => e.name == "signatures")[0].value;
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - signatures: " + signatures);
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - operation: " + operation);
+    const signaturesString = results.parameters.filter(e => e.name == "signatures")[0].value;
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - signaturesString: " + signaturesString);
+    const signatures = signaturesString.substring(2,).match(/.{1,131}/g).map(e => ("0x" + e));
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - signatures: " + JSON.stringify(signatures));
     results.multisigAction = {
       to,
       value,
