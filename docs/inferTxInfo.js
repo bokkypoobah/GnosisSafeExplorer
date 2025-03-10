@@ -48,14 +48,14 @@ function inferTxInfo(txData, functionSigs) {
     const operation = results.parameters.filter(e => e.name == "operation")[0].value;
     const signaturesString = results.parameters.filter(e => e.name == "signatures")[0].value;
     const signatures = signaturesString.substring(2,).match(/.{1,131}/g).map(e => ("0x" + e));
-    results.multisigAction = {
+    results.multisig = {
       to,
       value,
       data,
       operation,
       signatures,
     };
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - results.multisigAction: " + JSON.stringify(results.multisigAction, null, 2));
+    console.log(moment().format("HH:mm:ss") + " inferTxInfo - results.multisig: " + JSON.stringify(results.multisig, null, 2));
   }
   return results;
 }

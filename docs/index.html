@@ -1957,7 +1957,7 @@
               await syncSafe_getSafeAndTokenLogsFromRange(3, 0, latestBlockNumber);
               console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
-              Vue.set(this, 'safeData', safeData);
+              Vue.set(this, 'safeData', structuredClone(safeData));
             }
 
             if (safeAddress && !this.sync.halt && !this.settings.devMode) {
@@ -1993,7 +1993,7 @@
               }
               console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 3: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
-              Vue.set(this, 'safeData', safeData);
+              Vue.set(this, 'safeData', structuredClone(safeData));
             }
 
             if (safeAddress && !this.sync.halt /*&& !this.settings.devMode*/) {
@@ -2056,7 +2056,7 @@
               }
               console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
-              Vue.set(this, 'safeData', safeData);
+              Vue.set(this, 'safeData', structuredClone(safeData));
             }
 
             if (safeAddress && !this.sync.halt && !this.settings.devMode) {
@@ -2103,7 +2103,7 @@
               }
               // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 5: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
-              Vue.set(this, 'safeData', safeData);
+              Vue.set(this, 'safeData', structuredClone(safeData));
             }
 
             if (safeAddress && !this.sync.halt /*&& this.settings.devMode*/) {
