@@ -75,38 +75,23 @@ function safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, 
   return ethers.utils.keccak256(safeEncodeTransactionData(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe));
 }
 
-
-function testIt() {
-  console.log("Testing Hashing");
-  const TEST_SAFE = "0x9fC3dc011b461664c835F2527fffb1169b3C213e";
-  const TEST_SAFE_RESULT1 = "0x628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f";
-  const result1 = safeDomainSeparator(1, TEST_SAFE);
-  console.log(moment().format("HH:mm:ss") + " safeDomainSeparator - result1: " + result1 + " vs expected: " + TEST_SAFE_RESULT1);
-  // 0x628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f
-
-  const TEST_SAFE_RESULT2 = "0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fb920110910bff2cc4723e08ab24811f6ed50ca3dcc5a6b00591fa0a2b7529790";
-  const result2 = safeEncodeTransactionData(TEST_SAFE, 123, "0x1234", 1, 12, 34, 56, TEST_SAFE, TEST_SAFE, 123, 1, TEST_SAFE);
-  console.log(moment().format("HH:mm:ss") + " safeEncodeTransactionData - result2: " + result2 + " vs expected: " + TEST_SAFE_RESULT2);
-
-  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fb920110910bff2cc4723e08ab24811f6ed50ca3dcc5a6b00591fa0a2b7529790
-  // 0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fb920110910bff2cc4723e08ab24811f6ed50ca3dcc5a6b00591fa0a2b7529790
-
-  const TEST_SAFE_RESULT3 = "0xd88fcf8dedf935400142836a2693b601803ea32b6919bbdfa0e5532cad932e06";
-  const result3 = safeGetTransactionHash(TEST_SAFE, 123, "0x1234", 1, 12, 34, 56, TEST_SAFE, TEST_SAFE, 123, 1, TEST_SAFE);
-  console.log(moment().format("HH:mm:ss") + " safeGetTransactionHash - result3: " + result3 + " vs expected: " + TEST_SAFE_RESULT3);
-
-  // 0xd88fcf8dedf935400142836a2693b601803ea32b6919bbdfa0e5532cad932e06
-  // 0xd88fcf8dedf935400142836a2693b601803ea32b6919bbdfa0e5532cad932e06
-
-  // const abiCoder = ethers.utils.defaultAbiCoder;
-  // const encoded = abiCoder.encode(["uint", "string"], [1234, "Hello World"]);
-  // console.log("encoded: " + encoded);
-  // const digest = ethers.utils.keccak256(encoded);
-  // console.log("digest: " + digest);
-
-}
-
-testIt();
+// function testIt() {
+//   console.log("Testing Hashing");
+//   const TEST_SAFE = "0x9fC3dc011b461664c835F2527fffb1169b3C213e";
+//   const TEST_SAFE_RESULT1 = "0x628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5f";
+//   const result1 = safeDomainSeparator(1, TEST_SAFE);
+//   console.log(moment().format("HH:mm:ss") + " safeDomainSeparator - result1: " + result1 + " vs expected: " + TEST_SAFE_RESULT1);
+//
+//   const TEST_SAFE_RESULT2 = "0x1901628f9956ba132a7b5837682f2500833b6c6dd3711903cf5c091a6345d609fe5fb920110910bff2cc4723e08ab24811f6ed50ca3dcc5a6b00591fa0a2b7529790";
+//   const result2 = safeEncodeTransactionData(TEST_SAFE, 123, "0x1234", 1, 12, 34, 56, TEST_SAFE, TEST_SAFE, 123, 1, TEST_SAFE);
+//   console.log(moment().format("HH:mm:ss") + " safeEncodeTransactionData - result2: " + result2 + " vs expected: " + TEST_SAFE_RESULT2);
+//
+//   const TEST_SAFE_RESULT3 = "0xd88fcf8dedf935400142836a2693b601803ea32b6919bbdfa0e5532cad932e06";
+//   const result3 = safeGetTransactionHash(TEST_SAFE, 123, "0x1234", 1, 12, 34, 56, TEST_SAFE, TEST_SAFE, 123, 1, TEST_SAFE);
+//   console.log(moment().format("HH:mm:ss") + " safeGetTransactionHash - result3: " + result3 + " vs expected: " + TEST_SAFE_RESULT3);
+// }
+//
+// testIt();
 
 function inferTxInfo(txData, safe, functionSigs) {
   const results = {};
@@ -178,6 +163,7 @@ function inferTxInfo(txData, safe, functionSigs) {
       }
     }
     results.multisig = {
+      from: safe,
       to,
       value,
       data,
