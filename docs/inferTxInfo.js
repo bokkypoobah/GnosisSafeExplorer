@@ -36,15 +36,14 @@ function safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, 
 // testIt();
 
 function methodIds() {
-  console.log("methodIds");
   const results = {};
-  for (const abi of [ERC20ABI, ERC721ABI, ERC1155ABI]) {
-    const interface = new ethers.utils.Interface(abi);
+  for (const abi of [[ERC20ABI, 'erc20'], [ERC721ABI, 'erc721'], [ERC1155ABI, 'erc1155']]) {
+    const interface = new ethers.utils.Interface(abi[0]);
     for (const f of interface.format(ethers.utils.FormatTypes.full)) {
       if (f.substring(0, 8) == "function") {
         const functionSig = interface.getFunction(f.substring(9,));
         const methodId = interface.getSighash(functionSig);
-        results[methodId] = f.substring(9,);
+        results[methodId] = [f, abi[1]];
       }
     }
   }
@@ -52,7 +51,6 @@ function methodIds() {
 }
 
 function testIt1() {
-  console.log("Hi");
   const methodIds_ = methodIds();
   console.log("methodIds_: " + JSON.stringify(methodIds_, null, 2));
 
