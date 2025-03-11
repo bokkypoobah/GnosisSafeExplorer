@@ -71,34 +71,17 @@ function methodIds() {
   return results;
 }
 
-function testIt1() {
-  const methodIds_ = methodIds();
-  console.log("methodIds_: " + JSON.stringify(methodIds_, null, 2));
-
-  // const erc721Interface = new ethers.utils.Interface(ERC721ABI);
-  // // console.log("erc721Interface.functions: " + JSON.stringify(erc721Interface.functions, null, 2));
-  // const functions = erc721Interface.format(ethers.utils.FormatTypes.full);
-  // for (const f of functions) {
-  //   if (f.substring(0, 8) == "function") {
-  //     // console.log("f: " + JSON.stringify(f, null, 2));
-  //     const f1 = erc721Interface.getFunction(f.substring(9,));
-  //     // console.log("f1: " + JSON.stringify(f1, null, 2));
-  //     const f2 = erc721Interface.getSighash(f1);
-  //     console.log("methodId: " + f2 + " => " + f);
-  //   }
-  // }
-  // console.table(erc721Interface.functions);
-  // for (const fragment of erc721Interface.fragments) {
-  //   if (fragment.type == "function") {
-  //     console.log("fragment: " + JSON.stringify(fragment, null, 2));
-  //   }
-  // }
-}
-
-testIt1();
+// function testIt1() {
+//   const methodIds_ = methodIds();
+//   console.log("methodIds_: " + JSON.stringify(methodIds_, null, 2));
+// }
+// testIt1();
 
 function parseTx(from, to, value, data, functionSigs) {
   console.log(moment().format("HH:mm:ss") + " parseTx - from: " + from + ", to: " + to + ", value: " + value + ", data: " + data);
+  const methodId = data && data.length > 10 && data.substring(0, 10) || null;
+  const functionSig = (methodId in methodIds()) ? methodIds()[methodId][0][0] : null;
+  console.log(moment().format("HH:mm:ss") + " parseTx - methodId: " + methodId + ", functionSig: " + functionSig);
 }
 
 function inferTxInfo(txData, safe, functionSigs) {
