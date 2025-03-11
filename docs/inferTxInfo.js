@@ -78,57 +78,58 @@ function methodIds() {
 // testIt1();
 
 function parseTx(from, to, value, data, functionSigs) {
+  const results = {};
   console.log(moment().format("HH:mm:ss") + " parseTx - from: " + from + ", to: " + to + ", value: " + value + ", data: " + data);
   const methodId = data && data.length > 10 && data.substring(0, 10) || null;
   const functionSig = (methodId in methodIds()) ? methodIds()[methodId][0][0] : null;
   console.log(moment().format("HH:mm:ss") + " parseTx - methodId: " + methodId + ", functionSig: " + functionSig);
+  if (!methodId) {
+    results.action = "transfer";
+    results.parameters = [
+      { name: "from", type: "address", value: from },
+      { name: "to", type: "address", value: to },
+      { name: "token", type: "address", value: "eth" }, // TODO
+      { name: "value", type: "uint256", value: value },
+    ];
+  } else {
+    const functionDefinition = functionSigs[methodId] || null;
+    if (functionDefinition) {
+      // console.log(moment().format("HH:mm:ss") + " inferTxInfo - methodId: " + methodId + " => " + functionDefinition);
+      let decodedData = null
+      try {
+        const interface = new ethers.utils.Interface([functionDefinition]);
+        decodedData = interface.parseTransaction({ data: data, value: value });
+        results.action = decodedData.functionFragment.name;
+        results.function = functionDefinition;
+        results.parameters = [];
+        for (const [index, parameter] of decodedData.functionFragment.inputs.entries()) {
+          // console.log(index + " => " + JSON.stringify(parameter));
+          let value = null;
+          if (parameter.type == "uint256") {
+            value = ethers.BigNumber.from(decodedData.args[index]).toString();
+          } else {
+            value = decodedData.args[index];
+          }
+          results.parameters.push({ name: parameter.name, type: parameter.type, value });
+        }
+      } catch (e) {
+        console.error(moment().format("HH:mm:ss") + " inferTxInfo - decodedData - error: " + e.message);
+      }
+    }
+  }
+  return results;
 }
 
 function inferTxInfo(txData, safe, functionSigs) {
-  const results = {};
+  let results = {};
   console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2).substring(0, 200));
   if (txData.tx) {
-    parseTx(txData.tx.from, txData.tx.to, txData.tx.value, txData.tx.data, functionSigs);
-    if (!txData.tx.data || txData.tx.data.length <= 2) {
-      results.action = "transfer";
-      results.parameters = [
-        { name: "from", type: "address", value: txData.tx.from },
-        { name: "to", type: "address", value: txData.tx.to },
-        { name: "token", type: "address", value: "eth" }, // TODO
-        { name: "value", type: "uint256", value: txData.tx.value },
-      ];
-    } else {
-      const functionSig = txData.tx.data.substring(0, 10);
-      const functionDefinition = functionSigs[functionSig] || null;
-      if (functionDefinition) {
-        // console.log(moment().format("HH:mm:ss") + " inferTxInfo - functionSig: " + functionSig + " => " + functionDefinition);
-        let decodedData = null
-        try {
-          const interface = new ethers.utils.Interface([functionDefinition]);
-          decodedData = interface.parseTransaction({ data: txData.tx.data, value: txData.tx.value });
-          results.action = decodedData.functionFragment.name;
-          results.function = functionDefinition;
-          results.parameters = [];
-          for (const [index, parameter] of decodedData.functionFragment.inputs.entries()) {
-            // console.log(index + " => " + JSON.stringify(parameter));
-            let value = null;
-            if (parameter.type == "uint256") {
-              value = ethers.BigNumber.from(decodedData.args[index]).toString();
-            } else {
-              value = decodedData.args[index];
-            }
-            results.parameters.push({ name: parameter.name, type: parameter.type, value });
-          }
-        } catch (e) {
-          console.error(moment().format("HH:mm:ss") + " inferTxInfo - decodedData - error: " + e.message);
-        }
-      }
-    }
+    results = parseTx(txData.tx.from, txData.tx.to, txData.tx.value, txData.tx.data, functionSigs);
   }
   // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
   if (results.action == "execTransaction") {
     // console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2));
-    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
+    console.log(moment().format("HH:mm:ss") + " inferTxInfo - execTransaction - results: " + JSON.stringify(results, null, 2));
     const to = results.parameters.filter(e => e.name == "to")[0].value;
     const value = results.parameters.filter(e => e.name == "value")[0].value;
     const data = results.parameters.filter(e => e.name == "data")[0].value;
@@ -141,7 +142,8 @@ function inferTxInfo(txData, safe, functionSigs) {
     const nonce = txData.nonce;
     const chain = 1; // TODO
 
-    parseTx(safe, to, value, data, functionSigs);
+    const info = parseTx(safe, to, value, data, functionSigs);
+    console.log(moment().format("HH:mm:ss") + " inferTxInfo - execTransaction - info: " + JSON.stringify(info, null, 2));
 
     const signaturesString = results.parameters.filter(e => e.name == "signatures")[0].value;
     const signatures = signaturesString.substring(2,).match(/.{1,130}/g).map(e => ("0x" + e));
@@ -167,9 +169,11 @@ function inferTxInfo(txData, safe, functionSigs) {
       signatures,
       signers,
       safeTxHash,
+      info,
     };
     console.log(moment().format("HH:mm:ss") + " inferTxInfo - results.multisig: " + JSON.stringify(results.multisig, null, 2));
   }
+  // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
   return results;
 }
 
