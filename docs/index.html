@@ -1747,13 +1747,13 @@
 
             if (safeAddress && !this.sync.halt && !this.settings.devMode) {
               this.sync.section = "Timestamps And Balances";
+              this.sync.completed = 0;
               this.sync.total = 0;
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
                 if (!blockData.timestamp || !blockData.balance) {
                   this.sync.total++;
                 }
               }
-              this.sync.completed = 0;
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
                 if (!blockData.timestamp) {
                   try {
@@ -1783,18 +1783,15 @@
 
             if (safeAddress && !this.sync.halt /*&& !this.settings.devMode*/) {
               this.sync.section = "Transactions & Receipts";
+              this.sync.completed = 0;
               this.sync.total = 0;
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
                 for (const [txHash, txData] of Object.entries(blockData.txs)) {
-                  if (!txData.tx) {
-                    this.sync.total++;
-                  }
-                  if (!txData.txReceipt) {
+                  if (!txData.tx || !txData.txReceipt) {
                     this.sync.total++;
                   }
                 }
               }
-              this.sync.completed = 0;
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
                 for (const [txIndex, txData] of Object.entries(blockData.txs)) {
                   if (!txData.tx && !this.sync.halt) {
@@ -1815,7 +1812,6 @@
                     } catch (e) {
                       console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.getTransaction - error: " + e.message);
                     }
-                    t.sync.completed++;
                   }
                   if (!txData.txReceipt && !this.sync.halt) {
                     try {
@@ -1832,8 +1828,8 @@
                     } catch (e) {
                       console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.getTransactionReceipt - error: " + e.message);
                     }
-                    t.sync.completed++;
                   }
+                  t.sync.completed++;
                   if (this.sync.halt) {
                     break;
                   }
@@ -1846,13 +1842,13 @@
 
             if (safeAddress && !this.sync.halt && !this.settings.devMode) {
               this.sync.section = "ERC-20/721/1155 Token Contract";
+              this.sync.completed = 0;
               this.sync.total = 0;
               for (const [token, tokenContractData] of Object.entries(safeData.tokens)) {
                 if (!tokenContractData.name) {
                   this.sync.total++;
                 }
               }
-              this.sync.completed = 0;
               const ERC_TOKENS_ABI = [
                 "function symbol() public view returns (string)",
                 "function name() public view returns (string)",
@@ -1893,6 +1889,7 @@
 
             if (safeAddress && !this.sync.halt /*&& this.settings.devMode*/) {
               this.sync.section = "ERC-721/1155 Token Metadata";
+              this.sync.completed = 0;
               this.sync.total = 0;
               for (const [token, tokenContractData] of Object.entries(safeData.tokens)) {
                 if (tokenContractData.type == 721 || tokenContractData.type == 1155) {
@@ -1904,7 +1901,6 @@
                   }
                 }
               }
-              this.sync.completed = 0;
               const reservoirData = {};
               let continuation = null;
               do {
