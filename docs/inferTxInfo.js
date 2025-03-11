@@ -35,6 +35,49 @@ function safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, 
 //
 // testIt();
 
+function methodIds() {
+  console.log("methodIds");
+  const results = {};
+  for (const abi of [ERC20ABI, ERC721ABI, ERC1155ABI]) {
+    const interface = new ethers.utils.Interface(abi);
+    for (const f of interface.format(ethers.utils.FormatTypes.full)) {
+      if (f.substring(0, 8) == "function") {
+        const functionSig = interface.getFunction(f.substring(9,));
+        const methodId = interface.getSighash(functionSig);
+        results[methodId] = f.substring(9,);
+      }
+    }
+  }
+  return results;
+}
+
+function testIt1() {
+  console.log("Hi");
+  const methodIds_ = methodIds();
+  console.log("methodIds_: " + JSON.stringify(methodIds_, null, 2));
+
+  // const erc721Interface = new ethers.utils.Interface(ERC721ABI);
+  // // console.log("erc721Interface.functions: " + JSON.stringify(erc721Interface.functions, null, 2));
+  // const functions = erc721Interface.format(ethers.utils.FormatTypes.full);
+  // for (const f of functions) {
+  //   if (f.substring(0, 8) == "function") {
+  //     // console.log("f: " + JSON.stringify(f, null, 2));
+  //     const f1 = erc721Interface.getFunction(f.substring(9,));
+  //     // console.log("f1: " + JSON.stringify(f1, null, 2));
+  //     const f2 = erc721Interface.getSighash(f1);
+  //     console.log("methodId: " + f2 + " => " + f);
+  //   }
+  // }
+  // console.table(erc721Interface.functions);
+  // for (const fragment of erc721Interface.fragments) {
+  //   if (fragment.type == "function") {
+  //     console.log("fragment: " + JSON.stringify(fragment, null, 2));
+  //   }
+  // }
+}
+
+testIt1();
+
 function parseTx(from, to, value, data, functionSigs) {
   console.log(moment().format("HH:mm:ss") + " parseTx - from: " + from + ", to: " + to + ", value: " + value + ", data: " + data);
 }
