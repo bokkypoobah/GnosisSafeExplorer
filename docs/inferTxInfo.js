@@ -37,7 +37,8 @@ function safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, 
 
 function methodIds() {
   const results = {};
-  for (const abi of [[ERC20ABI, 'erc20'], [ERC721ABI, 'erc721'], [ERC1155ABI, 'erc1155']]) {
+  // for (const abi of [[ERC20ABI, 'erc20'], [ERC721ABI, 'erc721'], [ERC1155ABI, 'erc1155']]) {
+  for (const abi of [[ERC721ABI, 'erc721']]) {
     const interface = new ethers.utils.Interface(abi[0]);
     for (const f of interface.format(ethers.utils.FormatTypes.full)) {
       if (f.substring(0, 8) == "function") {
@@ -47,18 +48,18 @@ function methodIds() {
       }
     }
   }
-  for (const [version, versionData] of Object.entries(SAFE_ABIS)) {
-    for (const [name, abi] of Object.entries(versionData)) {
-      const interface = new ethers.utils.Interface(abi);
-      for (const f of interface.format(ethers.utils.FormatTypes.full)) {
-        if (f.substring(0, 8) == "function") {
-          const functionSig = interface.getFunction(f.substring(9,));
-          const methodId = interface.getSighash(functionSig);
-          results[methodId] = [f, name + ":" + version];
-        }
-      }
-    }
-  }
+  // for (const [version, versionData] of Object.entries(SAFE_ABIS)) {
+  //   for (const [name, abi] of Object.entries(versionData)) {
+  //     const interface = new ethers.utils.Interface(abi);
+  //     for (const f of interface.format(ethers.utils.FormatTypes.full)) {
+  //       if (f.substring(0, 8) == "function") {
+  //         const functionSig = interface.getFunction(f.substring(9,));
+  //         const methodId = interface.getSighash(functionSig);
+  //         results[methodId] = [f, name + ":" + version];
+  //       }
+  //     }
+  //   }
+  // }
   return results;
 }
 
