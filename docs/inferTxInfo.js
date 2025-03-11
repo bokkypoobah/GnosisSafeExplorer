@@ -79,12 +79,13 @@ function methodIds() {
 
 function parseTx(from, to, value, data, functionSigs) {
   const results = {};
-  console.log(moment().format("HH:mm:ss") + " parseTx - from: " + from + ", to: " + to + ", value: " + value + ", data: " + data);
+  // console.log(moment().format("HH:mm:ss") + " parseTx - from: " + from + ", to: " + to + ", value: " + value + ", data: " + data);
   const methodId = data && data.length > 10 && data.substring(0, 10) || null;
   const functionSig = (methodId in methodIds()) ? methodIds()[methodId][0][0] : null;
-  console.log(moment().format("HH:mm:ss") + " parseTx - methodId: " + methodId + ", functionSig: " + functionSig);
+  // console.log(moment().format("HH:mm:ss") + " parseTx - methodId: " + methodId + ", functionSig: " + functionSig);
   if (!methodId) {
     results.action = "transfer";
+    // results.methodId = null;
     results.parameters = [
       { name: "from", type: "address", value: from },
       { name: "to", type: "address", value: to },
@@ -100,6 +101,7 @@ function parseTx(from, to, value, data, functionSigs) {
         const interface = new ethers.utils.Interface([functionDefinition]);
         decodedData = interface.parseTransaction({ data: data, value: value });
         results.action = decodedData.functionFragment.name;
+        results.methodId = methodId;
         results.function = functionDefinition;
         results.parameters = [];
         for (const [index, parameter] of decodedData.functionFragment.inputs.entries()) {
@@ -115,6 +117,11 @@ function parseTx(from, to, value, data, functionSigs) {
       } catch (e) {
         console.error(moment().format("HH:mm:ss") + " inferTxInfo - decodedData - error: " + e.message);
       }
+    } else {
+      // results.action = decodedData.functionFragment.name;
+      results.methodId = methodId;
+      // results.function = functionDefinition;
+      // results.parameters = [];
     }
   }
   return results;
@@ -122,14 +129,14 @@ function parseTx(from, to, value, data, functionSigs) {
 
 function inferTxInfo(txData, safe, functionSigs) {
   let results = {};
-  console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2).substring(0, 200));
+  // console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2).substring(0, 200));
   if (txData.tx) {
     results = parseTx(txData.tx.from, txData.tx.to, txData.tx.value, txData.tx.data, functionSigs);
   }
   // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
   if (results.action == "execTransaction") {
     // console.log(moment().format("HH:mm:ss") + " inferTxInfo - txData: " + JSON.stringify(txData, null, 2));
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - execTransaction - results: " + JSON.stringify(results, null, 2));
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - execTransaction - results: " + JSON.stringify(results, null, 2));
     const to = results.parameters.filter(e => e.name == "to")[0].value;
     const value = results.parameters.filter(e => e.name == "value")[0].value;
     const data = results.parameters.filter(e => e.name == "data")[0].value;
@@ -143,7 +150,7 @@ function inferTxInfo(txData, safe, functionSigs) {
     const chain = 1; // TODO
 
     const info = parseTx(safe, to, value, data, functionSigs);
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - execTransaction - info: " + JSON.stringify(info, null, 2));
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - execTransaction - info: " + JSON.stringify(info, null, 2));
 
     const signaturesString = results.parameters.filter(e => e.name == "signatures")[0].value;
     const signatures = signaturesString.substring(2,).match(/.{1,130}/g).map(e => ("0x" + e));
@@ -171,7 +178,7 @@ function inferTxInfo(txData, safe, functionSigs) {
       safeTxHash,
       info,
     };
-    console.log(moment().format("HH:mm:ss") + " inferTxInfo - results.multisig: " + JSON.stringify(results.multisig, null, 2));
+    // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results.multisig: " + JSON.stringify(results.multisig, null, 2));
   }
   // console.log(moment().format("HH:mm:ss") + " inferTxInfo - results: " + JSON.stringify(results, null, 2));
   return results;

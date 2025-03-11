@@ -69,6 +69,34 @@
           </b-card-text>
         </b-card> -->
 
+        <b-modal id="modal-methodid" hide-footer size="lg" body-class="m-0 p-3" body-bg-variant="light">
+          <template #modal-title>
+            Method Id {{ modalMethodId.methodId }}
+            <font size="-1" class="text-muted ml-2">{{ modalMethodId.contract }}</font>
+          </template>
+          <b-form-group label="Contract:" label-cols="3" label-align="right" description="Browse this link. Click on [Contract]. If available, click on [Read As Proxy], then click on the ABI implementation link. Copy the contract ABI and paste below">
+            <b-input-group>
+              <b-button v-if="modalMethodId.contract" :href="'https://etherscan.io/address/' + lookupAddress(modalMethodId.contract)" variant="link" target="_blank" class="m-0 p-0 pt-1">
+                {{ modalMethodId.contract }}
+              </b-button>
+              <b-input-group-append>
+                <b-button size="sm" @click="copyToClipboard(lookupAddress(modalMethodId.contract));" variant="link">
+                  <b-icon-clipboard shift-v="-1" font-scale="1.1"></b-icon-clipboard>
+                </b-button>
+              </b-input-group-append>
+            </b-input-group>
+          </b-form-group>
+          <b-form-group label="ABI:" label-cols="3" label-align="right">
+            <b-form-textarea v-model="modalMethodId.abi" rows="6" max-rows="10" placeholder="Paste the ABI (Application Binary Interface) here"></b-form-textarea>
+          </b-form-group>
+          <b-form-group label="Function:" label-cols="3" label-align="right">
+            <b-form-textarea disabled :value="modalMethodId_search()" rows="3" max-rows="5" placeholder="Matching function will be displayed here"></b-form-textarea>
+          </b-form-group>
+          <b-form-group label="" label-cols="3" label-align="right">
+            <b-button :disabled="!modalMethodId_search() || modalMethodId_search().substring(0, 3) == 'Not'" @click="modalMethodId_add()" variant="primary">Add</b-button>
+          </b-form-group>
+        </b-modal>
+
         <!-- :MODALSAFEADDRESS -->
         <!-- TODO: Delete -->
         <b-modal id="modal-safeaddress" hide-footer size="lg" body-class="m-0 p-1 pt-2" body-bg-variant="light">
@@ -580,6 +608,14 @@
                     </span>
                   </b-badge>
                   <br />
+                  <font v-if="data.item.info.multisig.info.methodId" size="-1" class="text-muted ml-4">
+                    methodId
+                  </font>
+                  <b-badge v-if="data.item.info.multisig.info.methodId" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.info.multisig.info.methodId">
+                    <b-link @click="viewMethodId(data.item.info.multisig.info.methodId, data.item.info.multisig.data, data.item.info.multisig.to)">
+                      {{ data.item.info.multisig.info.methodId }}
+                    </b-link>
+                  </b-badge>
                   <font v-if="data.item.info.multisig.info.action" size="-1" class="text-muted ml-4">
                     action
                   </font>
@@ -613,7 +649,12 @@
                       {{ parameter.value }}
                     </b-badge>
                   </span>
-
+                  <font v-if="!data.item.info.multisig.info.action" size="-1" class="text-muted ml-4">
+                    data
+                  </font>
+                  <b-badge v-if="!data.item.info.multisig.info.action" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.info.multisig.data">
+                    {{ data.item.info.multisig.data.substring(0, 20) + (data.item.info.multisig.data.length > 20 ? '...' : '') }}
+                  </b-badge>
                   <!-- {{ data.item.info.multisig }} -->
                 </div>
                 <b-row v-for="(safeLog, index) of data.item.safeLogs" v-bind:key="index">
@@ -682,11 +723,11 @@
                   </b-col>
                 </b-row>
                 <!-- <font v-if="Object.keys(data.item.info).length > 0" size="-2"> -->
-                <font v-if="Object.keys(data.item.info).length > 0 && data.item.info.multisig" size="-2">
+                <!-- <font v-if="Object.keys(data.item.info).length > 0 && data.item.info.multisig" size="-2">
                   <pre>
 {{ data.item.info }}
                   </pre>
-                </font>
+                </font> -->
               </template>
               <template #cell(balance)="data">
                 {{ formatETH(data.item.balance, 0) }}
@@ -875,6 +916,13 @@
 
           modalSafeTx: {
             item: null,
+          },
+
+          modalMethodId: {
+            methodId: null,
+            data: null,
+            contract: null,
+            abi: null,
           },
 
           // TODO: Delete
@@ -1232,6 +1280,41 @@
           viewAddress(address) {
             this.modalSafeAddress.address = address;
             this.$bvModal.show('modal-safeaddress');
+          },
+
+          viewMethodId(methodId, data, contract) {
+            this.modalMethodId.methodId = methodId;
+            this.modalMethodId.data = data;
+            this.modalMethodId.contract = contract;
+            this.$bvModal.show('modal-methodid');
+          },
+
+          modalMethodId_search() {
+            if (this.modalMethodId.abi) {
+              try {
+                const interface = new ethers.utils.Interface(this.modalMethodId.abi);
+                for (const f of interface.format(ethers.utils.FormatTypes.full)) {
+                  if (f.substring(0, 8) == "function") {
+                    const functionSig = interface.getFunction(f.substring(9,));
+                    const methodId = interface.getSighash(functionSig);
+                    if (this.modalMethodId.methodId == methodId) {
+                      return f;
+                    }
+                  }
+                }
+              } catch (e) {
+                console.log(moment().format("HH:mm:ss") + " modalMethodId_search - error: " + e.message);
+              }
+              return "Not found";
+            }
+            return null;
+          },
+
+          modalMethodId_add() {
+            const function_ = this.modalMethodId_search();
+            Vue.set(this.settings.functionSigs, this.modalMethodId.methodId, this.modalMethodId_search());
+            this.$bvModal.hide('modal-methodid');
+            this.saveSettings();
           },
 
           safeTxsRowSelected(item) {
