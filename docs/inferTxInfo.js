@@ -38,7 +38,7 @@ function safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, 
 function methodIds() {
   const results = {};
   // for (const abi of [[ERC20ABI, 'erc20'], [ERC721ABI, 'erc721'], [ERC1155ABI, 'erc1155']]) {
-  for (const abi of [[ERC721ABI, 'erc721']]) {
+  for (const abi of [[ERC1155ABI, 'erc1155']]) {
     const interface = new ethers.utils.Interface(abi[0]);
     for (const f of interface.format(ethers.utils.FormatTypes.full)) {
       if (f.substring(0, 8) == "function") {
