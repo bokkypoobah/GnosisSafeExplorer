@@ -48,12 +48,8 @@
             <font size="-1" v-b-popover.hover.bottom="'gm gm gm'">GnosisSafeExplorer</font>
           </b-navbar-brand>
           <b-navbar-nav class="ml-auto">
-            <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings();" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'Safes'">Safes</b-nav-item>
-            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings(); $refs.safesTable.refresh();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'Safe'">Safe</b-nav-item> -->
-            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'Safe'">Safe</b-nav-item>
-            <!-- <b-nav-item size="sm" @click="settings.tabIndex = 0; saveSettings();" :active="settings.tabIndex == 0" active-class="active" v-b-popover.hover="'Approvals'">Approvals</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 1; saveSettings();" :active="settings.tabIndex == 1" active-class="active" v-b-popover.hover="'Events'">Events</b-nav-item>
-            <b-nav-item size="sm" @click="settings.tabIndex = 2; saveSettings();" :active="settings.tabIndex == 2" active-class="active" v-b-popover.hover="'Accounts'">Accounts</b-nav-item> -->
+            <b-nav-item size="sm" @click="settings.page = 'safe'; saveSettings();" :active="settings.page == 'safe'" active-class="active" v-b-popover.hover="'Safe'">Safe</b-nav-item>
+            <b-nav-item size="sm" @click="settings.page = 'safes'; saveSettings();" :active="settings.page == 'safes'" active-class="active" v-b-popover.hover="'All Safes created by factories 1.3.0 and 1.4.1'">Safes</b-nav-item>
             <!-- <b-avatar v-if="coinbase && coinbase != nameOrShortAddress(coinbase)" rounded variant="light" size="3.0rem" :src="'https://metadata.ens.domains/mainnet/avatar/' + nameOrShortAddress(coinbase, 100)" v-b-popover.hover="'Your ENS avatar if set'"></b-avatar> -->
             <!-- <b-button size="sm" variant="outline-primary" class="ml-1 mr-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.bottom="'Click to update wallet'">{{ coinbase ? nameOrShortAddress(coinbase, 16) : 'Connect' }}</b-button> -->
             <b-button size="sm" variant="outline-primary" class="ml-5 mr-1" @click="connectToWeb3(); processNewBlock(0);" v-b-popover.hover.bottom="'Click to update wallet'">{{ coinbase ? coinbase.substring(0, 16) : 'Connect' }}</b-button>
@@ -97,8 +93,7 @@
           </b-form-group>
         </b-modal>
 
-        <!-- :MODALSAFEADDRESS -->
-        <!-- TODO: Delete -->
+        <!-- TODO: Fill out - :MODALSAFEADDRESS -->
         <b-modal id="modal-safeaddress" hide-footer size="lg" body-class="m-0 p-1 pt-2" body-bg-variant="light">
           <template #modal-title>
             Address {{ modalSafeAddress.address }}
@@ -136,7 +131,7 @@
           </b-form-group>
         </b-modal>
 
-        <!-- :MODALSAFETX -->
+        <!-- TODO: Fill out - :MODALSAFETX -->
         <b-modal id="modal-safetx" hide-footer size="lg" body-class="m-0 p-1 pt-2" body-bg-variant="light">
           <template #modal-title>
             Safe Tx
@@ -148,7 +143,7 @@
           </font>
         </b-modal>
 
-        <!-- :MODALSAFE -->
+        <!-- TODO: Delete - :MODALSAFE -->
         <b-modal id="modal-safe" hide-footer size="lg" body-class="m-0 p-1 pt-2" body-bg-variant="light">
           <template #modal-title>
             Safe {{ modalSafe.safe || '' }}
@@ -271,102 +266,8 @@
         </b-modal>
 
         <b-card no-body class="p-0 mt-0 border-0" style="min-height: 600px;">
-          <!-- :MENU -->
-          <div v-if="settings.tabIndex == 0" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
-            <div class="mt-0 pr-1" style="max-width: 24.0rem;">
-              <b-form-input type="text" size="sm" v-model.trim="settings.safesTable.filter" @change="saveSettings();" debounce="600" v-b-popover.hover.bottom="'Filter by safe address'" placeholder="🔍 0xabcd"></b-form-input>
-            </div>
-            <div class="mt-0 pr-1">
-              <b-dropdown size="sm" right text="" variant="link" class="m-0 p-0">
-                <b-dropdown-text>Sample Safes</b-dropdown-text>
-                <b-dropdown-divider></b-dropdown-divider>
-                <b-dropdown-item @click="settings.safesTable.filter = '0x9fC3dc011b461664c835F2527fffb1169b3C213e'; saveSettings();">EF: DeFi Multisig - Safe v1.4.1</b-dropdown-item>
-                <b-dropdown-item @click="settings.safesTable.filter = '0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4'; saveSettings();">Hacked Bybit: Cold Wallet 1 - Originally Safe 1.3.0; now Non-Safe Contract</b-dropdown-item>
-              </b-dropdown>
-            </div>
-            <div class="mt-0 flex-grow-1">
-            </div>
-            <div v-if="!sync.section" class="mt-0 pr-1">
-              <b-button size="sm" @click="syncAllSafesEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
-            </div>
-            <div v-if="!sync.section" class="mt-1 pr-1">
-              <b-form-checkbox size="sm" v-model="settings.devMode" @input="saveSettings();" v-b-popover.hover="'Dev Mode?'">Dev</b-form-checkbox>
-            </div>
-            <div class="mt-0 flex-grow-1">
-            </div>
-            <div v-if="!sync.section" class="mt-0 pr-1">
-              <b-button size="sm" @click="resetData()" variant="primary" v-b-popover.hover.bottom="'Reset data'">Reset Data</b-button>
-            </div>
-            <div class="mt-0 flex-grow-1">
-            </div>
-            <div v-if="sync.section != null" class="mt-0 pr-1">
-              <b-progress height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 24.0rem;">
-                <b-progress-bar :value="sync.completed">
-                  {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
-                </b-progress-bar>
-              </b-progress>
-            </div>
-            <div v-if="sync.section != null" class="ml-0 mt-1">
-              <b-button size="sm" @click="halt" variant="link" v-b-popover.hover.top="'Click to stop. This process can be continued later'"><b-icon-stop-fill shift-v="+1" font-scale="1.0"></b-icon-stop-fill></b-button>
-            </div>
-            <div class="mt-0 flex-grow-1">
-            </div>
-            <div class="mt-0 pl-1">
-              <b-form-select size="sm" v-model="settings.safesTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
-            </div>
-            <div class="mt-0 pl-1">
-              <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safes'">{{ filteredSortedSafes.length + ' / ' + safes.length }}</font>
-            </div>
-            <div class="mt-0 pl-1">
-              <b-pagination size="sm" v-model="settings.safesTable.currentPage" @input="saveSettings" :total-rows="safes.length" :per-page="settings.safesTable.pageSize" style="height: 0;"></b-pagination>
-            </div>
-            <div class="mt-0 pl-1">
-              <b-form-select size="sm" v-model="settings.safesTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
-            </div>
-          </div>
-
-          <b-card v-if="settings.tabIndex == 0" no-body class="m-1 p-0 border-0" bg-variant="light">
-            <b-table ref="safesTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
-              <template #cell(index)="data">
-                <font size="-1" class="text-muted">
-                  {{ parseInt(data.index) + ((settings.safesTable.currentPage - 1) * settings.safesTable.pageSize) + 1 }}
-                </font>
-              </template>
-              <template #cell(blockNumber)="data">
-                <b-link :href="'https://etherscan.io/tx/' + txHashes[data.item[6]][0] + '#eventlog#' + data.item[8]" target="_blank">
-                  {{ data.item[7] }}
-                </b-link>
-                <font size="-2" class="text-muted">
-                  {{ data.item[8] }}
-                </font>
-              </template>
-              <template #cell(safe)="data">
-                <b-link :href="'https://etherscan.io/address/' + data.item[0]" target="_blank">
-                  {{ data.item[0].substring(0, 10) + '...' + data.item[0].slice(-8) }}
-                </b-link>
-                <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + data.item[0]" v-b-popover.hover.bottom="'View in app.safe.global'" target="_blank">
-                  <b-icon-wallet shift-v="+2" font-scale="0.9" variant="primary"></b-icon-wallet>
-                </b-link>
-              </template>
-              <template #cell(owners)="data">
-                <span v-for="(owner, index) of data.item[2]" v-bind:key="index">
-                  <b-link :href="'https://etherscan.io/address/' + owners[owner[0]]" target="_blank" class="mr-2">
-                    <font size="-1">{{ owners[owner[0]].substring(0, 6) + '...' + owners[owner[0]].slice(-4) }}</font>
-                  </b-link>
-                </span>
-              </template>
-              <template #cell(threshold)="data">
-                {{ data.item[3] }}
-              </template>
-              <template #cell(factory)="data">
-                <b-link :href="'https://etherscan.io/address/' + versionToFactories[data.item[1]]" target="_blank">
-                  {{ data.item[1] }}
-                </b-link>
-              </template>
-            </b-table>
-          </b-card>
-
-          <div v-if="settings.tabIndex == 1" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
+          <!-- :SAFEMENU -->
+          <div v-if="settings.page == 'safe'" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
             <div class="mt-0 pr-1" style="min-width: 24.0rem; max-width: 24.0rem;">
               <b-form-input type="text" size="sm" v-model.trim="settings.safe" @change="saveSettings(); syncSafe();" debounce="600" v-b-popover.hover.bottom="'Exact safe address'" placeholder="🔍 0xabcd"></b-form-input>
             </div>
@@ -425,7 +326,7 @@
             <div class="mt-0 flex-grow-1">
             </div>
             <div v-if="!sync.section" class="mt-0 pr-1">
-              <b-button size="sm" @click="syncSafe()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe Events'">Sync</b-button>
+              <b-button size="sm" @click="syncSafe()" variant="primary" v-b-popover.hover.bottom="'Sync Safe events'">Sync</b-button>
             </div>
             <div v-if="!sync.section" class="mt-1 pr-1">
               <b-form-checkbox size="sm" v-model="settings.devMode" @input="saveSettings();" v-b-popover.hover="'Dev Mode?'">Dev</b-form-checkbox>
@@ -493,7 +394,61 @@
             </div>
           </div>
 
-          <b-card v-if="settings.tabIndex == 1" no-body class="m-1 p-0 border-0" bg-variant="light">
+          <!-- :SAFESMENU -->
+          <div v-if="settings.page == 'safes'" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
+            <div class="mt-0 pr-1" style="max-width: 24.0rem;">
+              <b-form-input type="text" size="sm" v-model.trim="settings.safesTable.filter" @change="saveSettings();" debounce="600" v-b-popover.hover.bottom="'Filter by safe address'" placeholder="🔍 0xabcd"></b-form-input>
+            </div>
+            <div class="mt-0 pr-1">
+              <b-dropdown size="sm" right text="" variant="link" class="m-0 p-0">
+                <b-dropdown-text>Sample Safes</b-dropdown-text>
+                <b-dropdown-divider></b-dropdown-divider>
+                <b-dropdown-item @click="settings.safesTable.filter = '0x9fC3dc011b461664c835F2527fffb1169b3C213e'; saveSettings();">EF: DeFi Multisig - Safe v1.4.1</b-dropdown-item>
+                <b-dropdown-item @click="settings.safesTable.filter = '0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4'; saveSettings();">Hacked Bybit: Cold Wallet 1 - Originally Safe 1.3.0; now Non-Safe Contract</b-dropdown-item>
+              </b-dropdown>
+            </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
+            <div v-if="!sync.section" class="mt-0 pr-1">
+              <b-button size="sm" @click="syncAllSafesEvents()" variant="primary" v-b-popover.hover.bottom="'Retrieve Safe events'">Sync</b-button>
+            </div>
+            <div v-if="!sync.section" class="mt-1 pr-1">
+              <b-form-checkbox size="sm" v-model="settings.devMode" @input="saveSettings();" v-b-popover.hover="'Dev Mode?'">Dev</b-form-checkbox>
+            </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
+            <div v-if="!sync.section" class="mt-0 pr-1">
+              <b-button size="sm" @click="resetData()" variant="primary" v-b-popover.hover.bottom="'Reset data'">Reset Data</b-button>
+            </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
+            <div v-if="sync.section != null" class="mt-0 pr-1">
+              <b-progress height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 24.0rem;">
+                <b-progress-bar :value="sync.completed">
+                  {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
+                </b-progress-bar>
+              </b-progress>
+            </div>
+            <div v-if="sync.section != null" class="ml-0 mt-1">
+              <b-button size="sm" @click="halt" variant="link" v-b-popover.hover.top="'Click to stop. This process can be continued later'"><b-icon-stop-fill shift-v="+1" font-scale="1.0"></b-icon-stop-fill></b-button>
+            </div>
+            <div class="mt-0 flex-grow-1">
+            </div>
+            <div class="mt-0 pl-1">
+              <b-form-select size="sm" v-model="settings.safesTable.sortOption" @change="saveSettings" :options="safesSortOptions" v-b-popover.hover.bottom="'Yeah. Sort'"></b-form-select>
+            </div>
+            <div class="mt-0 pl-1">
+              <font size="-2" v-b-popover.hover.bottom="'# Filtered / Safes'">{{ filteredSortedSafes.length + ' / ' + safes.length }}</font>
+            </div>
+            <div class="mt-0 pl-1">
+              <b-pagination size="sm" v-model="settings.safesTable.currentPage" @input="saveSettings" :total-rows="safes.length" :per-page="settings.safesTable.pageSize" style="height: 0;"></b-pagination>
+            </div>
+            <div class="mt-0 pl-1">
+              <b-form-select size="sm" v-model="settings.safesTable.pageSize" @change="saveSettings" :options="pageSizes" v-b-popover.hover.bottom="'Yeah. Page size'"></b-form-select>
+            </div>
+          </div>
+
+          <b-card v-if="settings.page == 'safe'" no-body class="m-1 p-0 border-0" bg-variant="light">
             <b-table ref="safeTxsTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safeTxsRowSelected' :fields="safeTxsFields" :items="pagedFilteredSortedSafeTxs" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
               <template #cell(index)="data">
                 <font size="-1" class="text-muted">
@@ -655,7 +610,6 @@
                   <b-badge v-if="!data.item.info.multisig.info.action" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.info.multisig.data">
                     {{ data.item.info.multisig.data.substring(0, 20) + (data.item.info.multisig.data.length > 20 ? '...' : '') }}
                   </b-badge>
-                  <!-- {{ data.item.info.multisig }} -->
                 </div>
                 <b-row v-for="(safeLog, index) of data.item.safeLogs" v-bind:key="index">
                   <b-col cols="3" class="text-right">
@@ -725,7 +679,7 @@
                 <!-- <font v-if="Object.keys(data.item.info).length > 0" size="-2"> -->
                 <!-- <font v-if="Object.keys(data.item.info).length > 0 && data.item.info.multisig" size="-2">
                   <pre>
-{{ data.item.info }}
+                    {{ data.item.info }}
                   </pre>
                 </font> -->
               </template>
@@ -771,6 +725,48 @@
                 <font size="-2" class="text-muted">
                   {{ data.item.logIndex }}
                 </font>
+              </template>
+            </b-table>
+          </b-card>
+
+          <!-- :SAFES -->
+          <b-card v-if="settings.page == 'safes'" no-body class="m-1 p-0 border-0" bg-variant="light">
+            <b-table ref="safesTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safesRowSelected' :fields="safesFields" :items="pagedFilteredSortedSafes" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
+              <template #cell(index)="data">
+                <font size="-1" class="text-muted">
+                  {{ parseInt(data.index) + ((settings.safesTable.currentPage - 1) * settings.safesTable.pageSize) + 1 }}
+                </font>
+              </template>
+              <template #cell(blockNumber)="data">
+                <b-link :href="'https://etherscan.io/tx/' + txHashes[data.item[6]][0] + '#eventlog#' + data.item[8]" target="_blank">
+                  {{ data.item[7] }}
+                </b-link>
+                <font size="-2" class="text-muted">
+                  {{ data.item[8] }}
+                </font>
+              </template>
+              <template #cell(safe)="data">
+                <b-link :href="'https://etherscan.io/address/' + data.item[0]" target="_blank">
+                  {{ data.item[0].substring(0, 10) + '...' + data.item[0].slice(-8) }}
+                </b-link>
+                <b-link :href="'https://app.safe.global/transactions/history?safe=eth:' + data.item[0]" v-b-popover.hover.bottom="'View in app.safe.global'" target="_blank">
+                  <b-icon-wallet shift-v="+2" font-scale="0.9" variant="primary"></b-icon-wallet>
+                </b-link>
+              </template>
+              <template #cell(owners)="data">
+                <span v-for="(owner, index) of data.item[2]" v-bind:key="index">
+                  <b-link :href="'https://etherscan.io/address/' + owners[owner[0]]" target="_blank" class="mr-2">
+                    <font size="-1">{{ owners[owner[0]].substring(0, 6) + '...' + owners[owner[0]].slice(-4) }}</font>
+                  </b-link>
+                </span>
+              </template>
+              <template #cell(threshold)="data">
+                {{ data.item[3] }}
+              </template>
+              <template #cell(factory)="data">
+                <b-link :href="'https://etherscan.io/address/' + versionToFactories[data.item[1]]" target="_blank">
+                  {{ data.item[1] }}
+                </b-link>
               </template>
             </b-table>
           </b-card>
@@ -853,6 +849,7 @@
           timestamp: null,
 
           settings: {
+            page: 'safe',
             tabIndex: 0,
             devMode: false,
             safesTable: {
@@ -907,7 +904,7 @@
               "0xfe029156": "function swap(address fromToken, address toToken, uint256 amount, uint256 minReturn)",
               "0xb88d4fde": "function safeTransferFrom(address from, address to, uint256 tokenId, bytes _data)", // ERC-721
             },
-            version: 9,
+            version: 10,
           },
 
           modalSafeAddress: {
@@ -1329,407 +1326,11 @@
             if (item && item.length > 0) {
               console.log(moment().format("HH:mm:ss") + " safesRowSelected - item: " + JSON.stringify(item));
               this.settings.safe = item[0][0];
-              this.settings.tabIndex = 1;
+              this.settings.page = 'safe';
               this.saveSettings();
               this.$refs.safesTable.clearSelected();
               await this.syncSafe();
             }
-          },
-
-          async syncAllSafesEvents() {
-
-            async function syncAllSafesEvents_processLogs(fromBlock, toBlock, logs) {
-              console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock + ", logs.length: " + logs.length);
-              const records = [];
-              for (const log of logs) {
-                if (!log.removed) {
-                  // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - log: " + JSON.stringify(log));
-                  let event = null;
-                  let abiVersion = null;
-                  if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
-                    if (log.topics.length in SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]]) {
-                      abiVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
-                    }
-                  }
-                  // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - abiVersion: " + abiVersion);
-                  let logData = null;
-                  // Factory events
-                  if (log.topics[0] == '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80' || log.topics[0] == '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235') {
-                    if (abiVersion == 111) {
-                      logData = safeFactoryInterface111.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - safeFactoryInterface111: " + JSON.stringify(logData, null, 2));
-                    } else if (abiVersion == 130) {
-                      logData = safeFactoryInterface130.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - safeFactoryInterface130: " + JSON.stringify(logData, null, 2));
-                    } else if (abiVersion == 141) {
-                      logData = safeFactoryInterface141.parseLog(log);
-                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - safeFactoryInterface141: " + JSON.stringify(logData, null, 2));
-                    }
-                  // Safe events
-                  } else if (abiVersion == 130) {
-                    logData = safeInterface130.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - logData 130: " + JSON.stringify(logData, null, 2));
-                  } else if (abiVersion == 141) {
-                    logData = safeInterface141.parseLog(log);
-                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - logData 141: " + JSON.stringify(logData, null, 2));
-                  } else {
-                    console.error(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - logData ???: " + JSON.stringify(log));
-                  }
-                  if (logData) {
-                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - name: " + logData.name);
-                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - signature: " + logData.signature + ", abiVersion: " + abiVersion);
-                    const parameters = [];
-                    for (let [i, value] of logData.args.entries()) {
-                      // console.log(i + " => " + value + " " + logData.eventFragment.inputs[i].name + " " + logData.eventFragment.inputs[i].type);
-                      const type = logData.eventFragment.inputs[i].type;
-                      if (type == "uint256") {
-                        value = ethers.BigNumber.from(value).toString();
-                      } else if (type == "address[]") {
-                        // TODO: Handle indexation of addressesIndex
-                      }
-                      parameters.push({
-                        value,
-                        name: logData.eventFragment.inputs[i].name,
-                        type,
-                      });
-                    }
-                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - parameters: " + JSON.stringify(parameters));
-                    event = {
-                      type: SAFE_EVENT_TYPES[logData.name],
-                      name: logData.name,
-                      signature: logData.signature,
-                      parameters,
-                    };
-                    if (!(log.transactionHash in txHashesIndex)) {
-                      txHashesIndex[log.transactionHash] = txHashes.length;
-                      txHashes.push([log.transactionHash, log.blockNumber, log.transactionIndex]);
-                    }
-                    const txHashIndex = txHashesIndex[log.transactionHash];
-                    if (logData.name == "SafeSetup") {
-                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
-                      const factoryVersion = logData.args[0] && t.factoriesToVersion[logData.args[0]] || null;
-                      if (factoryVersion) {
-                        const ownerList = [];
-                        for (const owner of logData.args[1]) {
-                          if (!(owner in ownersIndex)) {
-                            ownersIndex[owner] = parseInt(owners.length);
-                            owners.push(owner);
-                          }
-                          ownerList.push([ownersIndex[owner], txHashIndex]);
-                        }
-                        if (!(log.address in safesIndex)) {
-                          safesIndex[log.address] = parseInt(safes.length);
-                          safes.push([
-                            log.address,                 // Address
-                            factoryVersion,              // Factory version
-                            ownerList,                   // Owners
-                            parseInt(logData.args[2]),   // Threshold
-                            [],                          // Removed owners
-                            null,                        // Factory ProxyCreation event - factory version number
-                            txHashIndex,                 // Creation txHash index
-                            log.blockNumber,             // Creation Block number
-                            log.logIndex,                // Creation logIndex
-                            txHashIndex,                 // Latest txHash index
-                            // initializer: logData.args[3],
-                            // fallbackHandler: logData.args[4],
-                          ]);
-                        }
-                      } else {
-                        // console.error(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - SafeSetup not emitted by the configured factories: " + JSON.stringify(log, null, 2));
-                      }
-                    } else if (logData.name == "ProxyCreation") {
-                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - ProxyCreation: " + JSON.stringify(logData.args));
-
-                      const factoryVersion = log.address && t.factoriesToVersion[log.address] || null;
-                      if (factoryVersion) {
-                        if (logData.args[0] in safesIndex) {
-                          safesIndex[logData.args[0]][5] = parseInt(t.factoriesToVersion[log.address]);
-                        } else {
-                          // Create new safe record
-                          safesIndex[logData.args[0]] = parseInt(safes.length);
-                          safes.push([
-                            logData.args[0],             // Address
-                            factoryVersion,              // Factory version
-                            null,                        // Owners
-                            null,                        // Threshold
-                            [],                          // Removed owners
-                            factoryVersion,              // Factory ProxyCreation event - factory version number
-                            txHashIndex,                 // Creation txHash index
-                            log.blockNumber,             // Creationi Block number
-                            log.logIndex,                // Creation logIndex
-                            txHashIndex,                 // Latest txHash index
-                            // initializer: logData.args[3],
-                            // fallbackHandler: logData.args[4],
-                          ]);
-                        }
-                      } else {
-                        // console.error(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - ProxyCreation not emitted by the configured factories: " + JSON.stringify(log, null, 2));
-                      }
-                    } else if (logData.name == "AddedOwner") {
-                      const safeIndex = safesIndex[log.address];
-                      if (safeIndex) {
-                        if (!(logData.args[0] in ownersIndex)) {
-                          ownersIndex[logData.args[0]] = parseInt(owners.length);
-                          owners.push(logData.args[0]);
-                        }
-                        const ownerIndex = ownersIndex[logData.args[0]];
-                        const before = safes[safeIndex][2];
-                        safes[safeIndex][2] = [...safes[safeIndex][2].filter(e => e[0] != ownerIndex), [ownerIndex, txHashIndex]];
-                        safes[safeIndex][9] = txHashIndex;
-                        // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - AddedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
-                      }
-
-                    } else if (logData.name == "RemovedOwner") {
-                      const safeIndex = safesIndex[log.address];
-                      const ownerIndex = ownersIndex[logData.args[0]];
-                      if (safeIndex && ownerIndex) {
-                        // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - RemovedOwner safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex);
-                        const before = safes[safeIndex][2];
-                        safes[safeIndex][2] = safes[safeIndex][2].filter(e => e[0] != ownerIndex);
-                        safes[safeIndex][9] = txHashIndex;
-                        // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - RemovedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
-                      }
-
-                    } else if (logData.name == "ChangedThreshold") {
-                      const safeIndex = safesIndex[log.address];
-                      if (safeIndex) {
-                        const before = safes[safeIndex][3];
-                        safes[safeIndex][3] = parseInt(logData.args[0]);
-                        // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - ChangedThreshold - safeIndex: " + safeIndex + ", threshold: " + parseInt(logData.args[0]) + ", before: " + before + ", after: " + safes[safeIndex][3]);
-                      }
-                    }
-                  }
-
-                  if (event) {
-                    records.push({
-                      chainId,
-                      blockNumber: parseInt(log.blockNumber),
-                      txIndex: parseInt(log.transactionIndex),
-                    //   txHashIndex,
-                      txHash: log.transactionHash,
-                      logIndex: parseInt(log.logIndex),
-                      address: log.address,
-                    //   safeAddressIndex,
-                      safe: log.address,
-                    //   factoryAddressIndex: addressesIndex[log.address],
-                      ...event,
-                    });
-                  }
-                }
-              }
-              if (records.length) {
-                // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - records: " + JSON.stringify(records, null, 2));
-                await db.safeEvents.bulkAdd(records).then(function(lastKey) {
-                  console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - bulkAdd lastKey: " + JSON.stringify(lastKey));
-                  }).catch(Dexie.BulkError, function(e) {
-                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
-                  });
-              }
-            }
-
-            async function syncAllSafesEvents_getLogsFromRange(fromBlock, toBlock) {
-              console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
-              try {
-                if (!t.sync.halt) {
-                  const logs = await provider.getLogs({
-                    address: null,
-                    fromBlock,
-                    toBlock,
-                    topics: [[
-                        // 1.1.1 event ProxyCreation(Proxy proxy)
-                        // '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80',
-                        // 1.3.0 event ProxyCreation(GnosisSafeProxy proxy, address singleton)
-                        // 1.4.1 event ProxyCreation(SafeProxy indexed proxy, address singleton)
-                        // '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235',
-
-                        // // 1.0.0 & 1.1.1 No SafeSetup
-                        // // 1.3.0 & 1.4.1 event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
-                        '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8',
-                        // // 1.3.0 & 1.4.1 event ApproveHash(bytes32 indexed approvedHash, address indexed owner);
-                        // '0xf2a0eb156472d1440255b0d7c1e19cc07115d1051fe605b0dce69acfec884d9c',
-                        // // 1.3.0 & 1.4.1 event SignMsg(bytes32 indexed msgHash)
-                        // '0xe7f4675038f4f6034dfcbbb24c4dc08e4ebf10eb9d257d3d02c0f38d122ac6e4',
-                        // // 1.3.0 event ExecutionFailure(bytes32 txHash, uint256 payment)
-                        // // 1.4.1 event ExecutionFailure(bytes32 indexed txHash, uint256 payment)
-                        // '0x23428b18acfb3ea64b08dc0c1d296ea9c09702c09083ca5272e64d115b687d23',
-                        // // 1.3.0 event ExecutionSuccess(bytes32 txHash, uint256 payment)
-                        // // 1.4.1 event ExecutionSuccess(bytes32 indexed txHash, uint256 payment)
-                        // '0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e',
-                        //
-                        // // 1.3.0 event ChangedFallbackHandler(address handler)
-                        // // 1.4.1 event ChangedFallbackHandler(address indexed handler)
-                        // '0x5ac6c46c93c8d0e53714ba3b53db3e7c046da994313d7ed0d192028bc7c228b0',
-                        //
-                        // // 1.3.0 event ChangedGuard(address guard)
-                        // // 1.4.1 event ChangedGuard(address indexed guard)
-                        // '0x1151116914515bc0891ff9047a6cb32cf902546f83066499bcf8ba33d2353fa2',
-                        //
-                        // // 1.3.0 event EnabledModule(address module)
-                        // // 1.4.1 event EnabledModule(address indexed module)
-                        // '0xecdf3a3effea5783a3c4c2140e677577666428d44ed9d474a0b3a4c9943f8440',
-                        // // 1.3.0 event DisabledModule(address module)
-                        // // 1.4.1 event DisabledModule(address indexed module)
-                        // '0xaab4fa2b463f581b2b32cb3b7e3b704b9ce37cc209b5fb4d77e593ace4054276',
-                        // // 1.3.0 & 1.4.1 event ExecutionFromModuleSuccess(address indexed module)
-                        // '0x6895c13664aa4f67288b25d7a21d7aaa34916e355fb9b6fae0a139a9085becb8',
-                        // // 1.3.0 & 1.4.1 event ExecutionFromModuleFailure(address indexed module)
-                        // '0xacd2c8702804128fdb0db2bb49f6d127dd0181c13fd45dbfe16de0930e2bd375',
-
-                        // // 1.3.0 event AddedOwner(address owner)
-                        // // 1.4.1 event AddedOwner(address indexed owner)
-                        '0x9465fa0c962cc76958e6373a993326400c1c94f8be2fe3a952adfa7f60b2ea26',
-                        // // 1.3.0 event RemovedOwner(address owner)
-                        // // 1.4.1 event RemovedOwner(address indexed owner)
-                        '0xf8d49fc529812e9a7c5c50e69c20f0dccc0db8fa95c98bc58cc9a4f1c1299eaf',
-                        // // 1.3.0 & 1.4.1 event ChangedThreshold(uint256 threshold)
-                        '0x610f7ff2b304ae8903c3de74c60c6ab1f7d6226b3f52c5161905bb5ad4039c93',
-
-                        // // event SafeReceived(address indexed sender, uint256 value);
-                        // '0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d',
-                      ],
-                    ],
-                  });
-                  await syncAllSafesEvents_processLogs(fromBlock, toBlock, logs);
-                  // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
-                  t.sync.completed = toBlock;
-                }
-              } catch (e) {
-                console.error(moment().format("HH:mm:ss") + " syncAllSafesEvents_getLogsFromRange - Error: " + e.message);
-                const mid = parseInt((fromBlock + toBlock) / 2);
-                await syncAllSafesEvents_getLogsFromRange(fromBlock, mid);
-                await syncAllSafesEvents_getLogsFromRange(parseInt(mid) + 1, toBlock);
-              }
-            }
-
-            const t = this;
-            const db = new Dexie(this.db.name);
-            db.version(this.db.version).stores(this.db.schemaDefinition);
-
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const network = await provider.getNetwork();
-            const chainId = network.chainId;
-            localStorage.gnosisSafeExplorerChainId = chainId;
-            const block = await provider.getBlock();
-            const latestBlockNumber = block && block.number || null;
-            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - latestBlockNumber: " + latestBlockNumber);
-            this.sync.section = "Syncing";
-            this.sync.total = latestBlockNumber;
-            this.sync.completed = 0;
-            const safeFactoryInterface111 = new ethers.utils.Interface(SAFE_ABIS[111].proxy_factory);
-            const safeFactoryInterface130 = new ethers.utils.Interface(SAFE_ABIS[130].proxy_factory);
-            const safeFactoryInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].proxy_factory);
-            const safeInterface130 = new ethers.utils.Interface(SAFE_ABIS[130].gnosis_safe);
-            const safeInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].gnosis_safe);
-
-            const addresses = await this.getCachedData('addresses', db, chainId, []);
-            const addressesIndex = await this.getCachedData('addressesIndex', db, chainId, {});
-            const txHashes = await this.getCachedData('txHashes', db, chainId, []);
-            const txHashesIndex = await this.getCachedData('txHashesIndex', db, chainId, {});
-            const owners = await this.getCachedData('owners', db, chainId, []);
-            const ownersIndex = await this.getCachedData('ownersIndex', db, chainId, {});
-            const safes = await this.getCachedData('safes', db, chainId, []);
-            const safesIndex = await this.getCachedData('safesIndex', db, chainId, {});
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - versionToFactories: " + JSON.stringify(this.versionToFactories));
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - addresses 1: " + JSON.stringify(addresses).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - addressesIndex 1: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - txHashes 1: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - txHashesIndex 1: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - owners 1: " + JSON.stringify(owners).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - ownersIndex 1: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safes 1: " + JSON.stringify(safes).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safesIndex 1: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
-
-            const latest = await db.safeEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
-            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - latest: " + (latest && JSON.stringify(latest).substring(0, 100) || null));
-            const startBlock = this.settings.devMode ? (latestBlockNumber - 1000000) : (latest ? parseInt(latest.blockNumber) + 1: 0);
-            this.sync.completed = startBlock;
-            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - startBlock: " + startBlock);
-            await syncAllSafesEvents_getLogsFromRange(startBlock, latestBlockNumber);
-
-            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - saveCacheData BEGIN");
-            await this.saveCacheData("addresses", addresses, db, chainId);
-            await this.saveCacheData("addressesIndex", addressesIndex, db, chainId);
-            await this.saveCacheData("txHashes", txHashes, db, chainId);
-            await this.saveCacheData("txHashesIndex", txHashesIndex, db, chainId);
-            await this.saveCacheData("owners", owners, db, chainId);
-            await this.saveCacheData("ownersIndex", ownersIndex, db, chainId);
-            await this.saveCacheData("safes", safes, db, chainId);
-            await this.saveCacheData("safesIndex", safesIndex, db, chainId);
-            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - saveCacheData END");
-
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - addresses 2: " + JSON.stringify(addresses).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - addressesIndex 2: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - txHashes 2: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - txHashesIndex 2: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - owners 2: " + JSON.stringify(owners).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - ownersIndex 2: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safes 2: " + JSON.stringify(safes).substring(0, 1000) + "...");
-            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safesIndex 2: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
-            db.close();
-            await this.loadCurrentData();
-            this.sync.section = null;
-            this.sync.halt = false;
-          },
-
-          async loadCurrentData() {
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - BEGIN");
-            const DB_PROCESSING_BATCH_SIZE = 50000;
-            const db = new Dexie(this.db.name);
-            db.version(this.db.version).stores(this.db.schemaDefinition);
-            const chainId = this.chainId;
-
-            let safeAddress = null;
-            let safeAddressAsBytes32 = null;
-            try {
-              safeAddress = ethers.utils.getAddress(this.settings.safe);
-            } catch (e) {
-            }
-
-            for (const name of ['addresses', 'addressesIndex', 'txHashes', 'txHashesIndex', 'owners', 'ownersIndex', 'safes', 'safesIndex'/*, 'timestamps'*/]) {
-              const data = await this.getCachedData(name, db, chainId, name.endsWith("Index") ? {} : []);
-              Vue.set(this, name, data);
-              // console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name); // + ": " + JSON.stringify(data).substring(0, 1000) + "...");
-            }
-
-            const safeData = safeAddress ? (await this.getCachedData("safeData_" + safeAddress, db, chainId, {})) : {};
-            Vue.set(this, 'safeData', safeData);
-            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safeData: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
-
-            // const timestamps = await this.getCachedData("timestamps", db, chainId, {});
-            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - timestamps: " + JSON.stringify(timestamps).substring(0, 1000) + "...");
-            // Vue.set(this, "timestamps", timestamps);
-
-            // let rows = 0;
-            // let done = false;
-            // const safes = {};
-            // do {
-            //   let data;
-            //   if (this.settings.safesTable.filter && this.settings.safesTable.filter.length > 2) {
-            //     data = await db.safeFactoryEvents.where('safe').startsWithIgnoreCase(this.settings.safesTable.filter).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
-            //   } else {
-            //     data = await db.safeFactoryEvents.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
-            //   }
-            //   console.log(moment().format("HH:mm:ss") + " loadCurrentData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
-            //   for (const item of data) {
-            //     if (!(item.chainId in safes)) {
-            //       safes[item.chainId] = {};
-            //     }
-            //     if (!(item.safeAddressIndex in safes[item.chainId])) {
-            //       safes[item.chainId][item.safeAddressIndex] = {
-            //         blockNumber: item.blockNumber,
-            //         logIndex: item.logIndex,
-            //         txHashIndex: item.txHashIndex,
-            //         factoryAddressIndex: item.factoryAddressIndex,
-            //       };
-            //     }
-            //   }
-            //   rows = parseInt(rows) + data.length;
-            //   done = data.length < DB_PROCESSING_BATCH_SIZE;
-            // } while (!done);
-            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safes: " + JSON.stringify(safes));
-            // Vue.set(this, 'safes', safes);
-            db.close();
-            console.log(moment().format("HH:mm:ss") + " loadCurrentData - END");
           },
 
           async syncSafe() {
@@ -2347,10 +1948,407 @@
             this.sync.halt = false;
           },
 
+          async syncAllSafesEvents() {
+
+            async function syncAllSafesEvents_processLogs(fromBlock, toBlock, logs) {
+              console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - fromBlock: " + fromBlock + ", toBlock: " + toBlock + ", logs.length: " + logs.length);
+              const records = [];
+              for (const log of logs) {
+                if (!log.removed) {
+                  // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - log: " + JSON.stringify(log));
+                  let event = null;
+                  let abiVersion = null;
+                  if (log.topics[0] in SAFE_TOPICS_BY_TOPICSLENGTH) {
+                    if (log.topics.length in SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]]) {
+                      abiVersion = SAFE_TOPICS_BY_TOPICSLENGTH[log.topics[0]][log.topics.length];
+                    }
+                  }
+                  // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - abiVersion: " + abiVersion);
+                  let logData = null;
+                  // Factory events
+                  if (log.topics[0] == '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80' || log.topics[0] == '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235') {
+                    if (abiVersion == 111) {
+                      logData = safeFactoryInterface111.parseLog(log);
+                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - safeFactoryInterface111: " + JSON.stringify(logData, null, 2));
+                    } else if (abiVersion == 130) {
+                      logData = safeFactoryInterface130.parseLog(log);
+                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - safeFactoryInterface130: " + JSON.stringify(logData, null, 2));
+                    } else if (abiVersion == 141) {
+                      logData = safeFactoryInterface141.parseLog(log);
+                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - safeFactoryInterface141: " + JSON.stringify(logData, null, 2));
+                    }
+                  // Safe events
+                  } else if (abiVersion == 130) {
+                    logData = safeInterface130.parseLog(log);
+                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - logData 130: " + JSON.stringify(logData, null, 2));
+                  } else if (abiVersion == 141) {
+                    logData = safeInterface141.parseLog(log);
+                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - logData 141: " + JSON.stringify(logData, null, 2));
+                  } else {
+                    console.error(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - logData ???: " + JSON.stringify(log));
+                  }
+                  if (logData) {
+                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - name: " + logData.name);
+                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - signature: " + logData.signature + ", abiVersion: " + abiVersion);
+                    const parameters = [];
+                    for (let [i, value] of logData.args.entries()) {
+                      // console.log(i + " => " + value + " " + logData.eventFragment.inputs[i].name + " " + logData.eventFragment.inputs[i].type);
+                      const type = logData.eventFragment.inputs[i].type;
+                      if (type == "uint256") {
+                        value = ethers.BigNumber.from(value).toString();
+                      } else if (type == "address[]") {
+                        // TODO: Handle indexation of addressesIndex
+                      }
+                      parameters.push({
+                        value,
+                        name: logData.eventFragment.inputs[i].name,
+                        type,
+                      });
+                    }
+                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - parameters: " + JSON.stringify(parameters));
+                    event = {
+                      type: SAFE_EVENT_TYPES[logData.name],
+                      name: logData.name,
+                      signature: logData.signature,
+                      parameters,
+                    };
+                    if (!(log.transactionHash in txHashesIndex)) {
+                      txHashesIndex[log.transactionHash] = txHashes.length;
+                      txHashes.push([log.transactionHash, log.blockNumber, log.transactionIndex]);
+                    }
+                    const txHashIndex = txHashesIndex[log.transactionHash];
+                    if (logData.name == "SafeSetup") {
+                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - SafeSetup: " + log.address + ", owners: " + JSON.stringify(logData.args[1]) + ", threshold: " + parseInt(logData.args[2]));
+                      const factoryVersion = logData.args[0] && t.factoriesToVersion[logData.args[0]] || null;
+                      if (factoryVersion) {
+                        const ownerList = [];
+                        for (const owner of logData.args[1]) {
+                          if (!(owner in ownersIndex)) {
+                            ownersIndex[owner] = parseInt(owners.length);
+                            owners.push(owner);
+                          }
+                          ownerList.push([ownersIndex[owner], txHashIndex]);
+                        }
+                        if (!(log.address in safesIndex)) {
+                          safesIndex[log.address] = parseInt(safes.length);
+                          safes.push([
+                            log.address,                 // Address
+                            factoryVersion,              // Factory version
+                            ownerList,                   // Owners
+                            parseInt(logData.args[2]),   // Threshold
+                            [],                          // Removed owners
+                            null,                        // Factory ProxyCreation event - factory version number
+                            txHashIndex,                 // Creation txHash index
+                            log.blockNumber,             // Creation Block number
+                            log.logIndex,                // Creation logIndex
+                            txHashIndex,                 // Latest txHash index
+                            // initializer: logData.args[3],
+                            // fallbackHandler: logData.args[4],
+                          ]);
+                        }
+                      } else {
+                        // console.error(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - SafeSetup not emitted by the configured factories: " + JSON.stringify(log, null, 2));
+                      }
+                    } else if (logData.name == "ProxyCreation") {
+                      // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - ProxyCreation: " + JSON.stringify(logData.args));
+
+                      const factoryVersion = log.address && t.factoriesToVersion[log.address] || null;
+                      if (factoryVersion) {
+                        if (logData.args[0] in safesIndex) {
+                          safesIndex[logData.args[0]][5] = parseInt(t.factoriesToVersion[log.address]);
+                        } else {
+                          // Create new safe record
+                          safesIndex[logData.args[0]] = parseInt(safes.length);
+                          safes.push([
+                            logData.args[0],             // Address
+                            factoryVersion,              // Factory version
+                            null,                        // Owners
+                            null,                        // Threshold
+                            [],                          // Removed owners
+                            factoryVersion,              // Factory ProxyCreation event - factory version number
+                            txHashIndex,                 // Creation txHash index
+                            log.blockNumber,             // Creationi Block number
+                            log.logIndex,                // Creation logIndex
+                            txHashIndex,                 // Latest txHash index
+                            // initializer: logData.args[3],
+                            // fallbackHandler: logData.args[4],
+                          ]);
+                        }
+                      } else {
+                        // console.error(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - ProxyCreation not emitted by the configured factories: " + JSON.stringify(log, null, 2));
+                      }
+                    } else if (logData.name == "AddedOwner") {
+                      const safeIndex = safesIndex[log.address];
+                      if (safeIndex) {
+                        if (!(logData.args[0] in ownersIndex)) {
+                          ownersIndex[logData.args[0]] = parseInt(owners.length);
+                          owners.push(logData.args[0]);
+                        }
+                        const ownerIndex = ownersIndex[logData.args[0]];
+                        const before = safes[safeIndex][2];
+                        safes[safeIndex][2] = [...safes[safeIndex][2].filter(e => e[0] != ownerIndex), [ownerIndex, txHashIndex]];
+                        safes[safeIndex][9] = txHashIndex;
+                        // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - AddedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
+                      }
+
+                    } else if (logData.name == "RemovedOwner") {
+                      const safeIndex = safesIndex[log.address];
+                      const ownerIndex = ownersIndex[logData.args[0]];
+                      if (safeIndex && ownerIndex) {
+                        // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - RemovedOwner safeIndex: " + safeIndex + ", ownerIndex: " + ownerIndex);
+                        const before = safes[safeIndex][2];
+                        safes[safeIndex][2] = safes[safeIndex][2].filter(e => e[0] != ownerIndex);
+                        safes[safeIndex][9] = txHashIndex;
+                        // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - RemovedOwner - safeIndex: " + safes[safeIndex][0] + ", ownerIndex: " + ownerIndex + ", before: " + JSON.stringify(before) + ", after: " + JSON.stringify(safes[safeIndex][2]));
+                      }
+
+                    } else if (logData.name == "ChangedThreshold") {
+                      const safeIndex = safesIndex[log.address];
+                      if (safeIndex) {
+                        const before = safes[safeIndex][3];
+                        safes[safeIndex][3] = parseInt(logData.args[0]);
+                        // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - ChangedThreshold - safeIndex: " + safeIndex + ", threshold: " + parseInt(logData.args[0]) + ", before: " + before + ", after: " + safes[safeIndex][3]);
+                      }
+                    }
+                  }
+
+                  if (event) {
+                    records.push({
+                      chainId,
+                      blockNumber: parseInt(log.blockNumber),
+                      txIndex: parseInt(log.transactionIndex),
+                    //   txHashIndex,
+                      txHash: log.transactionHash,
+                      logIndex: parseInt(log.logIndex),
+                      address: log.address,
+                    //   safeAddressIndex,
+                      safe: log.address,
+                    //   factoryAddressIndex: addressesIndex[log.address],
+                      ...event,
+                    });
+                  }
+                }
+              }
+              if (records.length) {
+                // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - records: " + JSON.stringify(records, null, 2));
+                await db.safeEvents.bulkAdd(records).then(function(lastKey) {
+                  console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - bulkAdd lastKey: " + JSON.stringify(lastKey));
+                  }).catch(Dexie.BulkError, function(e) {
+                    // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_processLogs - bulkAdd e: " + JSON.stringify(e.failures, null, 2));
+                  });
+              }
+            }
+
+            async function syncAllSafesEvents_getLogsFromRange(fromBlock, toBlock) {
+              console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_getLogsFromRange - fromBlock: " + fromBlock + ", toBlock: " + toBlock);
+              try {
+                if (!t.sync.halt) {
+                  const logs = await provider.getLogs({
+                    address: null,
+                    fromBlock,
+                    toBlock,
+                    topics: [[
+                        // 1.1.1 event ProxyCreation(Proxy proxy)
+                        // '0xa38789425dbeee0239e16ff2d2567e31720127fbc6430758c1a4efc6aef29f80',
+                        // 1.3.0 event ProxyCreation(GnosisSafeProxy proxy, address singleton)
+                        // 1.4.1 event ProxyCreation(SafeProxy indexed proxy, address singleton)
+                        // '0x4f51faf6c4561ff95f067657e43439f0f856d97c04d9ec9070a6199ad418e235',
+
+                        // // 1.0.0 & 1.1.1 No SafeSetup
+                        // // 1.3.0 & 1.4.1 event SafeSetup(address indexed initiator, address[] owners, uint256 threshold, address initializer, address fallbackHandler);
+                        '0x141df868a6331af528e38c83b7aa03edc19be66e37ae67f9285bf4f8e3c6a1a8',
+                        // // 1.3.0 & 1.4.1 event ApproveHash(bytes32 indexed approvedHash, address indexed owner);
+                        // '0xf2a0eb156472d1440255b0d7c1e19cc07115d1051fe605b0dce69acfec884d9c',
+                        // // 1.3.0 & 1.4.1 event SignMsg(bytes32 indexed msgHash)
+                        // '0xe7f4675038f4f6034dfcbbb24c4dc08e4ebf10eb9d257d3d02c0f38d122ac6e4',
+                        // // 1.3.0 event ExecutionFailure(bytes32 txHash, uint256 payment)
+                        // // 1.4.1 event ExecutionFailure(bytes32 indexed txHash, uint256 payment)
+                        // '0x23428b18acfb3ea64b08dc0c1d296ea9c09702c09083ca5272e64d115b687d23',
+                        // // 1.3.0 event ExecutionSuccess(bytes32 txHash, uint256 payment)
+                        // // 1.4.1 event ExecutionSuccess(bytes32 indexed txHash, uint256 payment)
+                        // '0x442e715f626346e8c54381002da614f62bee8d27386535b2521ec8540898556e',
+                        //
+                        // // 1.3.0 event ChangedFallbackHandler(address handler)
+                        // // 1.4.1 event ChangedFallbackHandler(address indexed handler)
+                        // '0x5ac6c46c93c8d0e53714ba3b53db3e7c046da994313d7ed0d192028bc7c228b0',
+                        //
+                        // // 1.3.0 event ChangedGuard(address guard)
+                        // // 1.4.1 event ChangedGuard(address indexed guard)
+                        // '0x1151116914515bc0891ff9047a6cb32cf902546f83066499bcf8ba33d2353fa2',
+                        //
+                        // // 1.3.0 event EnabledModule(address module)
+                        // // 1.4.1 event EnabledModule(address indexed module)
+                        // '0xecdf3a3effea5783a3c4c2140e677577666428d44ed9d474a0b3a4c9943f8440',
+                        // // 1.3.0 event DisabledModule(address module)
+                        // // 1.4.1 event DisabledModule(address indexed module)
+                        // '0xaab4fa2b463f581b2b32cb3b7e3b704b9ce37cc209b5fb4d77e593ace4054276',
+                        // // 1.3.0 & 1.4.1 event ExecutionFromModuleSuccess(address indexed module)
+                        // '0x6895c13664aa4f67288b25d7a21d7aaa34916e355fb9b6fae0a139a9085becb8',
+                        // // 1.3.0 & 1.4.1 event ExecutionFromModuleFailure(address indexed module)
+                        // '0xacd2c8702804128fdb0db2bb49f6d127dd0181c13fd45dbfe16de0930e2bd375',
+
+                        // // 1.3.0 event AddedOwner(address owner)
+                        // // 1.4.1 event AddedOwner(address indexed owner)
+                        '0x9465fa0c962cc76958e6373a993326400c1c94f8be2fe3a952adfa7f60b2ea26',
+                        // // 1.3.0 event RemovedOwner(address owner)
+                        // // 1.4.1 event RemovedOwner(address indexed owner)
+                        '0xf8d49fc529812e9a7c5c50e69c20f0dccc0db8fa95c98bc58cc9a4f1c1299eaf',
+                        // // 1.3.0 & 1.4.1 event ChangedThreshold(uint256 threshold)
+                        '0x610f7ff2b304ae8903c3de74c60c6ab1f7d6226b3f52c5161905bb5ad4039c93',
+
+                        // // event SafeReceived(address indexed sender, uint256 value);
+                        // '0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d',
+                      ],
+                    ],
+                  });
+                  await syncAllSafesEvents_processLogs(fromBlock, toBlock, logs);
+                  // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents_getLogsFromRange - logs: " + JSON.stringify(logs, null, 2));
+                  t.sync.completed = toBlock;
+                }
+              } catch (e) {
+                console.error(moment().format("HH:mm:ss") + " syncAllSafesEvents_getLogsFromRange - Error: " + e.message);
+                const mid = parseInt((fromBlock + toBlock) / 2);
+                await syncAllSafesEvents_getLogsFromRange(fromBlock, mid);
+                await syncAllSafesEvents_getLogsFromRange(parseInt(mid) + 1, toBlock);
+              }
+            }
+
+            const t = this;
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const network = await provider.getNetwork();
+            const chainId = network.chainId;
+            localStorage.gnosisSafeExplorerChainId = chainId;
+            const block = await provider.getBlock();
+            const latestBlockNumber = block && block.number || null;
+            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - latestBlockNumber: " + latestBlockNumber);
+            this.sync.section = "Syncing";
+            this.sync.total = latestBlockNumber;
+            this.sync.completed = 0;
+            const safeFactoryInterface111 = new ethers.utils.Interface(SAFE_ABIS[111].proxy_factory);
+            const safeFactoryInterface130 = new ethers.utils.Interface(SAFE_ABIS[130].proxy_factory);
+            const safeFactoryInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].proxy_factory);
+            const safeInterface130 = new ethers.utils.Interface(SAFE_ABIS[130].gnosis_safe);
+            const safeInterface141 = new ethers.utils.Interface(SAFE_ABIS[141].gnosis_safe);
+
+            const addresses = await this.getCachedData('addresses', db, chainId, []);
+            const addressesIndex = await this.getCachedData('addressesIndex', db, chainId, {});
+            const txHashes = await this.getCachedData('txHashes', db, chainId, []);
+            const txHashesIndex = await this.getCachedData('txHashesIndex', db, chainId, {});
+            const owners = await this.getCachedData('owners', db, chainId, []);
+            const ownersIndex = await this.getCachedData('ownersIndex', db, chainId, {});
+            const safes = await this.getCachedData('safes', db, chainId, []);
+            const safesIndex = await this.getCachedData('safesIndex', db, chainId, {});
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - versionToFactories: " + JSON.stringify(this.versionToFactories));
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - addresses 1: " + JSON.stringify(addresses).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - addressesIndex 1: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - txHashes 1: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - txHashesIndex 1: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - owners 1: " + JSON.stringify(owners).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - ownersIndex 1: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safes 1: " + JSON.stringify(safes).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safesIndex 1: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
+
+            const latest = await db.safeEvents.where('[chainId+blockNumber+logIndex]').between([chainId, Dexie.minKey, Dexie.minKey],[chainId, Dexie.maxKey, Dexie.maxKey]).last();
+            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - latest: " + (latest && JSON.stringify(latest).substring(0, 100) || null));
+            const startBlock = this.settings.devMode ? (latestBlockNumber - 1000000) : (latest ? parseInt(latest.blockNumber) + 1: 0);
+            this.sync.completed = startBlock;
+            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - startBlock: " + startBlock);
+            await syncAllSafesEvents_getLogsFromRange(startBlock, latestBlockNumber);
+
+            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - saveCacheData BEGIN");
+            await this.saveCacheData("addresses", addresses, db, chainId);
+            await this.saveCacheData("addressesIndex", addressesIndex, db, chainId);
+            await this.saveCacheData("txHashes", txHashes, db, chainId);
+            await this.saveCacheData("txHashesIndex", txHashesIndex, db, chainId);
+            await this.saveCacheData("owners", owners, db, chainId);
+            await this.saveCacheData("ownersIndex", ownersIndex, db, chainId);
+            await this.saveCacheData("safes", safes, db, chainId);
+            await this.saveCacheData("safesIndex", safesIndex, db, chainId);
+            console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - saveCacheData END");
+
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - addresses 2: " + JSON.stringify(addresses).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - addressesIndex 2: " + JSON.stringify(addressesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - txHashes 2: " + JSON.stringify(txHashes).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - txHashesIndex 2: " + JSON.stringify(txHashesIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - owners 2: " + JSON.stringify(owners).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - ownersIndex 2: " + JSON.stringify(ownersIndex).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safes 2: " + JSON.stringify(safes).substring(0, 1000) + "...");
+            // console.log(moment().format("HH:mm:ss") + " syncAllSafesEvents - safesIndex 2: " + JSON.stringify(safesIndex).substring(0, 1000) + "...");
+            db.close();
+            await this.loadCurrentData();
+            this.sync.section = null;
+            this.sync.halt = false;
+          },
+
+          async loadCurrentData() {
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - BEGIN");
+            const DB_PROCESSING_BATCH_SIZE = 50000;
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            const chainId = this.chainId;
+
+            let safeAddress = null;
+            let safeAddressAsBytes32 = null;
+            try {
+              safeAddress = ethers.utils.getAddress(this.settings.safe);
+            } catch (e) {
+            }
+
+            for (const name of ['addresses', 'addressesIndex', 'txHashes', 'txHashesIndex', 'owners', 'ownersIndex', 'safes', 'safesIndex'/*, 'timestamps'*/]) {
+              const data = await this.getCachedData(name, db, chainId, name.endsWith("Index") ? {} : []);
+              Vue.set(this, name, data);
+              // console.log(moment().format("HH:mm:ss") + " loadCurrentData - " + name); // + ": " + JSON.stringify(data).substring(0, 1000) + "...");
+            }
+
+            const safeData = safeAddress ? (await this.getCachedData("safeData_" + safeAddress, db, chainId, {})) : {};
+            Vue.set(this, 'safeData', safeData);
+            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safeData: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
+
+            // const timestamps = await this.getCachedData("timestamps", db, chainId, {});
+            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - timestamps: " + JSON.stringify(timestamps).substring(0, 1000) + "...");
+            // Vue.set(this, "timestamps", timestamps);
+
+            // let rows = 0;
+            // let done = false;
+            // const safes = {};
+            // do {
+            //   let data;
+            //   if (this.settings.safesTable.filter && this.settings.safesTable.filter.length > 2) {
+            //     data = await db.safeFactoryEvents.where('safe').startsWithIgnoreCase(this.settings.safesTable.filter).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+            //   } else {
+            //     data = await db.safeFactoryEvents.where('[chainId+blockNumber+logIndex]').between([Dexie.minKey, Dexie.minKey, Dexie.minKey],[Dexie.maxKey, Dexie.maxKey, Dexie.maxKey]).offset(rows).limit(DB_PROCESSING_BATCH_SIZE).toArray();
+            //   }
+            //   console.log(moment().format("HH:mm:ss") + " loadCurrentData - data.length: " + data.length + ", first[0..9]: " + JSON.stringify(data.slice(0, 10).map(e => e.blockNumber + '.' + e.logIndex )));
+            //   for (const item of data) {
+            //     if (!(item.chainId in safes)) {
+            //       safes[item.chainId] = {};
+            //     }
+            //     if (!(item.safeAddressIndex in safes[item.chainId])) {
+            //       safes[item.chainId][item.safeAddressIndex] = {
+            //         blockNumber: item.blockNumber,
+            //         logIndex: item.logIndex,
+            //         txHashIndex: item.txHashIndex,
+            //         factoryAddressIndex: item.factoryAddressIndex,
+            //       };
+            //     }
+            //   }
+            //   rows = parseInt(rows) + data.length;
+            //   done = data.length < DB_PROCESSING_BATCH_SIZE;
+            // } while (!done);
+            // console.log(moment().format("HH:mm:ss") + " loadCurrentData - safes: " + JSON.stringify(safes));
+            // Vue.set(this, 'safes', safes);
+            db.close();
+            console.log(moment().format("HH:mm:ss") + " loadCurrentData - END");
+          },
+
           saveSettings() {
             // console.log(moment().format("HH:mm:ss") + " saveSettings: " + JSON.stringify(this.settings, null, 2));
             localStorage.gnosisSafeExplorerSettings = JSON.stringify(this.settings);
           },
+
           async processNewBlock(blockNumber) {
             console.log(moment().format("HH:mm:ss") + " processNewBlock[" + this.chainId + "] #" + this.commify0(blockNumber) + ", latest #" + this.commify0(this.blockNumber) + " @ " + moment.unix(this.timestamp).format("YYYY-MM-DD HH:mm:ss") + " " + moment.unix(this.timestamp).fromNow());
           },
