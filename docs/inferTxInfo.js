@@ -47,6 +47,18 @@ function methodIds() {
       }
     }
   }
+  for (const [version, versionData] of Object.entries(SAFE_ABIS)) {
+    for (const [name, abi] of Object.entries(versionData)) {
+      const interface = new ethers.utils.Interface(abi);
+      for (const f of interface.format(ethers.utils.FormatTypes.full)) {
+        if (f.substring(0, 8) == "function") {
+          const functionSig = interface.getFunction(f.substring(9,));
+          const methodId = interface.getSighash(functionSig);
+          results[methodId] = [f, name + ":" + version];
+        }
+      }
+    }
+  }
   return results;
 }
 
