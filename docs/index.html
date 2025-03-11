@@ -488,40 +488,134 @@
                 </font>
               </template>
               <template #cell(tx)="data">
-                <font v-if="data.item.tx && data.item.tx.from" size="-1" class="text-muted">
-                  from
-                </font>
-                <b-badge v-if="data.item.tx && data.item.tx.from" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.from + ' in the explorer'">
-                  <b-link @click="viewAddress(data.item.tx.from)">
-                    <font size="-1">{{ safe_lookupName(data.item.tx.from) }}</font>
-                  </b-link>
-                </b-badge>
-                <font v-if="data.item.tx && data.item.tx.nonce" size="-1" class="text-muted">
-                  nonce
-                </font>
-                <b-badge v-if="data.item.tx && data.item.tx.nonce" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'From account nonce'">
-                  <font size="-1">{{ data.item.tx.nonce }}</font>
-                </b-badge>
-                <font v-if="data.item.tx && data.item.tx.to" size="-1" class="text-muted">
-                  to
-                </font>
-                <b-badge v-if="data.item.tx && data.item.tx.to" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.to + ' in the explorer'">
-                  <b-link @click="viewAddress(data.item.tx.to)">
-                    <font size="-1">{{ safe_lookupName(data.item.tx.to) }}</font>
-                  </b-link>
-                </b-badge>
-                <font v-if="data.item.tx && data.item.tx.value" size="-1" class="text-muted">
-                  value
-                </font>
-                <b-badge v-if="data.item.tx && data.item.tx.value" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.tx.value">
-                  {{ formatETH(data.item.tx.value, 0) }}
-                </b-badge>
-                <font v-if="data.item.tx && data.item.tx.data.length > 2" size="-1" class="text-muted">
-                  functionSig
-                </font>
-                <b-badge v-if="data.item.tx && data.item.tx.data.length > 2" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.tx.value">
-                  {{ data.item.tx.data.substring(0, 10) }}
-                </b-badge>
+                <div v-if="data.item.tx">
+                  <font v-if="data.item.tx.from" size="-1" class="text-muted">
+                    from
+                  </font>
+                  <b-badge v-if="data.item.tx.from" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.from + ' in the explorer'">
+                    <b-link @click="viewAddress(data.item.tx.from)">
+                      <font size="-1">{{ safe_lookupName(data.item.tx.from) }}</font>
+                    </b-link>
+                  </b-badge>
+                  <font v-if="data.item.tx.nonce" size="-1" class="text-muted">
+                    nonce
+                  </font>
+                  <b-badge v-if="data.item.tx.nonce" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'From account nonce'">
+                    <font size="-1">{{ data.item.tx.nonce }}</font>
+                  </b-badge>
+                  <font v-if="data.item.tx.to" size="-1" class="text-muted">
+                    to
+                  </font>
+                  <b-badge v-if="data.item.tx.to" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.tx.to + ' in the explorer'">
+                    <b-link @click="viewAddress(data.item.tx.to)">
+                      <font size="-1">{{ safe_lookupName(data.item.tx.to) }}</font>
+                    </b-link>
+                  </b-badge>
+                  <font v-if="data.item.tx.value" size="-1" class="text-muted">
+                    value
+                  </font>
+                  <b-badge v-if="data.item.tx.value" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.tx.value">
+                    {{ formatETH(data.item.tx.value, 0) }}
+                  </b-badge>
+                  <font v-if="data.item.tx.data.length > 2" size="-1" class="text-muted">
+                    functionSig
+                  </font>
+                  <b-badge v-if="data.item.tx.data.length > 2" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.tx.value">
+                    {{ data.item.tx.data.substring(0, 10) }}
+                  </b-badge>
+                </div>
+                <div v-if="Object.keys(data.item.info).length > 0 && data.item.info.multisig">
+                  <font v-if="data.item.info.multisig.from" size="-1" class="text-muted ml-2">
+                    Multisig.execTransaction from
+                  </font>
+                  <b-badge v-if="data.item.info.multisig.from" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.info.multisig.from + ' in the explorer'">
+                    <b-link @click="viewAddress(data.item.info.multisig.from)">
+                      <font size="-1">{{ safe_lookupName(data.item.info.multisig.from) }}</font>
+                    </b-link>
+                  </b-badge>
+                  <font v-if="data.item.info.multisig.to" size="-1" class="text-muted">
+                    to
+                  </font>
+                  <b-badge v-if="data.item.info.multisig.to" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + data.item.info.multisig.to + ' in the explorer'">
+                    <b-link @click="viewAddress(data.item.info.multisig.to)">
+                      <font size="-1">{{ safe_lookupName(data.item.info.multisig.to) }}</font>
+                    </b-link>
+                  </b-badge>
+                  <font v-if="data.item.info.multisig.value" size="-1" class="text-muted">
+                    value
+                  </font>
+                  <b-badge v-if="data.item.info.multisig.value" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.info.multisig.value">
+                    {{ formatETH(data.item.info.multisig.value, 0) }}
+                  </b-badge>
+                  <font v-if="data.item.info.multisig.data.length > 2" size="-1" class="text-muted">
+                    functionSig
+                  </font>
+                  <b-badge v-if="data.item.info.multisig.data.length > 2" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.info.multisig.value">
+                    {{ data.item.info.multisig.data.substring(0, 10) }}
+                  </b-badge>
+                  <font v-if="data.item.info.multisig.operation != null" size="-1" class="text-muted">
+                    operation
+                  </font>
+                  <b-badge v-if="data.item.info.multisig.operation != null" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.info.multisig.operation">
+                    {{ data.item.info.multisig.operation == 1 ? "DelegateCall" : "Call" }}
+                  </b-badge>
+                  <font v-if="data.item.info.multisig.nonce != null" size="-1" class="text-muted">
+                    nonce
+                  </font>
+                  <b-badge v-if="data.item.info.multisig.nonce != null" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.info.multisig.nonce">
+                    {{ data.item.info.multisig.nonce }}
+                  </b-badge>
+                  <br />
+                  <font v-if="data.item.info.multisig.signers" size="-1" class="text-muted ml-3">
+                    signers
+                  </font>
+                  <b-badge v-if="data.item.info.multisig.signers" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.info.multisig.signers">
+                    <span v-for="(signer, signerIndex) of data.item.info.multisig.signers" v-bind:key="signerIndex">
+                      <font v-if="signerIndex > 0" size="-1" class="text-muted">,</font>
+                      <b-link @click="viewAddress(signer)">
+                        <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + signer + ' in the explorer'">
+                          <font size="-1">{{ safe_lookupName(signer) }}</font>
+                        </b-badge>
+                      </b-link>
+                    </span>
+                  </b-badge>
+                  <br />
+                  <font v-if="data.item.info.multisig.info.action" size="-1" class="text-muted ml-4">
+                    action
+                  </font>
+                  <b-badge v-if="data.item.info.multisig.info.action" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="data.item.info.multisig.info.action">
+                    {{ data.item.info.multisig.info.action }}
+                  </b-badge>
+                  <span v-for="(parameter, parameterIndex) of data.item.info.multisig.info.parameters" v-bind:key="parameterIndex">
+                    <!-- {{ parameter }} -->
+                    <font size="-1" class="text-muted">
+                      {{ parameter.name }}
+                    </font>
+                    <b-badge v-if="parameter.type == 'address'" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'Blah'">
+                      <span v-if="parameter.value == 'eth'">
+                        ETH
+                      </span>
+                      <span v-else>
+                        <b-link @click="viewAddress(parameter.value)">
+                          {{ safe_lookupName(parameter.value) }}
+                        </b-link>
+                      </span>
+                    </b-badge>
+                    <b-badge v-else-if="parameter.type == 'uint256'" pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'Blah'">
+                      <span v-if="parameter.name == 'value'">
+                        {{ formatETH(parameter.value, 0) }}
+                      </span>
+                      <span v-else>
+                        {{ parameter.value }}
+                      </span>
+                    </b-badge>
+                    <b-badge v-else pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'Blah'">
+                      {{ parameter.value }}
+                    </b-badge>
+                  </span>
+
+                  <!-- {{ data.item.info.multisig }} -->
+                </div>
                 <b-row v-for="(safeLog, index) of data.item.safeLogs" v-bind:key="index">
                   <b-col cols="3" class="text-right">
                     <b-badge pill variant="transparent" v-b-popover.hover.bottom="safeLog.address" class="m-0 p-0">
@@ -556,9 +650,7 @@
                       </b-badge>
                       <span v-else-if="parameter.type == 'address[]'">
                         <span v-for="(address, addressIndex) of parameter.value" v-bind:key="addressIndex">
-                          <font v-if="addressIndex > 0" size="-1" class="text-muted">
-                            ,
-                          </font>
+                          <font v-if="addressIndex > 0" size="-1" class="text-muted">,</font>
                           <b-link @click="viewAddress(address)">
                             <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + address + ' in the explorer'">
                               <font size="-1">{{ safe_lookupName(address) }}</font>
