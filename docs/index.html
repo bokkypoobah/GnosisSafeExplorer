@@ -1068,6 +1068,7 @@
           addressTypeOptions: [
             { value: null, text: 'Unknown' },
             { value: 'safe', text: 'Gnosis Safe' },
+            { value: 'safecontracts', text: 'Gnosis Safe Contracts' },
             { value: 'owner', text: 'Gnosis Safe Owner' },
             { value: 'erc20', text: 'ERC-20' },
             { value: 'erc721', text: 'ERC-721' },
@@ -2563,6 +2564,8 @@
                 return "erc" + this.safeData.tokens[a].type;
               } else if (a in this.safeData.owners) {
                 return "owner";
+              } else if (a in this.safeContractNames) {
+                return 'safecontracts';
               }
             }
             return null;
