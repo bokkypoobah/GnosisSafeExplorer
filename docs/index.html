@@ -2549,7 +2549,7 @@
               } else if (a in this.safeContractNames) {
                 return this.safeContractNames[a];
               } else if (a in this.safeData.owners) {
-                return "Owner #" + this.safeData.owners[a] + " " + a.substring(2, 6).toUpperCase();
+                return "Owner #" + (parseInt(this.safeData.owners[a]) + 1) + " " + a.substring(2, 6).toUpperCase();
               } else {
                 return a.substring(0, 8) + '...' + a.slice(-6);
               }
