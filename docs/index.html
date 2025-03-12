@@ -1860,9 +1860,35 @@
               await syncSafe_getSafeAndTokenLogsFromRange(2, 0, latestBlockNumber);
               this.sync.section = "Token Events #3";
               await syncSafe_getSafeAndTokenLogsFromRange(3, 0, latestBlockNumber);
-              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', structuredClone(safeData));
+            }
+
+            if (safeAddress && !this.sync.halt && this.settings.devMode) {
+              this.sync.section = "Etherscan Internal Transactions";
+              this.sync.completed = 0;
+              this.sync.total = 0;
+
+              let getInternalTransactionsResult;
+              if (!localStorage.cachedGetInternalTransactionsResult) {
+                const getInternalTransactionsUrl = "https://api.etherscan.io/v2/api?chainId=" + chainId + "&module=account&action=txlistinternal&address=" + safeAddress + "&startblock=0&endblock=99999999&page=1&offset=100&sort=desc&apikey=" + this.settings.etherscanAPIKey;
+                console.log(moment().format("HH:mm:ss") + " syncSafe - getInternalTransactionsUrl: " + getInternalTransactionsUrl);
+                getInternalTransactionsResult = await fetch(getInternalTransactionsUrl)
+                  .then(handleErrors)
+                  .then(response => response.json())
+                  .catch(function(error) {
+                    console.log(moment().format("HH:mm:ss") + " syncSafe - ERROR: " + error);
+                     return {};
+                  });
+                console.log(moment().format("HH:mm:ss") + " syncSafe - getInternalTransactionsResult: " + JSON.stringify(getInternalTransactionsResult, null, 2).substring(0, 200));
+                localStorage.cachedGetInternalTransactionsResult = JSON.stringify(getInternalTransactionsResult);
+              } else {
+                getInternalTransactionsResult = JSON.parse(localStorage.cachedGetInternalTransactionsResult || {});
+              }
+              console.log(moment().format("HH:mm:ss") + " syncSafe - getInternalTransactionsResult 2: " + JSON.stringify(getInternalTransactionsResult, null, 2).substring(0, 20000));
+
+
             }
 
             if (safeAddress && !this.sync.halt && !this.settings.devMode) {
@@ -2009,7 +2035,7 @@
               Vue.set(this, 'safeData', structuredClone(safeData));
             }
 
-            if (safeAddress && !this.sync.halt && this.settings.devMode) {
+            if (safeAddress && !this.sync.halt && !this.settings.devMode) {
               this.sync.section = "ERC-721/1155 Token Metadata";
               this.sync.completed = 0;
               this.sync.total = 0;
