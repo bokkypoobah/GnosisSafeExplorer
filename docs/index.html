@@ -499,9 +499,9 @@
           <b-card v-if="settings.page == 'safe' && settings.tabIndex == 0" no-body class="m-1 p-0 border-0" bg-variant="light">
             <b-row>
               <b-col cols="8">
-                <b-form-group v-if="settings.safe" label="Address:" label-cols="4" label-align="right" class="m-0 p-0">
+                <b-form-group v-if="settings.safe" label="Address:" label-cols="3" label-align="right" class="m-0 p-0">
                   <b-input-group>
-                    <b-button v-if="settings.safe" :href="'https://etherscan.io/address/' + lookupAddress(settings.safe)" variant="link" target="_blank" class="m-0 p-0 pt-1">
+                    <b-button v-if="settings.safe" :href="'https://etherscan.io/address/' + lookupAddress(settings.safe)" variant="link" target="_blank" class="m-0 p-0 pt-1 text-left" style="width: 26.0rem;">
                       {{ settings.safe }}
                     </b-button>
                     <b-input-group-append>
@@ -514,11 +514,11 @@
                     </b-input-group-append>
                   </b-input-group>
                 </b-form-group>
-                <b-form-group v-if="Object.keys(safeData.owners || {}).length > 0" label="Owners:" label-cols="4" label-align="right" class="m-0">
+                <b-form-group v-if="Object.keys(safeData.owners || {}).length > 0" label="Owners:" label-cols="3" label-align="right" class="m-0">
                   <div v-for="(ownerIndex, owner, index) in safeData.owners" v-bind:key="ownerIndex">
                     <!-- owner: {{ owner }} index: {{ index }} ownerIndex: {{ ownerIndex }} -->
                     <b-input-group>
-                      <b-button :href="'https://etherscan.io/address/' + owner" variant="link" target="_blank" class="m-0 p-0 pt-1">
+                      <b-button :href="'https://etherscan.io/address/' + owner" variant="link" target="_blank" class="m-0 p-0 pt-1 text-left" style="width: 26.0rem;">
                         <!-- {{ safe_lookupName(owner) }} -->
                         {{ owner }}
                       </b-button>
@@ -526,14 +526,21 @@
                         <b-button size="sm" @click="copyToClipboard(owner);" variant="link">
                           <b-icon-clipboard shift-v="-1" font-scale="1.1"></b-icon-clipboard>
                         </b-button>
-                        <font size="-1" class="mt-2 text-muted">
-                          {{ safe_lookupName(owner) }}
+                        <font size="-1" class="mt-2 ml-5 text-muted">
+                          <b-link @click="viewAddress(owner)">
+                            {{ safe_lookupName(owner) }}
+                          </b-link>
                         </font>
+                        <!-- <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + owner + ' in the explorer'">
+                          <b-link @click="viewAddress(owner)">
+                            <font size="-1">{{ safe_lookupName(owner) }}</font>
+                          </b-link>
+                        </b-badge> -->
                       </b-input-group-append>
                     </b-input-group>
                   </div>
                 </b-form-group>
-                <b-form-group v-if="safeData.threshold" label="Threshold:" label-cols="4" label-align="right" class="m-0">
+                <b-form-group v-if="safeData.threshold" label="Threshold:" label-cols="3" label-align="right" class="m-0">
                   <b-form-input type="text" readonly size="sm" :value="safeData.threshold" class="w-25"></b-form-input>
                 </b-form-group>
               </b-col>
