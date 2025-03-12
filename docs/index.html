@@ -266,44 +266,14 @@
         </b-modal>
 
         <b-card no-body class="p-0 mt-0 border-0" style="min-height: 600px;">
-
-          <!-- <div class="d-flex mt-1">
-            <div class="nav-tabs mr-auto p-1">
-              <b-form-input v-model="settings.tabIndex" size="sm"></b-form-input>
-            </div>
-            <div class="ml-auto pr-1">
-              <b-tabs small v-model="settings.tabIndex">
-                <b-tab title="Tab 1">Tab 1 content</b-tab>
-                <b-tab title="Tab 2">Tab 2 content</b-tab>
-                <b-tab title="Tab 3">Tab 3 content</b-tab>
-                <b-tab title="Tab 4">Tab 4 content</b-tab>
-              </b-tabs>
-            </div>
-          </div> -->
-
-          <!-- <div class="d-flex">
-            <input size="sm" type="text" class="form-control flex-grow-1 mr-auto" placeholder="Input Box" style="max-width: 24.0rem;">
-            <ul class="nav nav-tabs small ml-auto">
-              <li class="nav-item">
-                <a class="nav-link active" href="#">Safe</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#">Fungibles</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#">Non-Fungibles</a>
-              </li>
-            </ul>
-          </div> -->
-
           <!-- :SAFEMENU -->
-          <b-tabs v-if="settings.page == 'safe'" small v-model="settings.tabIndex" @input="saveSettings" align="right" class="text-right mt-1" content-class="m-0 p-0">
+          <b-tabs v-if="settings.page == 'safe'" v-model="settings.tabIndex" @input="saveSettings" align="right" class="text-right mt-1" content-class="m-0 p-0">
             <template #tabs-start>
               <div class="d-flex flex-grow-1">
-                <div class="ml-1 p-0" style="width: 24.0rem;">
+                <div class="ml-1 mt-1 p-0" style="width: 24.0rem;">
                   <b-form-input :disabled="!!sync.section" type="text" size="sm" v-model.trim="settings.safe" @change="saveSettings(); syncSafe();" debounce="600" v-b-popover.hover.bottom="'Exact safe address'" placeholder="🔍 Exact Gnosis Safe address, e.g., 0x1234...abcd"></b-form-input>
                 </div>
-                <div class="mt-0 pr-1">
+                <div class="mt-1 pr-1">
                   <b-dropdown :disabled="!!sync.section" size="sm" right text="" variant="link" class="m-0 p-0">
                     <b-dropdown-text>Sample Safes</b-dropdown-text>
                     <b-dropdown-divider></b-dropdown-divider>
@@ -313,20 +283,20 @@
                 </div>
                 <div class="mt-0 flex-grow-1">
                 </div>
-                <div v-if="!sync.section" class="mt-0 pr-1">
+                <div v-if="!sync.section" class="mt-1 pr-1">
                   <b-button size="sm" @click="syncSafe()" variant="primary" v-b-popover.hover.bottom="'Sync Safe events'">Sync</b-button>
                 </div>
-                <div v-if="!sync.section" class="mt-1 pr-1">
+                <div v-if="!sync.section" class="mt-2 pr-1">
                   <b-form-checkbox size="sm" v-model="settings.devMode" @input="saveSettings();" v-b-popover.hover="'Dev Mode?'">Dev</b-form-checkbox>
                 </div>
-                <div v-if="sync.section != null" class="mt-0 pr-1">
+                <div v-if="sync.section != null" class="mt-1 pr-1">
                   <b-progress height="2.0rem" :max="sync.total" show-progress :animated="sync.section != null" :variant="sync.section != null ? 'success' : 'secondary'" class="m-0 p-0" style="min-width: 18.0rem;">
                     <b-progress-bar :value="sync.completed">
                       {{ sync.total == null ? (sync.completed + ' ' + sync.section) : (sync.completed + '/' + sync.total + ' ' + ((sync.completed / sync.total) * 100).toFixed(0) + '% ' + sync.section) }}
                     </b-progress-bar>
                   </b-progress>
                 </div>
-                <div v-if="sync.section != null" class="ml-0 mt-1">
+                <div v-if="sync.section != null" class="ml-0 mt-2">
                   <b-button size="sm" @click="halt" variant="link" v-b-popover.hover.top="'Click to stop. This process can be continued later'"><b-icon-stop-fill shift-v="+1" font-scale="1.0"></b-icon-stop-fill></b-button>
                 </div>
                 <div class="mt-0 flex-grow-1">
@@ -339,7 +309,7 @@
             <b-tab title="Transactions" no-body></b-tab>
           </b-tabs>
 
-          <div v-if="settings.page == 'safe' && settings.tabIndex == 3" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
+          <div v-if="settings.page == 'safe' && settings.tabIndex == 1" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
             <!-- <div class="mt-0 pr-1" style="min-width: 24.0rem; max-width: 24.0rem;">
               <b-form-input type="text" size="sm" v-model.trim="settings.safe" @change="saveSettings(); syncSafe();" debounce="600" v-b-popover.hover.bottom="'Exact safe address'" placeholder="🔍 0xabcd"></b-form-input>
             </div> -->
@@ -499,22 +469,27 @@
           <b-card v-if="settings.page == 'safe' && settings.tabIndex == 0" no-body class="m-1 p-0 border-0" bg-variant="light">
             <b-row>
               <b-col cols="8">
-                <b-form-group v-if="settings.safe" label="Address:" label-cols="3" label-align="right" class="m-0 p-0">
+                <b-form-group v-if="settings.safe" label="Address:" label-cols="3" label-align="right" class="m-0 p-0" :description="safeData.version ? ('Version ' + safeData.version) : ''">
                   <b-input-group>
-                    <b-button v-if="settings.safe" :href="'https://etherscan.io/address/' + lookupAddress(settings.safe)" variant="link" target="_blank" class="m-0 p-0 pt-1 text-left" style="width: 26.0rem;">
+                    <b-button :href="'https://etherscan.io/address/' + lookupAddress(settings.safe)" variant="link" target="_blank" class="m-0 p-0 pt-1 text-left" style="width: 26.0rem;">
                       {{ settings.safe }}
                     </b-button>
                     <b-input-group-append>
                       <b-button size="sm" @click="copyToClipboard(lookupAddress(settings.safe));" variant="link">
                         <b-icon-clipboard shift-v="-1" font-scale="1.1"></b-icon-clipboard>
                       </b-button>
-                      <b-button v-if="settings.safe && safe_lookupNameType(settings.safe) == 'safe'" size="sm" :href="'https://app.safe.global/transactions/history?safe=eth:' + lookupAddress(settings.safe)" v-b-popover.hover.bottom="'View in app.safe.global'" variant="link" target="_blank">
+                      <font size="-1" class="mt-2 ml-5 text-muted">
+                        <b-link @click="viewAddress(settings.safe)">
+                          {{ safe_lookupName(settings.safe) }}
+                        </b-link>
+                      </font>
+                      <b-button v-if="safe_lookupNameType(settings.safe) == 'safe'" size="sm" :href="'https://app.safe.global/transactions/history?safe=eth:' + lookupAddress(settings.safe)" v-b-popover.hover.bottom="'View in app.safe.global'" variant="link" target="_blank">
                         <b-icon-wallet shift-v="-1" font-scale="1.1"></b-icon-wallet>
                       </b-button>
                     </b-input-group-append>
                   </b-input-group>
                 </b-form-group>
-                <b-form-group v-if="Object.keys(safeData.owners || {}).length > 0" label="Owners:" label-cols="3" label-align="right" class="m-0">
+                <b-form-group v-if="settings.safe == safeData.address && Object.keys(safeData.owners || {}).length > 0" label="Owners:" label-cols="3" label-align="right" class="m-0">
                   <div v-for="(ownerIndex, owner, index) in safeData.owners" v-bind:key="ownerIndex">
                     <!-- owner: {{ owner }} index: {{ index }} ownerIndex: {{ ownerIndex }} -->
                     <b-input-group>
@@ -531,17 +506,32 @@
                             {{ safe_lookupName(owner) }}
                           </b-link>
                         </font>
-                        <!-- <b-badge pill variant="transparent" class="px-0" v-b-popover.hover.bottom="'View ' + owner + ' in the explorer'">
-                          <b-link @click="viewAddress(owner)">
-                            <font size="-1">{{ safe_lookupName(owner) }}</font>
-                          </b-link>
-                        </b-badge> -->
                       </b-input-group-append>
                     </b-input-group>
                   </div>
                 </b-form-group>
-                <b-form-group v-if="safeData.threshold" label="Threshold:" label-cols="3" label-align="right" class="m-0">
+                <b-form-group v-if="settings.safe == safeData.address && safeData.threshold" label="Threshold:" label-cols="3" label-align="right" class="m-0">
                   <b-form-input type="text" readonly size="sm" :value="safeData.threshold" class="w-25"></b-form-input>
+                </b-form-group>
+                <b-form-group v-if="settings.safe == safeData.address && safeData.nonce" label="Nonce:" label-cols="3" label-align="right" class="m-0">
+                  <b-form-input type="text" readonly size="sm" :value="safeData.nonce" class="w-25"></b-form-input>
+                </b-form-group>
+                <b-form-group v-if="settings.safe == safeData.address && safeData.implementation" label="Implementation:" label-cols="3" label-align="right" class="m-0 p-0" :description="safeData.factoryVersion ? ('Version ' + safeData.factoryVersion) : ''">
+                  <b-input-group>
+                    <b-button :href="'https://etherscan.io/address/' + safeData.implementation" variant="link" target="_blank" class="m-0 p-0 pt-1 text-left" style="width: 26.0rem;">
+                      {{ safeData.implementation }}
+                    </b-button>
+                    <b-input-group-append>
+                      <b-button size="sm" @click="copyToClipboard(safeData.implementation);" variant="link">
+                        <b-icon-clipboard shift-v="-1" font-scale="1.1"></b-icon-clipboard>
+                      </b-button>
+                      <font size="-1" class="mt-2 ml-5 text-muted">
+                        <b-link @click="viewAddress(safeData.implementation)">
+                          {{ safe_lookupName(safeData.implementation) }}
+                        </b-link>
+                      </font>
+                    </b-input-group-append>
+                  </b-input-group>
                 </b-form-group>
               </b-col>
               <b-col cols="4">
@@ -1857,6 +1847,9 @@
                 }
               }
               for (const [blockNumber, blockData] of Object.entries(safeData.blocks)) {
+                if (!blockData.timestamp || !blockData.balance) {
+                  t.sync.completed++;
+                }
                 if (!blockData.timestamp) {
                   try {
                     const block = await provider.getBlock(parseInt(blockNumber));
@@ -1873,7 +1866,6 @@
                     console.error(moment().format("HH:mm:ss") + " syncSafe - safeData.balance - error: " + e.message);
                   }
                 }
-                t.sync.completed++;
                 if (this.sync.halt) {
                   break;
                 }
