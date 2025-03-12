@@ -301,7 +301,7 @@
             <template #tabs-start>
               <div class="d-flex flex-grow-1">
                 <div class="ml-1 p-0" style="width: 24.0rem;">
-                  <b-form-input :disabled="!!sync.section" type="text" size="sm" v-model.trim="settings.safe" @change="saveSettings(); syncSafe();" debounce="600" v-b-popover.hover.bottom="'Exact safe address'" placeholder="🔍 0xabcd"></b-form-input>
+                  <b-form-input :disabled="!!sync.section" type="text" size="sm" v-model.trim="settings.safe" @change="saveSettings(); syncSafe();" debounce="600" v-b-popover.hover.bottom="'Exact safe address'" placeholder="🔍 Exact Gnosis Safe address, e.g., 0x1234...abcd"></b-form-input>
                 </div>
                 <div class="mt-0 pr-1">
                   <b-dropdown :disabled="!!sync.section" size="sm" right text="" variant="link" class="m-0 p-0">
@@ -334,22 +334,14 @@
             </div>
             </template>
             <b-tab title="Safe" no-body></b-tab>
-            <b-tab title="Fungibles" no-body></b-tab>
-            <b-tab title="Non-Fungibles" no-body></b-tab>
+            <b-tab disabled title="Fungibles" no-body></b-tab>
+            <b-tab disabled title="Non-Fungibles" no-body></b-tab>
             <b-tab title="Transactions" no-body></b-tab>
           </b-tabs>
 
-          <div v-if="settings.page == 'safe'" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
+          <div v-if="settings.page == 'safe' && settings.tabIndex == 3" class="d-flex flex-wrap m-0 mt-1 p-0 px-1 bg-white">
             <!-- <div class="mt-0 pr-1" style="min-width: 24.0rem; max-width: 24.0rem;">
               <b-form-input type="text" size="sm" v-model.trim="settings.safe" @change="saveSettings(); syncSafe();" debounce="600" v-b-popover.hover.bottom="'Exact safe address'" placeholder="🔍 0xabcd"></b-form-input>
-            </div> -->
-            <!-- <div class="mt-0 pr-1">
-              <b-dropdown size="sm" right text="" variant="link" class="m-0 p-0">
-                <b-dropdown-text>Sample Safes</b-dropdown-text>
-                <b-dropdown-divider></b-dropdown-divider>
-                <b-dropdown-item @click="settings.safe = '0x9fC3dc011b461664c835F2527fffb1169b3C213e'; saveSettings(); syncSafe();">EF: DeFi Multisig - Safe v1.4.1</b-dropdown-item>
-                <b-dropdown-item @click="settings.safe = '0x1Db92e2EeBC8E0c075a02BeA49a2935BcD2dFCF4'; saveSettings(); syncSafe();">Hacked Bybit: Cold Wallet 1 - Originally Safe 1.3.0; now Non-Safe Contract</b-dropdown-item>
-              </b-dropdown>
             </div> -->
             <div class="mt-0 flex-grow-1">
             </div>
@@ -503,7 +495,55 @@
             </div>
           </div>
 
-          <b-card v-if="settings.page == 'safe'" no-body class="m-1 p-0 border-0" bg-variant="light">
+          <!-- :SAFEPAGES -->
+          <b-card v-if="settings.page == 'safe' && settings.tabIndex == 0" no-body class="m-1 p-0 border-0" bg-variant="light">
+            <b-row>
+              <b-col cols="8">
+                <b-form-group v-if="settings.safe" label="Address:" label-cols="4" label-align="right" class="m-0 p-0">
+                  <b-input-group>
+                    <b-button v-if="settings.safe" :href="'https://etherscan.io/address/' + lookupAddress(settings.safe)" variant="link" target="_blank" class="m-0 p-0 pt-1">
+                      {{ settings.safe }}
+                    </b-button>
+                    <b-input-group-append>
+                      <b-button size="sm" @click="copyToClipboard(lookupAddress(settings.safe));" variant="link">
+                        <b-icon-clipboard shift-v="-1" font-scale="1.1"></b-icon-clipboard>
+                      </b-button>
+                      <b-button v-if="settings.safe && safe_lookupNameType(settings.safe) == 'safe'" size="sm" :href="'https://app.safe.global/transactions/history?safe=eth:' + lookupAddress(settings.safe)" v-b-popover.hover.bottom="'View in app.safe.global'" variant="link" target="_blank">
+                        <b-icon-wallet shift-v="-1" font-scale="1.1"></b-icon-wallet>
+                      </b-button>
+                    </b-input-group-append>
+                  </b-input-group>
+                </b-form-group>
+                <b-form-group v-if="safeData.owners" label="Owners:" label-cols="4" label-align="right" class="m-0">
+                  <div v-for="(ownerIndex, owner, index) in safeData.owners" v-bind:key="ownerIndex">
+                    <!-- owner: {{ owner }} index: {{ index }} ownerIndex: {{ ownerIndex }} -->
+                    <b-input-group>
+                      <b-button :href="'https://etherscan.io/address/' + owner" variant="link" target="_blank" class="m-0 p-0 pt-1">
+                        <!-- {{ safe_lookupName(owner) }} -->
+                        {{ owner }}
+                      </b-button>
+                      <b-input-group-append>
+                        <b-button size="sm" @click="copyToClipboard(owner);" variant="link">
+                          <b-icon-clipboard shift-v="-1" font-scale="1.1"></b-icon-clipboard>
+                        </b-button>
+                        <font size="-1" class="mt-2 text-muted">
+                          {{ safe_lookupName(owner) }}
+                        </font>
+                      </b-input-group-append>
+                    </b-input-group>
+                  </div>
+                </b-form-group>
+                <b-form-group v-if="safeData.threshold" label="Threshold:" label-cols="4" label-align="right" class="m-0">
+                  <b-form-input type="text" readonly size="sm" :value="safeData.threshold" class="w-25"></b-form-input>
+                </b-form-group>
+              </b-col>
+              <b-col cols="4">
+
+              </b-col>
+            </b-row>
+          </b-card>
+
+          <b-card v-if="settings.page == 'safe' && settings.tabIndex == 3" no-body class="m-1 p-0 border-0" bg-variant="light">
             <b-table ref="safeTxsTable" small fixed striped responsive hover selectable select-mode="single" @row-selected='safeTxsRowSelected' :fields="safeTxsFields" :items="pagedFilteredSortedSafeTxs" show-empty empty-html="Click Sync above to retrieve Safes deployed by Safe factories v1.0.0, v1.1.1, v1.3.0 and v1.4.1" head-variant="light" class="mx-0 my-0">
               <template #cell(index)="data">
                 <font size="-1" class="text-muted">
