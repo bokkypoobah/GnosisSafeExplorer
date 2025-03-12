@@ -1865,7 +1865,7 @@
               Vue.set(this, 'safeData', structuredClone(safeData));
             }
 
-            if (safeAddress && !this.sync.halt && this.settings.devMode) {
+            if (safeAddress && !this.sync.halt && this.settings.etherscanAPIKey && this.settings.devMode) {
               this.sync.section = "Etherscan Internal Transactions";
               this.sync.completed = 0;
               this.sync.total = 0;
