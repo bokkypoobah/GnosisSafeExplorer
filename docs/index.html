@@ -514,7 +514,7 @@
                     </b-input-group-append>
                   </b-input-group>
                 </b-form-group>
-                <b-form-group v-if="safeData.owners" label="Owners:" label-cols="4" label-align="right" class="m-0">
+                <b-form-group v-if="Object.keys(safeData.owners || {}).length > 0" label="Owners:" label-cols="4" label-align="right" class="m-0">
                   <div v-for="(ownerIndex, owner, index) in safeData.owners" v-bind:key="ownerIndex">
                     <!-- owner: {{ owner }} index: {{ index }} ownerIndex: {{ ownerIndex }} -->
                     <b-input-group>
@@ -932,7 +932,7 @@
           safes: [],          // index => [ safeAddress, factoryVersion, [ ownerIndex,... ], threshold, [ removedOwnerIndex, ... ], proxyCreationFromFactoryVersion, txHashIndex, blockNumber, logIndex, latestTxHashIndex ]
           safesIndex: {},     // safeAddress => index
 
-          safeData: [],       // blockNumber => { timestamp, txs: { ..., logs: { logIndex: eventData, ...} } }
+          safeData: {},       // blockNumber => { timestamp, txs: { ..., logs: { logIndex: eventData, ...} } }
 
           timestamps: {},     // TODO: Remove? blockNumber => Unix timestamp
           txData: {},         // TODO: Remove? Transactions only for the current safe address
