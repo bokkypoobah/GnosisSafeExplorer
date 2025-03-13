@@ -148,22 +148,23 @@ function inferTxInfo(txData, safe, functionSigs) {
     const refundReceiver = results.parameters.filter(e => e.name == "refundReceiver")[0].value;
     const nonce = txData.nonce;
     const chain = 1; // TODO
-
     const info = parseTx(safe, to, value, data, functionSigs);
     // console.log(moment().format("HH:mm:ss") + " inferTxInfo - execTransaction - info: " + JSON.stringify(info, null, 2));
-
     const signaturesString = results.parameters.filter(e => e.name == "signatures")[0].value;
     const signatures = signaturesString.substring(2,).match(/.{1,130}/g).map(e => ("0x" + e));
-    const safeTxHash = safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe);
+    let safeTxHash = null;
     const signers = [];
-    for (const signature of signatures) {
-      if (signature.substring(0, 10) != "0x00000000") {
-        const pubKey = ethers.utils.recoverPublicKey(ethers.utils.arrayify(safeTxHash), signature);
-        const signer = ethers.utils.computeAddress(pubKey);
-        signers.push(signer);
-      } else {
-        const signer = ethers.utils.getAddress('0x' + signature.substring(26, 66));
-        signers.push(signer);
+    if (nonce) {
+      safeTxHash = safeGetTransactionHash(to, value, data, operation, safeTxGas, baseGas, gasPrice, gasToken, refundReceiver, nonce, chain, safe);
+      for (const signature of signatures) {
+        if (signature.substring(0, 10) != "0x00000000") {
+          const pubKey = ethers.utils.recoverPublicKey(ethers.utils.arrayify(safeTxHash), signature);
+          const signer = ethers.utils.computeAddress(pubKey);
+          signers.push(signer);
+        } else {
+          const signer = ethers.utils.getAddress('0x' + signature.substring(26, 66));
+          signers.push(signer);
+        }
       }
     }
     results.multisig = {

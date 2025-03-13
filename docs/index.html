@@ -1635,6 +1635,7 @@
                       safeData.blocks[log.blockNumber].txs[log.transactionHash] = {
                         txIndex: log.transactionIndex,
                         logs: {},
+                        internal: {},
                         nonce,
                         tx: null,
                         txReceipt: null,
@@ -1850,7 +1851,7 @@
               this.sync.completed++;
             }
 
-            if (safeAddress) {
+            if (safeAddress && !this.settings.devMode) {
               this.sync.section = "Safe Events";
               safeData.nonce = 0;
               await syncSafe_getSafeAndTokenLogsFromRange(0, 0, latestBlockNumber);
@@ -1860,18 +1861,19 @@
               await syncSafe_getSafeAndTokenLogsFromRange(2, 0, latestBlockNumber);
               this.sync.section = "Token Events #3";
               await syncSafe_getSafeAndTokenLogsFromRange(3, 0, latestBlockNumber);
-              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 2: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', structuredClone(safeData));
             }
 
-            if (safeAddress && !this.sync.halt && this.settings.etherscanAPIKey && this.settings.devMode) {
+            if (safeAddress && !this.sync.halt && this.settings.etherscanAPIKey && !this.settings.devMode) {
               this.sync.section = "Etherscan Internal Transactions";
               this.sync.completed = 0;
               this.sync.total = 0;
+              // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData.blocks: " + JSON.stringify(safeData.blocks, null, 2).substring(0, 200));
 
               let getInternalTransactionsResult;
-              if (!localStorage.cachedGetInternalTransactionsResult) {
+              // if (!localStorage.cachedGetInternalTransactionsResult) {
                 const getInternalTransactionsUrl = "https://api.etherscan.io/v2/api?chainId=" + chainId + "&module=account&action=txlistinternal&address=" + safeAddress + "&startblock=0&endblock=99999999&page=1&offset=100&sort=desc&apikey=" + this.settings.etherscanAPIKey;
                 console.log(moment().format("HH:mm:ss") + " syncSafe - getInternalTransactionsUrl: " + getInternalTransactionsUrl);
                 getInternalTransactionsResult = await fetch(getInternalTransactionsUrl)
@@ -1882,20 +1884,52 @@
                      return {};
                   });
                 console.log(moment().format("HH:mm:ss") + " syncSafe - getInternalTransactionsResult: " + JSON.stringify(getInternalTransactionsResult, null, 2).substring(0, 200));
-                localStorage.cachedGetInternalTransactionsResult = JSON.stringify(getInternalTransactionsResult);
-              } else {
+              //   localStorage.cachedGetInternalTransactionsResult = JSON.stringify(getInternalTransactionsResult);
+              // } else {
                 getInternalTransactionsResult = JSON.parse(localStorage.cachedGetInternalTransactionsResult || {});
-              }
-              console.log(moment().format("HH:mm:ss") + " syncSafe - getInternalTransactionsResult 2: " + JSON.stringify(getInternalTransactionsResult, null, 2).substring(0, 20000));
+              // }
+              // console.log(moment().format("HH:mm:ss") + " syncSafe - getInternalTransactionsResult 2: " + JSON.stringify(getInternalTransactionsResult, null, 2).substring(0, 20000));
               if (getInternalTransactionsResult.status == 1 && getInternalTransactionsResult.message == "OK" && getInternalTransactionsResult.result) {
                 for (const tx of getInternalTransactionsResult.result) {
                   console.log(JSON.stringify(tx, null, 2));
                   const from = ethers.utils.getAddress(tx.from);
                   const to = tx.to && ethers.utils.getAddress(tx.to) || null;
                   const contractAddress = tx.contractAddress && ethers.utils.getAddress(tx.contractAddress) || null;
+
+                  if (!(tx.blockNumber in safeData.blocks)) {
+                    safeData.blocks[tx.blockNumber] = {
+                      timestamp: parseInt(tx.timeStamp),
+                      balance: null,
+                      txs: {},
+                    };
+                  }
+                  if (!(tx.hash in safeData.blocks[tx.blockNumber].txs)) {
+                    safeData.blocks[tx.blockNumber].txs[tx.hash] = {
+                      txIndex: null, // TODO: Fill in
+                      logs: {},
+                      internal: {},
+                      nonce: null, // TODO Need this?
+                      tx: null,
+                      txReceipt: null,
+                    };
+                  }
+                  if (!(tx.traceId in safeData.blocks[tx.blockNumber].txs[tx.hash].logs)) {
+                    safeData.blocks[tx.blockNumber].txs[tx.hash].internal[tx.traceId] = {
+                      from: ethers.utils.getAddress(tx.from),
+                      to: tx.to && ethers.utils.getAddress(tx.to) || null,
+                      value: ethers.BigNumber.from(tx.value).toString(),
+                      contract: tx.contractAddress && ethers.utils.getAddress(tx.contractAddress) || null,
+                      input: tx.input,
+                      call: tx.call,
+                      gas: parseInt(tx.gas),
+                      gasUsed: parseInt(tx.gasUsed),
+                      isError: parseInt(tx.isError),
+                      errCode: tx.errCode,
+                    };
+                  }
                 }
               }
-
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 3: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
             }
 
             if (safeAddress && !this.sync.halt && !this.settings.devMode) {
@@ -1931,7 +1965,7 @@
                   break;
                 }
               }
-              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 3: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', structuredClone(safeData));
             }
@@ -1990,7 +2024,7 @@
                   }
                 }
               }
-              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 4: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 5: " + JSON.stringify(safeData, null, 2).substring(0, 200) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', structuredClone(safeData));
             }
@@ -2037,7 +2071,7 @@
                   break;
                 }
               }
-              // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 5: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
+              // console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 6: " + JSON.stringify(safeData, null, 2).substring(0, 2000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', structuredClone(safeData));
             }
@@ -2089,7 +2123,7 @@
                   await delay(1000);
                 }
               } while (continuation != null);
-              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 6: " + JSON.stringify(safeData, null, 2).substring(0, 10000) + "...");
+              console.log(moment().format("HH:mm:ss") + " syncSafe - safeData 7: " + JSON.stringify(safeData, null, 2).substring(0, 10000) + "...");
               await this.saveCacheData("safeData_" + safeAddress, safeData, db, chainId);
               Vue.set(this, 'safeData', safeData);
             }
