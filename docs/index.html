@@ -1887,7 +1887,14 @@
                 getInternalTransactionsResult = JSON.parse(localStorage.cachedGetInternalTransactionsResult || {});
               }
               console.log(moment().format("HH:mm:ss") + " syncSafe - getInternalTransactionsResult 2: " + JSON.stringify(getInternalTransactionsResult, null, 2).substring(0, 20000));
-
+              if (getInternalTransactionsResult.status == 1 && getInternalTransactionsResult.message == "OK" && getInternalTransactionsResult.result) {
+                for (const tx of getInternalTransactionsResult.result) {
+                  console.log(JSON.stringify(tx, null, 2));
+                  const from = ethers.utils.getAddress(tx.from);
+                  const to = tx.to && ethers.utils.getAddress(tx.to) || null;
+                  const contractAddress = tx.contractAddress && ethers.utils.getAddress(tx.contractAddress) || null;
+                }
+              }
 
             }
 
