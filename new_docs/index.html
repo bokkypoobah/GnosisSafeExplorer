@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>GnosisSafeExplorer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <meta name="description" content="GnosisSafeExplorer (c) Bok Consulting Pty Ltd 2025" />
+    <meta name="author" content="BokkyPooBah" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@BokkyPooBah" />
+    <meta name="twitter:creator" content="@BokkyPooBah" />
+    <link type="text/css" rel="stylesheet" href="css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="css/bootstrap-vue.min.css"/>
+    <link type="text/css" rel="stylesheet" href="css/bootstrap-vue-icons.min.css"/>
+    <link type="text/css" rel="stylesheet" href="css/app.css" />
+    <script src="js/vue.js"></script>
+    <script src="js/bootstrap-vue.min.js"></script>
+    <script src="js/bootstrap-vue-icons.min.js"></script>
+    <script src="js/ethers-5.7.umd.min.js" type="application/javascript"></script>
+    <script src="js/moment.min.js"></script>
+    <script src="js/dexie.js"></script>
+    <script src="globals.js"></script>
+
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="images/site.webmanifest">
+    <link rel="mask-icon" href="images/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-config" content="images/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+  </head>
+  <body>
+    <div id="app">
+      <b-container fluid class="m-0 p-0">
+      </b-container>
+    </div>
+
+    <script>
+      window.app = new Vue({
+        el: '#app',
+        // --- DATA ---
+        data: {
+        },
+
+        // --- COMPUTED ---
+        computed: {
+        },
+
+        // --- METHODS ---
+        methods: {
+        },
+
+        // --- MOUNTED ---
+        mounted() {
+          console.log(now() + " mounted");
+        },
+      })
+    </script>
+  </body>
+</html>
