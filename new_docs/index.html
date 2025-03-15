@@ -36,6 +36,9 @@
             <b-avatar rounded variant="light" size="3.0rem" src="images/fknchad_FkqVTzBaUAAiE8x_nobg.png" v-b-popover.hover.bottom="'gm'" class="ml-0"></b-avatar>
             <font size="-1" v-b-popover.hover.bottom="'gm gm gm'">GnosisSafeExplorer</font>
           </b-navbar-brand>
+          <b-navbar-nav class="ml-auto">
+            <b-button size="sm" variant="outline-primary" class="ml-5 mr-1" @click="connectToWeb3();" v-b-popover.hover.bottom="'Click to connect to web3'">{{ connected ? 'Connected' : 'Connect' }}</b-button>
+          </b-navbar-nav>
         </b-navbar>
       </b-container>
     </div>
@@ -45,6 +48,13 @@
         el: '#app',
         // --- DATA ---
         data: {
+
+          // Web3 connection
+          connected: null,
+          chainId: null,
+          coinbase: null,
+          blockNumber: null,
+          timestamp: null,
         },
 
         // --- COMPUTED ---
@@ -53,11 +63,73 @@
 
         // --- METHODS ---
         methods: {
+          async connectToWeb3() {
+            console.log(now() + " connectToWeb3");
+            if (!window.ethereum) {
+              this.connected = false;
+            } else {
+              try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                this.connected = window.ethereum.isConnected();
+              } catch (e) {
+                console.error(now() + " connectToWeb3 - window.ethereum.request error: " + e.message);
+                this.connected = false;
+              }
+            }
+            if (!this.connected) {
+              alert("Please load this dapp in a web3-enabled browser like Brave, or use the web3 extension like Rabby or MetaMask");
+            } else {
+              const t = this;
+              function handleChainChanged(_chainId) {
+                t.chainId = parseInt(_chainId);
+                console.log(now() + " connectToWeb3_handleChainChanged - chainId: " + t.chainId);
+              }
+              window.ethereum.on('chainChanged', handleChainChanged);
+              async function handleAccountsChanged(accounts) {
+                const signer = provider.getSigner();
+                t.coinbase = await signer.getAddress();
+                console.log(now() + " connectToWeb3 - handleAccountsChanged: " + t.coinbase);
+              }
+              window.ethereum.on('accountsChanged', handleAccountsChanged);
+              const provider = new ethers.providers.Web3Provider(window.ethereum);
+              const network = await provider.getNetwork();
+              this.chainId = network.chainId;
+              const block = await provider.getBlock("latest");
+              this.blockNumber = block.number;
+              this.timestamp = block.timestamp;
+              const signer = provider.getSigner();
+              this.coinbase = await signer.getAddress();
+              console.log(now() + " connectToWeb3 - chainId: " + this.chainId + ", blockNumber: " + this.blockNumber + ", timestamp: " + this.timestamp + " " + moment.unix(this.timestamp).format("YYYY-MM-DD HH:mm:ss") + ", coinbase: " + this.coinbase);
+              async function handleNewBlock(blockNumber) {
+                if (!t.blockNumber || blockNumber > t.blockNumber) {
+                  const block = await provider.getBlock("latest");
+                  t.blockNumber = block.number;
+                  t.timestamp = block.timestamp;
+                  await t.processNewBlock(blockNumber);
+                }
+              }
+              provider.on("block", handleNewBlock);
+            }
+            localStorage.newGnosisSafeExplorerConnected = this.connected;
+          },
+          async processNewBlock(blockNumber) {
+            console.log(now() + " processNewBlock - chainId: " + this.chainId + ", blockNumber: " + blockNumber + ", this.blockNumber: " + this.blockNumber + ", timestamp: " + this.timestamp + " " + moment.unix(this.timestamp).format("YYYY-MM-DD HH:mm:ss") + ", coinbase: " + this.coinbase);
+          },
         },
 
         // --- MOUNTED ---
         mounted() {
           console.log(now() + " mounted");
+          if ('newGnosisSafeExplorerConnected' in localStorage) {
+            Vue.set(this, 'connected', localStorage.newGnosisSafeExplorerConnected);
+            console.log(now() + " mounted - this.connected: " + this.connected);
+            if (this.connected) {
+              (async() => {
+                await this.connectToWeb3();
+              })();
+            }
+          }
+
         },
       })
     </script>
