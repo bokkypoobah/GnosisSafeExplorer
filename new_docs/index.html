@@ -115,15 +115,15 @@ timestamps_: {{ timestamps_ }} -->
 
           presetMethodIds() {
             const results = {};
-            for (const abi of [ERC20ABI, ERC721ABI, ERC1155ABI]) {
+            for (const item of [[ERC20ABI, "erc20"], [ERC721ABI, "erc721"], [ERC1155ABI, "erc1155"]]) {
               try {
-                const interface = new ethers.utils.Interface(abi);
+                const interface = new ethers.utils.Interface(item[0]);
                 for (const f of interface.format(ethers.utils.FormatTypes.full)) {
                   if (f.substring(0, 8) == "function") {
                     const functionSig = interface.getFunction(f.substring(9,));
                     const methodId = interface.getSighash(functionSig);
                     if (!(methodId in results)) {
-                      results[methodId] = f;
+                      results[methodId] = [f, item[1]];
                     }
                   }
                 }
