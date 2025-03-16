@@ -142,9 +142,8 @@ timestamps_: {{ timestamps_ }}
             }
             return this.txHashesIndex_[txHash];
           },
-
-          // Load data from db into main or temp variables - type: all|addresses|txHashes|timestamps; where: main|temp
           async lookupDataLoad(db, chainId, type, where) {
+            // Load data from db into main or temp variables - type: all|addresses|txHashes|timestamps; where: main|temp
             console.log(now() + " lookupDataLoad - chainId: " + chainId + ", type: " + type + ", where: " + where);
             if (type == "all" || type == "addresses") {
               const addresses = await this.dbGetCachedData(db, chainId, "addresses", []);
@@ -177,8 +176,8 @@ timestamps_: {{ timestamps_ }}
               }
             }
           },
-          // Save from temp to db - type: all|addresses|txHashes|timestamps
           async lookupDataSaveTempToDB(db, chainId, type) {
+            // Save from temp to db - type: all|addresses|txHashes|timestamps
             console.log(now() + " lookupDataSaveTempToDB - type: " + type);
             if (type == "all" || type == "addresses") {
               await this.dbSaveCacheData(db, chainId, "addresses", this.addresses_);
@@ -192,8 +191,8 @@ timestamps_: {{ timestamps_ }}
               await this.dbSaveCacheData(db, chainId, "timestamps", this.timestamps_);
             }
           },
-          // Flush from temp to main - type: all|addresses|txHashes|timestamps
           async lookupDataFlushTempToMain(type) {
+            // Flush from temp to main - type: all|addresses|txHashes|timestamps
             console.log(now() + " lookupDataFlushTempToMain - type: " + type);
             if (type == "all" || type == "addresses") {
               Vue.set(this, "addresses", structuredClone(this.addresses_));
