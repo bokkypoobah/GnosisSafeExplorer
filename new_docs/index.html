@@ -113,6 +113,7 @@ timestamps_: {{ timestamps_ }} -->
         // --- COMPUTED ---
         computed: {
 
+          // --- Preset data ---
           presetMethodIds() {
             const results = {};
             for (const item of [[ERC20ABI, 20], [ERC721ABI, 721], [ERC1155ABI, 1155]]) {
@@ -147,15 +148,14 @@ timestamps_: {{ timestamps_ }} -->
             }
             return results;
           },
-
           presetEventSigs() {
             const results = {};
             for (const item of [[ERC20ABI, 20], [ERC721ABI, 721], [ERC1155ABI, 1155]]) {
               const interface = new ethers.utils.Interface(item[0]);
               for (const f of interface.format(ethers.utils.FormatTypes.full)) {
                 if (f.substring(0, 5) == "event") {
-                  const numberOfIndexedParameters = f.split("indexed").length - 1;
                   const eventInfo = interface.getEvent(f.substring(6,));
+                  const topicCount = eventInfo.inputs.filter(e => e.indexed).length + 1;
                   const eventSig = interface.getEventTopic(eventInfo);
                   if (!(eventSig in results)) {
                     results[eventSig] = {
@@ -165,8 +165,8 @@ timestamps_: {{ timestamps_ }} -->
                       types: eventInfo.inputs.map(e => e.type),
                     };
                   }
-                  if (!(numberOfIndexedParameters in results[eventSig].topicCounts)) {
-                    results[eventSig].topicCounts[numberOfIndexedParameters] = [f, "token", item[1]];
+                  if (!(topicCount in results[eventSig].topicCounts)) {
+                    results[eventSig].topicCounts[topicCount] = [f, "token", item[1]];
                   }
                 }
               }
@@ -176,8 +176,8 @@ timestamps_: {{ timestamps_ }} -->
                 const interface = new ethers.utils.Interface(abi);
                 for (const f of interface.format(ethers.utils.FormatTypes.full)) {
                   if (f.substring(0, 5) == "event") {
-                    const numberOfIndexedParameters = f.split("indexed").length - 1;
                     const eventInfo = interface.getEvent(f.substring(6,));
+                    const topicCount = eventInfo.inputs.filter(e => e.indexed).length + 1;
                     const eventSig = interface.getEventTopic(eventInfo);
                     if (!(eventSig in results)) {
                       results[eventSig] = {
@@ -187,8 +187,8 @@ timestamps_: {{ timestamps_ }} -->
                         types: eventInfo.inputs.map(e => e.type),
                       };
                     }
-                    if (!(numberOfIndexedParameters in results[eventSig].topicCounts)) {
-                      results[eventSig].topicCounts[numberOfIndexedParameters] = [f, name, version];
+                    if (!(topicCount in results[eventSig].topicCounts)) {
+                      results[eventSig].topicCounts[topicCount] = [f, name, version];
                     }
                   }
                 }
@@ -203,7 +203,7 @@ timestamps_: {{ timestamps_ }} -->
         methods: {
           testIt() {
             console.log(now() + " testIt");
-            // console.log(now() + " this.presetMethodIds: " + JSON.stringify(this.presetMethodIds, null, 2));
+            console.log(now() + " this.presetMethodIds: " + JSON.stringify(this.presetMethodIds, null, 2));
             console.log(now() + " this.presetEventSigs: " + JSON.stringify(this.presetEventSigs, null, 2));
           },
           async testItOld() {
