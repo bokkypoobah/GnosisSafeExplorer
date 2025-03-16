@@ -41,6 +41,31 @@
             <b-button v-if="web3.connected" size="sm" variant="outline-primary" class="ml-5 mr-1" @click="web3Connect('disconnect');" v-b-popover.hover.bottom="'Disconnect from web3'">{{ web3.coinbase && web3.coinbase.substring(0, 10) }}</b-button>
           </b-navbar-nav>
         </b-navbar>
+
+        <b-card no-body class="p-0 mt-0 border-0" style="min-height: 600px;">
+          <b-form-group label="Test:" label-cols="3" label-align="right" class="m-0 mt-5 p-0">
+            <b-button size="sm" @click="testIt();" variant="primary" class="mt-1">
+              Test
+            </b-button>
+          </b-form-group>
+          <b-form-group label="Data:" label-cols="3" label-align="right" class="m-0 mt-5 p-0">
+            <font size="-2">
+              <pre>
+addresses: {{ addresses }}
+addresses_: {{ addresses_ }}
+addressesIndex: {{ addressesIndex }}
+addressesIndex_: {{ addressesIndex_ }}
+txHashes: {{ txHashes }}
+txHashes_: {{ txHashes_ }}
+txHashesIndex: {{ txHashesIndex }}
+txHashesIndex_: {{ txHashesIndex_ }}
+timestamps: {{ timestamps }}
+timestamps_: {{ timestamps_ }}
+              </pre>
+            </font>
+          </b-form-group>
+        </b-card>
+
       </b-container>
     </div>
 
@@ -49,6 +74,29 @@
         el: '#app',
         // --- DATA ---
         data: {
+
+          // Lookup data & temp copies to reduce auto updates for each data change
+          addresses: [],       // index => { address, type [, ...] }
+          addressesIndex: {},  // address => index
+          txHashes: [],        // index => [ txHash, blockNumber, txIndex ]
+          txHashesIndex: {},   // txHash => index
+          timestamps: {},      // blockNumber => Unix timestamp
+          addresses_: [],      // Temp index => { address, type [, ...] }
+          addressesIndex_: {}, // Temp address => index
+          txHashes_: [],       // Temp index => [ txHash, blockNumber, txIndex ]
+          txHashesIndex_: {},  // Temp txHash => index
+          timestamps_: {},     // Temp blockNumber => Unix timestamp
+
+          // DB stuff
+          db: {
+            name: "gnosissafeexplorer089a",
+            version: 1,
+            schemaDefinition: {
+              cache: '&objectName',
+            },
+          },
+
+          // Web3 stuff
           provider: null,
           web3: {
             connected: null,
@@ -65,8 +113,120 @@
 
         // --- METHODS ---
         methods: {
+          async testIt() {
+            console.log(now() + " testIt");
+            const db = new Dexie(this.db.name);
+            db.version(this.db.version).stores(this.db.schemaDefinition);
+            const chainId = this.web3.chainId || 1;
+            await this.lookupDataLoad(db, chainId, "all", "main");
+            this.lookupDataGetAddressIndex("0x001", { type: "owner" });
+            this.lookupDataGetAddressIndex("0x002", { type: "erc20", decimals: 10 });
+            this.lookupDataGetTxHashIndex("0xaaa", { blockNumber: 124, txIndex: 234 });
+            await this.lookupDataSaveTempToDB(db, chainId, "all");
+            await this.lookupDataFlushTempToMain("all");
+            db.close();
+          },
 
-          // --- WEB3STUFF ---
+          // --- Lookup Data ---
+          lookupDataGetAddressIndex(address, data = {}) {
+            if (!(address in this.addressesIndex_)) {
+              this.addressesIndex_[address] = this.addresses_.length;
+              this.addresses_.push({ address, ...data });
+            }
+            return this.addressesIndex_[address];
+          },
+          lookupDataGetTxHashIndex(txHash, data = {}) {
+            if (!(txHash in this.txHashesIndex_)) {
+              this.txHashesIndex_[txHash] = this.txHashes_.length;
+              this.txHashes_.push({ txHash, ...data });
+            }
+            return this.txHashesIndex_[txHash];
+          },
+
+          // Load data from db into main or temp variables - type: all|addresses|txHashes|timestamps; where: main|temp
+          async lookupDataLoad(db, chainId, type, where) {
+            console.log(now() + " lookupDataLoad - chainId: " + chainId + ", type: " + type + ", where: " + where);
+            if (type == "all" || type == "addresses") {
+              const addresses = await this.dbGetCachedData(db, chainId, "addresses", []);
+              const addressesIndex = await this.dbGetCachedData(db, chainId, "addressesIndex", {});
+              if (where == "main") {
+                Vue.set(this, "addresses", addresses);
+                Vue.set(this, "addressesIndex", addressesIndex);
+              } else {
+                Vue.set(this, "addresses_", addresses);
+                Vue.set(this, "addressesIndex_", addressesIndex);
+              }
+            }
+            if (type == "all" || type == "txHashes") {
+              const txHashes = await this.dbGetCachedData(db, chainId, "txHashes", []);
+              const txHashesIndex = await this.dbGetCachedData(db, chainId, "txHashesIndex", {});
+              if (where == "main") {
+                Vue.set(this, "txHashes", txHashes);
+                Vue.set(this, "txHashesIndex", txHashesIndex);
+              } else {
+                Vue.set(this, "txHashes_", txHashes);
+                Vue.set(this, 'txHashesIndex_', txHashesIndex);
+              }
+            }
+            if (type == "all" || type == "timestamps") {
+              const timestamps = await this.dbGetCachedData(db, chainId, "timestamps", {});
+              if (where == "main") {
+                Vue.set(this, "timestamps", timestamps);
+              } else {
+                Vue.set(this, "timestamps_", timestamps);
+              }
+            }
+          },
+          // Save from temp to db - type: all|addresses|txHashes|timestamps
+          async lookupDataSaveTempToDB(db, chainId, type) {
+            console.log(now() + " lookupDataSaveTempToDB - type: " + type);
+            if (type == "all" || type == "addresses") {
+              await this.dbSaveCacheData(db, chainId, "addresses", this.addresses_);
+              await this.dbSaveCacheData(db, chainId, "addressesIndex", this.addressesIndex_);
+            }
+            if (type == "all" || type == "txHashes") {
+              await this.dbSaveCacheData(db, chainId, "txHashes", this.txHashes_);
+              await this.dbSaveCacheData(db, chainId, "txHashesIndex", this.txHashesIndex_);
+            }
+            if (type == "all" || type == "timestamps") {
+              await this.dbSaveCacheData(db, chainId, "timestamps", this.timestamps_);
+            }
+          },
+          // Flush from temp to main - type: all|addresses|txHashes|timestamps
+          async lookupDataFlushTempToMain(type) {
+            console.log(now() + " lookupDataFlushTempToMain - type: " + type);
+            if (type == "all" || type == "addresses") {
+              Vue.set(this, "addresses", structuredClone(this.addresses_));
+              Vue.set(this, "addressesIndex", structuredClone(this.addressesIndex_));
+            }
+            if (type == "all" || type == "txHashes") {
+              Vue.set(this, "txHashes", structuredClone(this.txHashes_));
+              Vue.set(this, "txHashesIndex", structuredClone(this.txHashesIndex_));
+            }
+            if (type == "all" || type == "timestamps") {
+              Vue.set(this, "timestamps", structuredClone(this.timestamps_));
+            }
+          },
+
+          // --- DB ---
+          async dbGetCachedData(db, chainId, name, empty) {
+            // console.log(now() + " getCachedData - name: " + name + ", chainId: " + chainId);
+            const dataItems = await db.cache.where("objectName").equals(name + "_" + chainId).toArray();
+            if (dataItems.length == 1) {
+              return dataItems[0].object;
+            } else {
+              return empty;
+            }
+          },
+          async dbSaveCacheData(db, chainId, name, data) {
+            // console.log(now() + " dbSaveCacheData - name: " + name + ", chainId: " + chainId);
+            await db.cache.put({ objectName: name + "_" + chainId, object: data }).then (function() {
+              }).catch(function(error) {
+                console.error(now() + " dbSaveCacheData - error: " + error);
+              });
+          },
+
+          // --- Web3 ---
           async web3Connect(action) {
             if (!this.provider) {
               this.provider = new ethers.providers.Web3Provider(window.ethereum);
