@@ -37,7 +37,8 @@
             <font size="-1" v-b-popover.hover.bottom="'gm gm gm'">GnosisSafeExplorer</font>
           </b-navbar-brand>
           <b-navbar-nav class="ml-auto">
-            <b-button size="sm" variant="outline-primary" class="ml-5 mr-1" @click="connectToWeb3();" v-b-popover.hover.bottom="'Click to connect to web3'">{{ connected ? 'Connected' : 'Connect' }}</b-button>
+            <b-button v-if="!web3.connected" size="sm" variant="outline-primary" class="ml-5 mr-1" @click="web3Connect('connect');" v-b-popover.hover.bottom="'Connect to web3'">{{ 'Connect' }}</b-button>
+            <b-button v-if="web3.connected" size="sm" variant="outline-primary" class="ml-5 mr-1" @click="web3Connect('disconnect');" v-b-popover.hover.bottom="'Disconnect from web3'">{{ web3.coinbase && web3.coinbase.substring(0, 10) }}</b-button>
           </b-navbar-nav>
         </b-navbar>
       </b-container>
@@ -48,13 +49,14 @@
         el: '#app',
         // --- DATA ---
         data: {
-
-          // Web3 connection
-          connected: null,
-          chainId: null,
-          coinbase: null,
-          blockNumber: null,
-          timestamp: null,
+          provider: null,
+          web3: {
+            connected: null,
+            chainId: null,
+            coinbase: null,
+            blockNumber: null,
+            timestamp: null,
+          },
         },
 
         // --- COMPUTED ---
@@ -63,69 +65,86 @@
 
         // --- METHODS ---
         methods: {
-          async connectToWeb3() {
-            console.log(now() + " connectToWeb3");
-            if (!window.ethereum) {
-              this.connected = false;
-            } else {
-              try {
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                this.connected = window.ethereum.isConnected();
-              } catch (e) {
-                console.error(now() + " connectToWeb3 - window.ethereum.request error: " + e.message);
-                this.connected = false;
-              }
+
+          // --- WEB3STUFF ---
+          async web3Connect(action) {
+            if (!this.provider) {
+              this.provider = new ethers.providers.Web3Provider(window.ethereum);
             }
-            if (!this.connected) {
-              alert("Please load this dapp in a web3-enabled browser like Brave, or use the web3 extension like Rabby or MetaMask");
+            if (action == 'disconnect') {
+              if (this.web3.connected) {
+                this.web3.connected = false;
+                this.provider.removeAllListeners();
+                this.provider = null;
+              }
             } else {
-              const t = this;
-              function handleChainChanged(_chainId) {
-                t.chainId = parseInt(_chainId);
-                console.log(now() + " connectToWeb3_handleChainChanged - chainId: " + t.chainId);
-              }
-              window.ethereum.on('chainChanged', handleChainChanged);
-              async function handleAccountsChanged(accounts) {
-                const signer = provider.getSigner();
-                t.coinbase = await signer.getAddress();
-                console.log(now() + " connectToWeb3 - handleAccountsChanged: " + t.coinbase);
-              }
-              window.ethereum.on('accountsChanged', handleAccountsChanged);
-              const provider = new ethers.providers.Web3Provider(window.ethereum);
-              const network = await provider.getNetwork();
-              this.chainId = network.chainId;
-              const block = await provider.getBlock("latest");
-              this.blockNumber = block.number;
-              this.timestamp = block.timestamp;
-              const signer = provider.getSigner();
-              this.coinbase = await signer.getAddress();
-              console.log(now() + " connectToWeb3 - chainId: " + this.chainId + ", blockNumber: " + this.blockNumber + ", timestamp: " + this.timestamp + " " + moment.unix(this.timestamp).format("YYYY-MM-DD HH:mm:ss") + ", coinbase: " + this.coinbase);
-              async function handleNewBlock(blockNumber) {
-                if (!t.blockNumber || blockNumber > t.blockNumber) {
-                  const block = await provider.getBlock("latest");
-                  t.blockNumber = block.number;
-                  t.timestamp = block.timestamp;
-                  await t.processNewBlock(blockNumber);
+              if (!window.ethereum) {
+                this.web3.connected = false;
+              } else {
+                try {
+                  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                  this.web3.connected = window.ethereum.isConnected();
+                } catch (e) {
+                  console.error(now() + " web3Connect - window.ethereum.request error: " + e.message);
+                  this.web3.connected = false;
                 }
               }
-              provider.on("block", handleNewBlock);
+              if (!this.web3.connected) {
+                alert("Please load this dapp in a web3-enabled browser like Brave, or use the web3 extension like Rabby or MetaMask");
+              } else {
+                window.ethereum.on('chainChanged', this.web3HandleChainChanged);
+                window.ethereum.on('accountsChanged', this.web3HandleAccountsChanged);
+                const network = await this.provider.getNetwork();
+                this.web3.chainId = parseInt(network.chainId);
+                const block = await this.provider.getBlock("latest");
+                this.web3.blockNumber = block.number;
+                this.web3.timestamp = block.timestamp;
+                const signer = this.provider.getSigner();
+                this.web3.coinbase = await signer.getAddress();
+                this.provider.on("block", this.web3HandleNewBlock);
+                await this.web3HandleNewBlock(0);
+              }
             }
-            localStorage.newGnosisSafeExplorerConnected = this.connected;
+            console.log(now() + " web3Connect: " + this.web3.chainId + ":" + this.web3.blockNumber + " @ " + formatLocalTime(this.web3.timestamp) + "; " + (this.web3.coinbase && this.web3.coinbase.substring(0, 10)) + "; " + (this.web3.connected ? "connected" : "disconnected"));
+            localStorage.gnosisSafeExplorerWeb3 = JSON.stringify(this.web3);
           },
-          async processNewBlock(blockNumber) {
-            console.log(now() + " processNewBlock - chainId: " + this.chainId + ", blockNumber: " + blockNumber + ", this.blockNumber: " + this.blockNumber + ", timestamp: " + this.timestamp + " " + moment.unix(this.timestamp).format("YYYY-MM-DD HH:mm:ss") + ", coinbase: " + this.coinbase);
+          async web3HandleChainChanged(_chainId) {
+            this.web3.chainId = parseInt(_chainId);
+            localStorage.gnosisSafeExplorerWeb3 = JSON.stringify(this.web3);
+            alert('Web3 network changed. This page will reload 5 seconds after you click OK.')
+            setTimeout(function() {
+              window.location.reload();
+            }, 5000);
+          },
+          async web3HandleAccountsChanged(accounts) {
+            const signer = this.provider.getSigner();
+            this.web3.coinbase = await signer.getAddress();
+            localStorage.gnosisSafeExplorerWeb3 = JSON.stringify(this.web3);
+          },
+          async web3HandleNewBlock(blockNumber) {
+            if (!this.web3.blockNumber || blockNumber > this.web3.blockNumber) {
+              const block = await this.provider.getBlock("latest");
+              this.web3.blockNumber = block.number;
+              this.web3.timestamp = block.timestamp;
+              if (blockNumber >= this.web3.blockNumber) {
+                await this.web3ProcessLatestBlock();
+                localStorage.gnosisSafeExplorerWeb3 = JSON.stringify(this.web3);
+              }
+            }
+          },
+          async web3ProcessLatestBlock() {
+            console.log(now() + " web3ProcessLatestBlock: " + this.web3.chainId + ":" + this.web3.blockNumber + " @ " + formatLocalTime(this.web3.timestamp) + "; " + (this.web3.coinbase && this.web3.coinbase.substring(0, 10)) + "; " + (this.web3.connected ? "connected" : "disconnected"));
           },
         },
 
         // --- MOUNTED ---
         mounted() {
-          console.log(now() + " mounted");
-          if ('newGnosisSafeExplorerConnected' in localStorage) {
-            Vue.set(this, 'connected', localStorage.newGnosisSafeExplorerConnected);
-            console.log(now() + " mounted - this.connected: " + this.connected);
-            if (this.connected) {
+          if ('gnosisSafeExplorerWeb3' in localStorage) {
+            this.web3 = JSON.parse(localStorage.gnosisSafeExplorerWeb3);
+            console.log(now() + " mounted: " + this.web3.chainId + ":" + this.web3.blockNumber + " @ " + formatLocalTime(this.web3.timestamp) + "; " + (this.web3.coinbase && this.web3.coinbase.substring(0, 10)) + "; " + (this.web3.connected ? "connected" : "disconnected"));
+            if (this.web3.connected) {
               (async() => {
-                await this.connectToWeb3();
+                await this.web3Connect('connect');
               })();
             }
           }

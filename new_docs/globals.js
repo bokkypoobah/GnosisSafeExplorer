@@ -12,3 +12,6 @@ function handleErrors(response) {
 function now() {
   return moment().format("HH:mm:ss");
 }
+function formatLocalTime(t) {
+  return moment.unix(t).format("YYYY-MM-DD HH:mm:ss");
+}
