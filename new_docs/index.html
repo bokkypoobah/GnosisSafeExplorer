@@ -122,7 +122,7 @@ timestamps_: {{ timestamps_ }} -->
                   const functionSig = interface.getFunction(f.substring(9,));
                   const methodId = interface.getSighash(functionSig);
                   if (!(methodId in results)) {
-                    results[methodId] = [f, item[1]];
+                    results[methodId] = [f, "token", item[1]];
                   }
                 }
               }
@@ -157,7 +157,7 @@ timestamps_: {{ timestamps_ }} -->
                     results[eventSig] = {};
                   }
                   if (!(numberOfIndexedParameters in results[eventSig])) {
-                    results[eventSig][numberOfIndexedParameters] = [f, item[1]];
+                    results[eventSig][numberOfIndexedParameters] = [f, "token", item[1]];
                   }
                 }
               }
