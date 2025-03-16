@@ -21,6 +21,7 @@
     <script src="js/moment.min.js"></script>
     <script src="js/dexie.js"></script>
     <script src="globals.js"></script>
+    <script src="addressesAndABIs.js"></script>
 
     <link rel="icon" type="image/png" href="/images/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/images/favicon.svg" />
@@ -51,7 +52,9 @@
           <b-form-group label="Data:" label-cols="3" label-align="right" class="m-0 mt-5 p-0">
             <font size="-2">
               <pre>
-addresses: {{ addresses }}
+presetMethodIds: {{ presetMethodIds }}
+presetEventSigs: {{ presetEventSigs }}
+<!-- addresses: {{ addresses }}
 addresses_: {{ addresses_ }}
 addressesIndex: {{ addressesIndex }}
 addressesIndex_: {{ addressesIndex_ }}
@@ -60,7 +63,7 @@ txHashes_: {{ txHashes_ }}
 txHashesIndex: {{ txHashesIndex }}
 txHashesIndex_: {{ txHashesIndex_ }}
 timestamps: {{ timestamps }}
-timestamps_: {{ timestamps_ }}
+timestamps_: {{ timestamps_ }} -->
               </pre>
             </font>
           </b-form-group>
@@ -75,7 +78,7 @@ timestamps_: {{ timestamps_ }}
         // --- DATA ---
         data: {
 
-          // Lookup data & temp copies to reduce auto updates for each data change
+          // Lookups to reduce memory and processing; temp copies to reduce auto updates for each data change
           addresses: [],       // index => { address, type [, ...] }
           addressesIndex: {},  // address => index
           txHashes: [],        // index => [ txHash, blockNumber, txIndex ]
@@ -109,42 +112,94 @@ timestamps_: {{ timestamps_ }}
 
         // --- COMPUTED ---
         computed: {
+
+          presetMethodIds() {
+            const results = {};
+            for (const abi of [ERC20ABI, ERC721ABI, ERC1155ABI]) {
+              try {
+                const interface = new ethers.utils.Interface(abi);
+                for (const f of interface.format(ethers.utils.FormatTypes.full)) {
+                  if (f.substring(0, 8) == "function") {
+                    const functionSig = interface.getFunction(f.substring(9,));
+                    const methodId = interface.getSighash(functionSig);
+                    if (!(methodId in results)) {
+                      results[methodId] = f;
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error(moment().format("HH:mm:ss") + " presetMethodIds - error: " + e.message);
+              }
+            }
+            return results;
+          },
+
+          presetEventSigs() {
+            const results = {};
+            for (const item of [[ERC20ABI, "erc20"], [ERC721ABI, "erc721"], [ERC1155ABI, "erc1155"]]) {
+              try {
+                const interface = new ethers.utils.Interface(item[0]);
+                for (const f of interface.format(ethers.utils.FormatTypes.full)) {
+                  if (f.substring(0, 5) == "event") {
+                    const numberOfIndexedParameters = f.split("indexed").length - 1;
+                    const eventInfo = interface.getEvent(f.substring(6,));
+                    const eventSig = interface.getEventTopic(eventInfo);
+                    if (!(eventSig in results)) {
+                      results[eventSig] = {};
+                    }
+                    if (!(numberOfIndexedParameters in results[eventSig])) {
+                      results[eventSig][numberOfIndexedParameters] = [f, item[1]];
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error(moment().format("HH:mm:ss") + " presetMethodIds - error: " + e.message);
+              }
+            }
+            return results;
+          },
+
         },
 
         // --- METHODS ---
         methods: {
-          async testIt() {
+          testIt() {
             console.log(now() + " testIt");
+            // console.log(now() + " this.presetMethodIds: " + JSON.stringify(this.presetMethodIds, null, 2));
+            console.log(now() + " this.presetEventSigs: " + JSON.stringify(this.presetEventSigs, null, 2));
+          },
+          async testItOld() {
+            console.log(now() + " testItOld");
             const db = new Dexie(this.db.name);
             db.version(this.db.version).stores(this.db.schemaDefinition);
             const chainId = this.web3.chainId || 1;
-            await this.lookupDataLoad(db, chainId, "all", "main");
-            this.lookupDataGetAddressIndex("0x001", { type: "owner" });
-            this.lookupDataGetAddressIndex("0x002", { type: "erc20", decimals: 10 });
-            this.lookupDataGetTxHashIndex("0xaaa", { blockNumber: 124, txIndex: 234 });
-            await this.lookupDataSaveTempToDB(db, chainId, "all");
-            await this.lookupDataFlushTempToMain("all");
+            await this.lookupLoad(db, chainId, "all", "main");
+            this.lookupGetAddressIndex("0x001", { type: "owner" });
+            this.lookupGetAddressIndex("0x002", { type: "erc20", decimals: 10 });
+            this.lookupGetTxHashIndex("0xaaa", { blockNumber: 124, txIndex: 234 });
+            await this.lookupSaveTempToDB(db, chainId, "all");
+            await this.lookupFlushTempToMain("all");
             db.close();
           },
 
-          // --- Lookup Data ---
-          lookupDataGetAddressIndex(address, data = {}) {
+          // --- Lookup ---
+          lookupGetAddressIndex(address, data = {}) {
             if (!(address in this.addressesIndex_)) {
               this.addressesIndex_[address] = this.addresses_.length;
               this.addresses_.push({ address, ...data });
             }
             return this.addressesIndex_[address];
           },
-          lookupDataGetTxHashIndex(txHash, data = {}) {
+          lookupGetTxHashIndex(txHash, data = {}) {
             if (!(txHash in this.txHashesIndex_)) {
               this.txHashesIndex_[txHash] = this.txHashes_.length;
               this.txHashes_.push({ txHash, ...data });
             }
             return this.txHashesIndex_[txHash];
           },
-          async lookupDataLoad(db, chainId, type, where) {
+          async lookupLoad(db, chainId, type, where) {
             // Load data from db into main or temp variables - type: all|addresses|txHashes|timestamps; where: main|temp
-            console.log(now() + " lookupDataLoad - chainId: " + chainId + ", type: " + type + ", where: " + where);
+            console.log(now() + " lookupLoad - chainId: " + chainId + ", type: " + type + ", where: " + where);
             if (type == "all" || type == "addresses") {
               const addresses = await this.dbGetCachedData(db, chainId, "addresses", []);
               const addressesIndex = await this.dbGetCachedData(db, chainId, "addressesIndex", {});
@@ -176,9 +231,9 @@ timestamps_: {{ timestamps_ }}
               }
             }
           },
-          async lookupDataSaveTempToDB(db, chainId, type) {
+          async lookupSaveTempToDB(db, chainId, type) {
             // Save from temp to db - type: all|addresses|txHashes|timestamps
-            console.log(now() + " lookupDataSaveTempToDB - type: " + type);
+            console.log(now() + " lookupSaveTempToDB - type: " + type);
             if (type == "all" || type == "addresses") {
               await this.dbSaveCacheData(db, chainId, "addresses", this.addresses_);
               await this.dbSaveCacheData(db, chainId, "addressesIndex", this.addressesIndex_);
@@ -191,9 +246,9 @@ timestamps_: {{ timestamps_ }}
               await this.dbSaveCacheData(db, chainId, "timestamps", this.timestamps_);
             }
           },
-          async lookupDataFlushTempToMain(type) {
+          async lookupFlushTempToMain(type) {
             // Flush from temp to main - type: all|addresses|txHashes|timestamps
-            console.log(now() + " lookupDataFlushTempToMain - type: " + type);
+            console.log(now() + " lookupFlushTempToMain - type: " + type);
             if (type == "all" || type == "addresses") {
               Vue.set(this, "addresses", structuredClone(this.addresses_));
               Vue.set(this, "addressesIndex", structuredClone(this.addressesIndex_));
