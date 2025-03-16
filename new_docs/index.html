@@ -116,19 +116,29 @@ timestamps_: {{ timestamps_ }} -->
           presetMethodIds() {
             const results = {};
             for (const item of [[ERC20ABI, "erc20"], [ERC721ABI, "erc721"], [ERC1155ABI, "erc1155"]]) {
-              try {
-                const interface = new ethers.utils.Interface(item[0]);
+              const interface = new ethers.utils.Interface(item[0]);
+              for (const f of interface.format(ethers.utils.FormatTypes.full)) {
+                if (f.substring(0, 8) == "function") {
+                  const functionSig = interface.getFunction(f.substring(9,));
+                  const methodId = interface.getSighash(functionSig);
+                  if (!(methodId in results)) {
+                    results[methodId] = [f, item[1]];
+                  }
+                }
+              }
+            }
+            for (const [version, versionData] of Object.entries(SAFE_ABIS)) {
+              for (const [name, abi] of Object.entries(versionData)) {
+                const interface = new ethers.utils.Interface(abi);
                 for (const f of interface.format(ethers.utils.FormatTypes.full)) {
                   if (f.substring(0, 8) == "function") {
                     const functionSig = interface.getFunction(f.substring(9,));
                     const methodId = interface.getSighash(functionSig);
                     if (!(methodId in results)) {
-                      results[methodId] = [f, item[1]];
+                      results[methodId] = [f, name, version];
                     }
                   }
                 }
-              } catch (e) {
-                console.error(moment().format("HH:mm:ss") + " presetMethodIds - error: " + e.message);
               }
             }
             return results;
@@ -137,8 +147,24 @@ timestamps_: {{ timestamps_ }} -->
           presetEventSigs() {
             const results = {};
             for (const item of [[ERC20ABI, "erc20"], [ERC721ABI, "erc721"], [ERC1155ABI, "erc1155"]]) {
-              try {
-                const interface = new ethers.utils.Interface(item[0]);
+              const interface = new ethers.utils.Interface(item[0]);
+              for (const f of interface.format(ethers.utils.FormatTypes.full)) {
+                if (f.substring(0, 5) == "event") {
+                  const numberOfIndexedParameters = f.split("indexed").length - 1;
+                  const eventInfo = interface.getEvent(f.substring(6,));
+                  const eventSig = interface.getEventTopic(eventInfo);
+                  if (!(eventSig in results)) {
+                    results[eventSig] = {};
+                  }
+                  if (!(numberOfIndexedParameters in results[eventSig])) {
+                    results[eventSig][numberOfIndexedParameters] = [f, item[1]];
+                  }
+                }
+              }
+            }
+            for (const [version, versionData] of Object.entries(SAFE_ABIS)) {
+              for (const [name, abi] of Object.entries(versionData)) {
+                const interface = new ethers.utils.Interface(abi);
                 for (const f of interface.format(ethers.utils.FormatTypes.full)) {
                   if (f.substring(0, 5) == "event") {
                     const numberOfIndexedParameters = f.split("indexed").length - 1;
@@ -148,12 +174,10 @@ timestamps_: {{ timestamps_ }} -->
                       results[eventSig] = {};
                     }
                     if (!(numberOfIndexedParameters in results[eventSig])) {
-                      results[eventSig][numberOfIndexedParameters] = [f, item[1]];
+                      results[eventSig][numberOfIndexedParameters] = [f, name, version];
                     }
                   }
                 }
-              } catch (e) {
-                console.error(moment().format("HH:mm:ss") + " presetMethodIds - error: " + e.message);
               }
             }
             return results;
