@@ -119,10 +119,12 @@ timestamps_: {{ timestamps_ }} -->
               const interface = new ethers.utils.Interface(item[0]);
               for (const f of interface.format(ethers.utils.FormatTypes.full)) {
                 if (f.substring(0, 8) == "function") {
-                  const functionSig = interface.getFunction(f.substring(9,));
-                  const methodId = interface.getSighash(functionSig);
+                  const functionInfo = interface.getFunction(f.substring(9,));
+                  const methodId = interface.getSighash(functionInfo);
                   if (!(methodId in results)) {
-                    results[methodId] = [f, "token", item[1]];
+                    const names = functionInfo.inputs.map(e => e.name);
+                    const types = functionInfo.inputs.map(e => e.type);
+                    results[methodId] = [f, "token", item[1], names, types];
                   }
                 }
               }
@@ -132,10 +134,12 @@ timestamps_: {{ timestamps_ }} -->
                 const interface = new ethers.utils.Interface(abi);
                 for (const f of interface.format(ethers.utils.FormatTypes.full)) {
                   if (f.substring(0, 8) == "function") {
-                    const functionSig = interface.getFunction(f.substring(9,));
-                    const methodId = interface.getSighash(functionSig);
+                    const functionInfo = interface.getFunction(f.substring(9,));
+                    const methodId = interface.getSighash(functionInfo);
                     if (!(methodId in results)) {
-                      results[methodId] = [f, name, version];
+                      const names = functionInfo.inputs.map(e => e.name);
+                      const types = functionInfo.inputs.map(e => e.type);
+                      results[methodId] = [f, name, version, names, types];
                     }
                   }
                 }
@@ -154,10 +158,15 @@ timestamps_: {{ timestamps_ }} -->
                   const eventInfo = interface.getEvent(f.substring(6,));
                   const eventSig = interface.getEventTopic(eventInfo);
                   if (!(eventSig in results)) {
-                    results[eventSig] = {};
+                    results[eventSig] = {
+                      topicCounts: {},
+                      name: eventInfo.name,
+                      names: eventInfo.inputs.map(e => e.name),
+                      types: eventInfo.inputs.map(e => e.type),
+                    };
                   }
-                  if (!(numberOfIndexedParameters in results[eventSig])) {
-                    results[eventSig][numberOfIndexedParameters] = [f, "token", item[1]];
+                  if (!(numberOfIndexedParameters in results[eventSig].topicCounts)) {
+                    results[eventSig].topicCounts[numberOfIndexedParameters] = [f, "token", item[1]];
                   }
                 }
               }
@@ -171,10 +180,15 @@ timestamps_: {{ timestamps_ }} -->
                     const eventInfo = interface.getEvent(f.substring(6,));
                     const eventSig = interface.getEventTopic(eventInfo);
                     if (!(eventSig in results)) {
-                      results[eventSig] = {};
+                      results[eventSig] = {
+                        topicCounts: {},
+                        name: eventInfo.name,
+                        names: eventInfo.inputs.map(e => e.name),
+                        types: eventInfo.inputs.map(e => e.type),
+                      };
                     }
-                    if (!(numberOfIndexedParameters in results[eventSig])) {
-                      results[eventSig][numberOfIndexedParameters] = [f, name, version];
+                    if (!(numberOfIndexedParameters in results[eventSig].topicCounts)) {
+                      results[eventSig].topicCounts[numberOfIndexedParameters] = [f, name, version];
                     }
                   }
                 }
