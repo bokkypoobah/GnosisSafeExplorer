@@ -115,7 +115,7 @@ timestamps_: {{ timestamps_ }} -->
 
           presetMethodIds() {
             const results = {};
-            for (const item of [[ERC20ABI, "erc20"], [ERC721ABI, "erc721"], [ERC1155ABI, "erc1155"]]) {
+            for (const item of [[ERC20ABI, 20], [ERC721ABI, 721], [ERC1155ABI, 1155]]) {
               const interface = new ethers.utils.Interface(item[0]);
               for (const f of interface.format(ethers.utils.FormatTypes.full)) {
                 if (f.substring(0, 8) == "function") {
@@ -146,7 +146,7 @@ timestamps_: {{ timestamps_ }} -->
 
           presetEventSigs() {
             const results = {};
-            for (const item of [[ERC20ABI, "erc20"], [ERC721ABI, "erc721"], [ERC1155ABI, "erc1155"]]) {
+            for (const item of [[ERC20ABI, 20], [ERC721ABI, 721], [ERC1155ABI, 1155]]) {
               const interface = new ethers.utils.Interface(item[0]);
               for (const f of interface.format(ethers.utils.FormatTypes.full)) {
                 if (f.substring(0, 5) == "event") {
